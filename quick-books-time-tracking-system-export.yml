@@ -1,0 +1,4634 @@
+category: Boolean PaintOS
+configPages:
+  - elements:
+      - type: htmlElement
+        value: >-
+          Access tokens expire periodically, so be sure to set the token’s
+          expiration date as far in the future as possible when generating
+          it.<br><br>
+
+          You can find or generate a new token by going to:<br>
+
+          QuickBooks Time → Add-Ons → API → Generate Token
+      - type: configVar
+        value: QuickBooks Time Token
+      - type: configVar
+        value: Airtable Connection
+    name: General Connection
+    tagline: ''
+  - elements:
+      - type: configVar
+        value: Project Management Base
+    name: Airtable Base
+    tagline: ''
+    userLevelConfigured: false
+  - elements:
+      - type: htmlElement
+        value: <h3>Please select the appropriate table for each item.</h3>
+      - type: configVar
+        value: Time Logs Table
+      - type: configVar
+        value: People Table
+      - type: configVar
+        value: Projects Table
+    name: Tables
+    tagline: ''
+    userLevelConfigured: false
+  - elements:
+      - type: configVar
+        value: ⚙️ Update Time Tracking App Record
+      - type: configVar
+        value: ⚙️ Include In Timetracking App Upsert Automation
+      - type: configVar
+        value: How Far Back to Pull Deleted Logs
+      - type: configVar
+        value: Non-Work Job Code Mapping
+      - type: configVar
+        value: Auto-Delete Non-Work Time Logs
+      - type: configVar
+        value: Location Last Modified Date
+    name: Configuration
+    tagline: ''
+    userLevelConfigured: false
+defaultInstanceProfile: Default Instance Profile
+definitionVersion: 7
+description: >-
+  This integration connects QuickBooks Time with Airtable to streamline time
+  tracking and project management. It syncs employee time data directly into
+  Airtable, enabling detailed reporting, job costing, and real-time insights
+  into labor allocation and productivity.
+documentation: ''
+endpointType: flow_specific
+flows:
+  - description: ''
+    endpointSecurityType: customer_optional
+    isAgentFlow: false
+    isSynchronous: false
+    name: 01 Time Tracking System
+    steps:
+      - action:
+          key: schedule
+          component:
+            isPublic: true
+            key: schedule-triggers
+            version: LATEST
+        description: ''
+        inputs: {}
+        isTrigger: true
+        name: Trigger
+        schedule:
+          meta:
+            scheduleType: hour
+            timeZone: ''
+          type: value
+          value: 0 */1 * * *
+      - action:
+          key: adjustDateTime
+          component:
+            isPublic: true
+            key: datetime
+            version: LATEST
+        description: ''
+        inputs:
+          dateTimeInput:
+            type: reference
+            value: trigger.results.startedAt
+          daysInput:
+            type: value
+            value: ''
+          hoursInput:
+            type: value
+            value: '-2'
+          minutesInput:
+            type: value
+            value: ''
+          secondsInput:
+            type: value
+            value: ''
+        name: Adjust Date/Time
+      - action:
+          key: formatDateTime
+          component:
+            isPublic: true
+            key: datetime
+            version: LATEST
+        description: ''
+        inputs:
+          dateTime:
+            type: reference
+            value: adjustDateTime.results
+          format:
+            type: value
+            value: YYYY-MM-DDTHH:mm:ssZ
+          timeZone:
+            type: value
+            value: Etc/UTC
+        name: Format to ISO Date
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: From QuickBooks Time
+        inputs:
+          code:
+            type: value
+            value: >-
+              const axios = require('axios');
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                // Example: ISO date string for filtering timesheets (passed as a parameter)
+                const date = stepResults.formatToIsoDate.results;  
+
+                // Retrieve TSheets token from configVars (assuming it's defined)
+                const tsheetToken = configVars["QuickBooks Time Token"];
+
+                // Initialize TSheets API client.
+                const tsheetClient = axios.create({
+                  baseURL: `https://rest.tsheets.com/api/v1`,
+                  headers: {
+                    Authorization: `Bearer ${tsheetToken}`,
+                    'Content-Type': 'application/json'
+                  },
+                });
+
+                let allTimesheets = [];
+                let page = 1;
+                const pageSize = 200; // maximum records per call
+
+                while (true) {
+                  try {
+                    // Use retryOperation to call the API for this page.
+                    const timesheets = await retryOperation(
+                      () => retriveSheets(tsheetClient, '/timesheets', date, page),
+                      [3, 3, 3]
+                    );
+                    logger.log(`Retrieved ${timesheets.length} records on page ${page}`);
+                    // Append the records from this page to allTimesheets.
+                    allTimesheets = allTimesheets.concat(timesheets);
+
+                    // If the number of records returned is less than the pageSize, we assume this is the last page.
+                    if (timesheets.length < pageSize) {
+                      break;
+                    }
+                    // Otherwise, move to the next page.
+                    page++;
+                  } catch (err) {
+                    logger.error(`Error retrieving Time Sheets on page ${page}:`, err.message);
+                    break;
+                  }
+                }
+                
+                // Sort timesheets from earliest to latest using last_modified
+                allTimesheets.sort((a, b) => new Date(a.last_modified) - new Date(b.last_modified));
+                
+                logger.log("Total Timesheets Retrieved: ", allTimesheets.length);
+
+                return allTimesheets;
+              };
+
+
+              async function retriveSheets(client, endpoint, date, page) {
+                try {
+                  // Construct query parameters.
+                  // Adjust the query string parameters as required by the API.
+                  const params = new URLSearchParams({ modified_since: date, page: page, on_the_clock: "both" }).toString();    
+                  const response = await client.get(`${endpoint}?${params}`);
+                  
+                  // Assuming your API returns a JSON object where timesheets are nested under a key (e.g. "results")
+                  // and that each page returns an object with a property "timesheets"
+                  const data = extractAllTimesheetIds(response.data);
+                  return data || [];
+                } catch (error) {
+                  console.error(`${endpoint} retrieval failed:`, error.response?.data || error.message);
+                  throw error;
+                }
+              }
+
+
+              function extractAllTimesheetIds(data) {
+                // Adjust this function based on the structure of your API's response.
+                // For example, if response data looks like: { results: { timesheets: { id1: {}, id2: {} } }, more: true }
+                if (!data || !data.results || !data.results.timesheets) return [];
+                
+                return Object.values(data.results.timesheets);
+              }
+
+
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+
+
+              /**
+               * Retry an async operation using specified delays (in seconds).
+               *
+               * @param {Function} operationFn - The async function to execute.
+               * @param {Array<number>} retryDelaysInSeconds - Array of delays (seconds) between retries.
+               * @returns {Promise<any>} - The result of the async function if successful.
+               */
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delayInSeconds of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                    await sleep(delayInSeconds * 1000);
+                  }
+                }
+                throw lastError;
+              }
+        name: Retrieve All Time Sheets
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: From QuickBooks Time
+        inputs:
+          code:
+            type: value
+            value: >-
+              const axios = require('axios');
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                const tsheetToken = configVars["QuickBooks Time Token"];
+
+                // Initialize TSheets API client.
+                const tsheetClient = axios.create({
+                  baseURL: `https://rest.tsheets.com/api/v1`,
+                  headers: {
+                    Authorization: `Bearer ${tsheetToken}`,
+                    'Content-Type': 'application/json'
+                  },
+                });
+
+                let allUsers = [];
+                let page = 1;
+                const pageSize = 200; // maximum records per call
+
+                while (true) {
+                  try {
+                    const users = await retryOperation(
+                      () => retriveUsers(tsheetClient, '/users', page),
+                      [3, 3, 3]
+                    );
+                    logger.log(`Retrieved ${users.length} user records on page ${page}`);
+                    allUsers = allUsers.concat(users);
+                    if (users.length < pageSize) break;
+                    page++;
+                  } catch (err) {
+                    logger.error(`Error retrieving Users on page ${page}:`, err.message);
+                    break;
+                  }
+                }
+                
+                logger.log("Total Users Retrieved: ", allUsers.length);
+                return allUsers;
+              };
+
+
+              async function retriveUsers(client, endpoint, page) {
+                try {
+                  // Construct query parameters.
+                  const params = new URLSearchParams({ page: page, per_page: 200 }).toString();
+                  const response = await client.get(`${endpoint}?${params}`);
+                  // Assuming the response structure contains user objects under results.users.
+                  if (!response.data || !response.data.results || !response.data.results.users) return [];
+                  return Object.values(response.data.results.users);
+                } catch (error) {
+                  console.error(`${endpoint} retrieval failed:`, error.response?.data || error.message);
+                  throw error;
+                }
+              }
+
+
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+
+
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delayInSeconds of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                    await sleep(delayInSeconds * 1000);
+                  }
+                }
+                throw lastError;
+              }
+        name: Retrieve All Users
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: From QuickBooks Time
+        inputs:
+          code:
+            type: value
+            value: >-
+              const axios = require('axios');
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                const tsheetToken = configVars["QuickBooks Time Token"];
+
+                // Initialize TSheets API client.
+                const tsheetClient = axios.create({
+                  baseURL: `https://rest.tsheets.com/api/v1`,
+                  headers: {
+                    Authorization: `Bearer ${tsheetToken}`,
+                    'Content-Type': 'application/json'
+                  },
+                });
+
+                let allJobCodes = [];
+                let page = 1;
+                const pageSize = 200; // maximum records per call
+
+                while (true) {
+                  try {
+                    const jobCodes = await retryOperation(
+                      () => retriveJobCodes(tsheetClient, '/jobcodes', page),
+                      [3, 3, 3]
+                    );
+                    logger.log(`Retrieved ${jobCodes.length} job codes on page ${page}`);
+                    
+                    // Filter for active job codes
+                    allJobCodes = allJobCodes.concat(jobCodes);
+                    
+                    if (jobCodes.length < pageSize) break;
+                    page++;
+                  } catch (err) {
+                    logger.error(`Error retrieving JobCodes on page ${page}:`, err.message);
+                    break;
+                  }
+                }
+                
+                logger.log("Total Active JobCodes Retrieved: ", allJobCodes.length);
+                return allJobCodes;
+              };
+
+
+              async function retriveJobCodes(client, endpoint, page) {
+                try {
+                  const params = new URLSearchParams({ page: page, per_page: 200, active: true }).toString();
+                  const response = await client.get(`${endpoint}?${params}`);
+                  if (!response.data || !response.data.results || !response.data.results.jobcodes) return [];
+                  return Object.values(response.data.results.jobcodes);
+                } catch (error) {
+                  console.error(`${endpoint} retrieval failed:`, error.response?.data || error.message);
+                  throw error;
+                }
+              }
+
+
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+
+
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delayInSeconds of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                    await sleep(delayInSeconds * 1000);
+                  }
+                }
+                throw lastError;
+              }
+        name: Retrieve All Active JobCodes
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: From PaintOS Projects Table
+        inputs:
+          code:
+            type: value
+            value: >-
+              const axios = require('axios');
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                const projectTable = configVars["Projects Table"];
+                const base = configVars["Project Management Base"];
+                const { apiKey } = configVars["Airtable Connection"].fields;
+
+                // Initialize Airtable client.
+                const airtableClient = axios.create({
+                  baseURL: `https://api.airtable.com/v0/${base}`,
+                  headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                  },
+                });
+
+                let allProjects = [];
+                let offset = null;
+                const pageSize = 100; // Airtable page size
+
+                do {
+                  // Build the URL with pageSize and offset (if available)
+                  let url = `/${encodeURIComponent(projectTable)}?pageSize=${pageSize}`;
+                  if (offset) {
+                    url += `&offset=${encodeURIComponent(offset)}`;
+                  }
+                  
+                  try {
+                    // Use retryOperation for robust API call.
+                    const response = await retryOperation(
+                      () => airtableClient.get(url),
+                      [3, 3, 3]
+                    );
+                    
+                    const records = response.data.records || [];
+                    allProjects = allProjects.concat(records);
+                    logger.log(`Retrieved ${records.length} records; offset: ${response.data.offset || "none"}`);
+                    
+                    offset = response.data.offset;
+                  } catch (error) {
+                    logger.error("Error retrieving projects:", error.message);
+                    break;
+                  }
+                } while (offset);
+
+                logger.log("Total Projects Retrieved:", allProjects.length);
+                return allProjects.map(record => ({
+                    id: record.id,
+                    fields: {
+                      "QB Time Jobcode ID": record.fields["QB Time Jobcode ID"]
+                    }
+                }));
+              };
+
+
+              //
+
+              // --- Retry Operation Function and Sleep Helper ---
+
+              //
+
+
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+
+
+              /**
+               * Retries an async operation using specified delays (in seconds).
+               *
+               * @param {Function} operationFn - The async function to execute.
+               * @param {Array<number>} retryDelaysInSeconds - Delays (in seconds) between retries.
+               * @returns {Promise<any>} - The result of the async function if successful.
+               */
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delayInSeconds of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                    await sleep(delayInSeconds * 1000);
+                  }
+                }
+                throw lastError;
+              }
+        name: Retrieve All Projects
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: From PaintOS Projects Table
+        inputs:
+          code:
+            type: value
+            value: >-
+              const axios = require('axios');
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                const peopleTable = configVars["People Table"]
+                const base = configVars["Project Management Base"];
+                const { apiKey } = configVars["Airtable Connection"].fields;
+
+                // Initialize Airtable client.
+                const airtableClient = axios.create({
+                  baseURL: `https://api.airtable.com/v0/${base}`,
+                  headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                  },
+                });
+
+                let allPeople = [];
+                let offset = null;
+                const pageSize = 100; // Airtable page size
+
+                do {
+                  // Build the URL with pageSize and offset (if available)
+                  let url = `/${encodeURIComponent(peopleTable)}?pageSize=${pageSize}`;
+                  if (offset) {
+                    url += `&offset=${encodeURIComponent(offset)}`;
+                  }
+                  
+                  try {
+                    // Use retryOperation for robust API call.
+                    const response = await retryOperation(
+                      () => airtableClient.get(url),
+                      [3, 3, 3]
+                    );
+                    
+                    const records = response.data.records || [];
+                    allPeople = allPeople.concat(records);
+                    logger.log(`Retrieved ${records.length} records; offset: ${response.data.offset || "none"}`);
+                    
+                    offset = response.data.offset;
+                  } catch (error) {
+                    logger.error("Error retrieving projects:", error.message);
+                    break;
+                  }
+                } while (offset);
+
+                logger.log("Total Employee Retrieved:", allPeople.length);
+                return allPeople.map(record => ({
+                    id: record.id,
+                    fields: {
+                      "Time Tracking User ID": record.fields["Time Tracking User ID"]
+                    }
+                }));
+              };
+
+
+              //
+
+              // --- Retry Operation Function and Sleep Helper ---
+
+              //
+
+
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+
+
+              /**
+               * Retries an async operation using specified delays (in seconds).
+               *
+               * @param {Function} operationFn - The async function to execute.
+               * @param {Array<number>} retryDelaysInSeconds - Delays (in seconds) between retries.
+               * @returns {Promise<any>} - The result of the async function if successful.
+               */
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delayInSeconds of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                    await sleep(delayInSeconds * 1000);
+                  }
+                }
+                throw lastError;
+              }
+        name: Retrieve All People
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: To Timelogs Airtable
+        errorConfig:
+          delaySeconds: 2
+          errorHandlerType: retry
+          ignoreFinalError: false
+          maxAttempts: 1
+          usesExponentialBackoff: false
+        inputs:
+          code:
+            type: value
+            value: >-
+              const axios = require('axios');
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+
+                try {
+                  // Get the time entries from stepResults.
+                  const timeEntries = stepResults.retrieveAllTimeSheets?.results || [];
+                  const jobCodesData = stepResults.retrieveAllActiveJobcodes?.results || []
+                  const projects = stepResults.retrieveAllProjects?.results || []
+                  const people = stepResults.retrieveAllPeople?.results || []
+                  const breakCodeIDs = configVars["Non-Work Job Code Mapping"] || []
+                  const timeLogTable = configVars["Time Logs Table"];
+                  const base = configVars["Project Management Base"];
+                  const { apiKey } = configVars["Airtable Connection"].fields;
+
+                  logger.log("Break/Lunch Entry Tag(s): ", breakCodeIDs)
+
+                  // Initialize Airtable client.
+                  const airtableClient = axios.create({
+                    baseURL: `https://api.airtable.com/v0/${base}`,
+                    headers: {
+                      Authorization: `Bearer ${apiKey}`,
+                      'Content-Type': 'application/json',
+                    },
+                  });
+
+                  let timeLogRecords = [];
+
+                  // Process each time entry sequentially.
+                  for (const entry of timeEntries) {
+                    const jobCodeId = entry.jobcode_id;
+                    const userId = entry.user_id;
+
+                    let jobCode = filter(jobCodesData, jobCodeId)
+
+                    let project;
+                    if (jobCode) {
+                      project = getProject(projects, jobCode.id);
+                    }
+
+                    // Create payloads for People and Time Logs based on retrieved data.
+                    let employee = getEmployee(people, userId)
+
+                    let timelogPayload = new TimeLogsPayload(entry, jobCode, project, employee, breakCodeIDs)
+
+                    timeLogRecords.push(timelogPayload);
+                  }
+
+                  // Process timeLogRecords in chunks of 10.
+                  const timeLogChunks = chunkArray(timeLogRecords, 10);
+                  const timeLogResponses = [];
+                  for (const chunk of timeLogChunks) {
+                    const timeLogPayload = {
+                      performUpsert: {
+                        fieldsToMergeOn: ["Time Entry ID"]
+                      },
+                      records: chunk
+                    };
+                    try {
+                      // Use retryOperation for bulk update.
+                      const response = await retryOperation(
+                        () => bulkUpdate(airtableClient, timeLogTable, timeLogPayload),
+                        [3, 3, 3]
+                      );
+                      timeLogResponses.push(response);
+                    } catch (error) {
+                      logger.error("Error during bulk update for time log chunk:", error.message);
+                      timeLogResponses.push({ error: error.message });
+                    }
+                  }
+                  logger.log("Time Log API Response: ", timeLogResponses);
+                  logger.log("Time Log API Response Count: ", timeLogResponses.length);
+                  return timeLogResponses
+                } catch(error) {
+                  logger.error("Unhandled error in code block", error);
+                  return { error: error.message };
+                }
+              };
+
+
+
+              // --- Retry Operation Function ---
+
+
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+
+
+              /**
+               * Retry an async operation using specified delays (in seconds).
+               *
+               * @param {Function} operationFn - The async function to execute.
+               * @param {Array<number>} retryDelaysInSeconds - Array of delays (seconds) between retries.
+               * @returns {Promise<any>} - The result of the async function if successful.
+               */
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delayInSeconds of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                    await sleep(delayInSeconds * 1000);
+                  }
+                }
+                throw lastError;
+              }
+
+
+              // --- API Call Functions ---
+
+
+              function filter(users, filterValue) {
+                if (!Array.isArray(users)) {
+                  throw new Error("The first argument must be an array.");
+                }
+                // Convert both user.id and filterValue to strings for the comparison.
+                return users.find(user => String(user.id) == String(filterValue));
+              }
+
+
+              function getQBTJobcodeNameByValue(breakCodes, value) {
+                if (!Array.isArray(breakCodes)) {
+                  throw new Error("breakCodes must be an array");
+                }
+                const found = breakCodes.find(item => String(item.value) === String(value));
+                return found ? found.key : "Jobcode used in time entry not found. Either inactive or is unmapped break code.";
+              }
+
+
+              function chunkArray(array, chunkSize) {
+                const chunks = [];
+                for (let i = 0; i < array.length; i += chunkSize) {
+                  chunks.push(array.slice(i, i + chunkSize));
+                }
+                return chunks;
+              }
+
+
+              async function bulkUpdate(client, tableName, data) {
+                try {
+                  const response = await client.patch(`/${encodeURIComponent(tableName)}`, data);
+                  return response.data || "";
+                } catch (error) {
+                  console.error("Bulk update failed:", error.response?.data || error.message);
+                  throw error;
+                }
+              }
+
+
+              function getEmployee(records, userId) {
+                return records.find(record => 
+                  record.fields?.["Time Tracking User ID"] == userId
+                );
+              }
+
+
+              function getProject(records, jobCodeId) {
+                return records.find(r =>
+                  String(r.fields["QB Time Jobcode ID"]) === String(jobCodeId)
+                );
+              }
+
+
+
+              // --- Payload Classes ---
+
+              class TimeLogsPayload {
+                constructor(timelog, jobCode, project, employee, breakCode) {
+                  this.fields = {
+                    "Time Entry ID": `${timelog.id}`,
+                    "Hours Worked": timelog.duration ? timelog.duration / 3600 : 0
+                  };
+
+                  // Add job code fields if available.
+                  if (jobCode) {
+                    this.fields["QB Time Jobcode Name"] = jobCode.name || "";
+                    this.fields["QB Time Jobcode ID"] = `${jobCode.id}` || "";
+                  } else {
+                    this.fields["QB Time Jobcode Name"] = getQBTJobcodeNameByValue(breakCode, timelog.jobcode_id)
+                    this.fields["QB Time Jobcode ID"] = String(timelog.jobcode_id) || "";
+                  }
+
+                  // Clocked In (start or fallback to date).
+                  this.fields["Clocked In"] = timelog.start || timelog.date || "";
+
+                  // Clocked Out.
+                  if (timelog.end) {
+                    this.fields["Clocked Out"] = timelog.end;
+                  }
+
+                  // Project (array format).
+                  if (project?.id) {
+                    this.fields["Project"] = [project.id];
+                  }
+
+                  // Set Employee field from timelog.user_id.
+                  if (employee?.id) {
+                    this.fields["Employee"] = [employee.id];
+                  }
+                }
+              }
+        name: Bulk Update Timelogs
+  - description: ''
+    endpointSecurityType: customer_optional
+    isAgentFlow: false
+    isSynchronous: false
+    name: 02 Job Codes Sync
+    steps:
+      - action:
+          key: schedule
+          component:
+            isPublic: true
+            key: schedule-triggers
+            version: LATEST
+        description: ''
+        inputs: {}
+        isTrigger: true
+        name: Trigger
+        schedule:
+          meta:
+            scheduleType: minute
+            timeZone: ''
+          type: value
+          value: '*/5 * * * *'
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: >-
+          From Airtable PaintOS
+
+          If ⚙️ Update Time Tracking App Record and ⚙️ Include In Timetracking
+          App Upsert is TRUE
+        inputs:
+          code:
+            type: value
+            value: >-
+              const axios = require('axios');
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                const projectTable = configVars["Projects Table"];
+                const base = configVars["Project Management Base"];
+                const { apiKey } = configVars["Airtable Connection"].fields;
+                const updateTimeTracker = configVars["⚙️ Update Time Tracking App Record"]
+                const includeTimeTracker = configVars["⚙️ Include In Timetracking App Upsert Automation"]
+
+                // Initialize Airtable client.
+                const airtableClient = axios.create({
+                  baseURL: `https://api.airtable.com/v0/${base}`,
+                  headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                  },
+                });
+
+                const formula = `AND({${updateTimeTracker}}="TRUE",{${includeTimeTracker}}="TRUE")`;
+                const encodedFormula = encodeURIComponent(formula);
+                let allProjects = [];
+                let offset = null;
+                const pageSize = 100; // Airtable page size
+
+                do {
+                  // Build the URL with pageSize and offset (if available)
+                  let url = `/${encodeURIComponent(projectTable)}?pageSize=${pageSize}&filterByFormula=${encodedFormula}`;
+                  if (offset) {
+                    url += `&offset=${encodeURIComponent(offset)}`;
+                  }
+                  
+                  try {
+                    // Use retryOperation for robust API call.
+                    const response = await retryOperation(
+                      () => airtableClient.get(url),
+                      [3, 3, 3]
+                    );
+                    
+                    const records = response.data.records || [];
+                    allProjects = allProjects.concat(records);
+                    logger.log(`Retrieved ${records.length} records; offset: ${response.data.offset || "none"}`);
+                    
+                    offset = response.data.offset;
+                  } catch (error) {
+                    logger.error("Error retrieving projects:", error.message);
+                    break;
+                  }
+                } while (offset);
+
+                logger.log("Total Projects Retrieved:", allProjects.length);
+                return allProjects;
+              };
+
+
+              //
+
+              // --- Retry Operation Function and Sleep Helper ---
+
+              //
+
+
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+
+
+              /**
+               * Retries an async operation using specified delays (in seconds).
+               *
+               * @param {Function} operationFn - The async function to execute.
+               * @param {Array<number>} retryDelaysInSeconds - Delays (in seconds) between retries.
+               * @returns {Promise<any>} - The result of the async function if successful.
+               */
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delayInSeconds of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                    await sleep(delayInSeconds * 1000);
+                  }
+                }
+                throw lastError;
+              }
+        name: Retrieve Eligible Projects
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: From QuickBooks Time
+        inputs:
+          code:
+            type: value
+            value: >
+              const axios = require("axios");
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                const tsheetToken = configVars["QuickBooks Time Token"];
+                const projectsData = stepResults.retrieveEligibleProjects.results;
+
+                if (projectsData == "") {
+                  logger.info("No Eligible Project to Update.");
+                  return [];
+                } else {
+                  // Initialize TSheets API client.
+                  const tsheetClient = axios.create({
+                    baseURL: `https://rest.tsheets.com/api/v1`,
+                    headers: {
+                      Authorization: `Bearer ${tsheetToken}`,
+                      "Content-Type": "application/json",
+                    },
+                  });
+
+                  // Define the date filter in ISO-8601 format (without milliseconds)
+                  const thirtyDaysAgo = new Date();
+                  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                  const modifiedSince = thirtyDaysAgo.toISOString().split(".")[0] + "Z"; // Format: YYYY-MM-DDTHH:mm:ssZ
+
+                  let allJobCodes = [];
+                  let page = 1;
+                  const pageSize = 200; // maximum records per call
+
+                  while (true) {
+                    try {
+                      const jobCodes = await retryOperation(
+                        () =>
+                          retrieveJobCodes(tsheetClient, "/jobcodes", page, modifiedSince),
+                        [3, 3, 3],
+                      );
+                      logger.log(`Retrieved ${jobCodes.length} job codes on page ${page}`);
+
+                      allJobCodes = allJobCodes.concat(jobCodes);
+
+                      if (jobCodes.length < pageSize) break;
+                      page++;
+                    } catch (err) {
+                      logger.error(`Error retrieving JobCodes on page ${page}:`, err.message);
+                      break;
+                    }
+                  }
+
+                  logger.log("Total Active JobCodes Retrieved: ", allJobCodes.length);
+                  return allJobCodes;
+                }
+              };
+
+
+              async function retrieveJobCodes(client, endpoint, page,
+              modifiedSince) {
+                try {
+                  const params = new URLSearchParams({
+                    page: page,
+                    per_page: 200,
+                    // modified_since: modifiedSince,
+                    // active: "no",
+                  }).toString();
+                  const response = await client.get(`${endpoint}?${params}`);
+                  if (
+                    !response.data ||
+                    !response.data.results ||
+                    !response.data.results.jobcodes
+                  )
+                    return [];
+                  return Object.values(response.data.results.jobcodes);
+                } catch (error) {
+                  console.error(
+                    `${endpoint} retrieval failed:`,
+                    error.response?.data || error.message,
+                  );
+                  throw error;
+                }
+              }
+
+
+              function sleep(ms) {
+                return new Promise((resolve) => setTimeout(resolve, ms));
+              }
+
+
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delayInSeconds of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(
+                      `Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`,
+                    );
+                    await sleep(delayInSeconds * 1000);
+                  }
+                }
+                throw lastError;
+              }
+        name: Retrieve All Active Jobcodes
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: Updates QBO ID and Sync Date
+        errorConfig:
+          delaySeconds: 5
+          errorHandlerType: retry
+          ignoreFinalError: false
+          maxAttempts: 3
+          usesExponentialBackoff: false
+        inputs:
+          code:
+            type: value
+            value: >-
+              const axios = require('axios');
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                // Retrieve data from step results.
+                const projectsData = stepResults.retrieveEligibleProjects.results || [];
+                const activeJobCodes = stepResults.retrieveAllActiveJobcodes.results || [];
+                
+                // Read configuration.
+                const projectTable = configVars["Projects Table"];
+                const base = configVars["Project Management Base"];
+                const { apiKey } = configVars["Airtable Connection"].fields;
+                const tsheetToken = configVars["QuickBooks Time Token"];
+                const currentDate = new Date().toISOString();
+
+                // Initialize clients.
+                const airtableClient = axios.create({
+                  baseURL: `https://api.airtable.com/v0/${base}`,
+                  headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                  }
+                });
+                const tsheetClient = axios.create({
+                  baseURL: `https://rest.tsheets.com/api/v1`,
+                  headers: {
+                    Authorization: `Bearer ${tsheetToken}`,
+                    'Content-Type': 'application/json'
+                  }
+                });
+
+                // Arrays to accumulate job code payloads and project update records.
+                const newJobCodeItems = [];  // Payloads for new job codes.
+                const jobCodeResults = [];   // Records (project updates) for projects that already have a job code.
+                
+                // Process each project.
+                for (const project of projectsData) {
+                  let jobCode = null;
+                  
+                  // 1. Try to locate the job code using the project's "QB Time Jobcode ID" field.
+                  if (project.fields["QB Time Jobcode ID"]) {
+                    const targetId = project.fields["QB Time Jobcode ID"];
+                    jobCode = activeJobCodes.find(jc => String(jc.id) === String(targetId));
+                    if (jobCode) {
+                      logger.log("Jobcode ID Exists:", jobCode);
+                      jobCodeResults.push({
+                        id: project.id,
+                        fields: new ProjectPayload(currentDate, jobCode.id)
+                      });
+                    }
+                  }
+                  
+                  // 2. If not found, try to search by name using the project's "Pre-Automation Time Tracking App Record Name".
+                  if (!jobCode && project.fields["Pre-Automation Time Tracking App Record Name"]) {
+                    const targetName = String(project.fields["Pre-Automation Time Tracking App Record Name"]).trim();
+                    jobCode = activeJobCodes.find(jc => {
+                      const jcName = String(jc.name).toLowerCase().trim();
+                      return jcName === targetName.toLowerCase();
+                    });
+                    if (jobCode) {
+                      logger.log("Jobcode Pre-Automation Name Exists:", jobCode);
+                      jobCodeResults.push({
+                        id: project.id,
+                        fields: new ProjectPayload(currentDate, jobCode.id)
+                      });
+                    }
+                  }
+                  
+                  // 3. If still not found, add a new job code payload for this project using the JobcodePayload class.
+                  if (!jobCode && project.fields["Timetracking App Record Display Name"]) {
+                    const createPayload = new JobcodePayload(project);
+                    newJobCodeItems.push(createPayload);
+                    logger.log("Create New Jobcode for project", project.id, ":", createPayload);
+                  }
+                }
+                
+                // 4. Build the bulk payload for job codes creation.
+                const bulkJobCodePayload = { data: newJobCodeItems };
+
+                // Chunk newJobCodeItems into groups of 50.
+                const jobCodeChunks = chunkArray(newJobCodeItems, 50);
+                logger.log(`Total new job code payloads: ${newJobCodeItems.length}. Split into ${jobCodeChunks.length} chunk(s).`);
+                
+                let createdJobCodes = [];
+                for (const chunk of jobCodeChunks) {
+                  const payloadChunk = { data: chunk };
+                  try {
+                    const jobCodes = await retryOperation(
+                      () => createJobCodes(tsheetClient, '/jobcodes', payloadChunk),
+                      [3, 3, 3]
+                    );
+                    logger.log(`Created ${jobCodes.length} job codes in this chunk`);
+                    createdJobCodes.push(...jobCodes);
+                  } catch (err) {
+                    logger.error("Error creating jobcodes:", err.message);
+                  }
+                }
+                
+                logger.log("Created Jobcodes Count:", createdJobCodes.length);
+
+                // 5. For each created job code, update the associated project record.
+                // Build an array of project records to upsert in Airtable.
+                const newProjectRecords = createdJobCodes.map(jobcode => {
+                  const associatedProject = queryProject(projectsData, jobcode.id, jobcode.fields ? jobcode.fields["Name"] : jobcode.name);
+                  if (!associatedProject) {
+                    logger.warn(`No associated project found for jobcode ID [${jobcode.id}]`);
+                    return null;
+                  }
+                  logger.log(`Associated Project with Jobcode ID [${jobcode.id}]:`, associatedProject);
+                  return {
+                    id: associatedProject.id,
+                    fields: new ProjectPayload(currentDate, jobcode.id)
+                  };
+                }).filter(record => record !== null);
+
+                const allProjectRecords = [...jobCodeResults, ...newProjectRecords];
+                
+                // 6. Bulk update the Projects table in Airtable.
+                const projectChunks = chunkArray(allProjectRecords, 10);
+                logger.log(`Total project records: ${allProjectRecords.length}. Split into ${projectChunks.length} chunk(s).`);
+                
+                let responses = [];
+                for (const chunk of projectChunks) {
+                  const payload = { records: chunk };
+                  try {
+                    const response = await retryOperation(
+                      () => bulkUpdate(airtableClient, projectTable, payload),
+                      [3, 3, 3]
+                    );
+                    responses.push(response);
+                  } catch (error) {
+                    logger.error("Error during bulk update for project chunk:", error.message);
+                    responses.push({ error: error.message });
+                  }
+                }
+                
+                logger.log("Project API Responses Count:", responses.length);
+                return responses;
+              };
+
+
+              //
+
+              // --- Helper Functions ---
+
+              //
+
+
+              function queryProject(projectsData, id, name) {
+                if (!Array.isArray(projectsData)) {
+                  throw new Error("projectsData must be an array");
+                }
+                return projectsData.find(project => {
+                  const fields = project.fields || {};
+                  const jobcodeId = fields["QB Time Jobcode ID"]
+                    ? String(fields["QB Time Jobcode ID"]).trim().toLowerCase()
+                    : "";
+                  const subCustomerName = fields["Timetracking App Record Display Name"]
+                    ? String(fields["Timetracking App Record Display Name"]).trim().toLowerCase()
+                    : "";
+                  return (
+                    jobcodeId === String(id).trim().toLowerCase() ||
+                    subCustomerName === String(name).trim().toLowerCase()
+                  );
+                });
+              }
+
+
+              function chunkArray(array, chunkSize) {
+                const chunks = [];
+                for (let i = 0; i < array.length; i += chunkSize) {
+                  chunks.push(array.slice(i, i + chunkSize));
+                }
+                return chunks;
+              }
+
+
+              async function bulkUpdate(client, tableName, data) {
+                try {
+                  const response = await client.patch(`/${encodeURIComponent(tableName)}`, data);
+                  return response.data || "";
+                } catch (error) {
+                  console.error("Bulk update failed:", error.response?.data || error.message);
+                  throw error;
+                }
+              }
+
+
+              async function createJobCodes(client, endpoint, payload) {
+                try {
+                  const response = await client.post(endpoint, payload);
+                  if (!response.data || !response.data.results || !response.data.results.jobcodes)
+                    return [];
+                  return Object.values(response.data.results.jobcodes);
+                } catch (error) {
+                  console.error(`${endpoint} creation failed:`, error.response?.data || error.message);
+                  throw error;
+                }
+              }
+
+
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+
+
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delay of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(`Operation failed: ${error.message}. Retrying in ${delay} seconds...`);
+                    await sleep(delay * 1000);
+                  }
+                }
+                throw lastError;
+              }
+
+
+              //
+
+              // --- Payload Classes ---
+
+              //
+
+
+              class JobcodePayload {
+                constructor(project = [], jobCode = []) {
+                  if (jobCode && jobCode.id) {
+                    this.id = jobCode.id;
+                  }
+                  // Use "Timetracking App Record Display Name" from project data if available; otherwise fall back to jobCode.name.
+                  this.name = project.fields ? project.fields["Timetracking App Record Display Name"] || jobCode.name : jobCode.name;
+                  this.billable = "yes";
+                  this.assigned_to_all = !project.fields?.["QB Time Jobcode Assign to All"] ? "no" : "yes"
+                }
+              }
+
+
+              class ProjectPayload {
+                constructor(date, jobCodeId) {
+                  this["⚙️ Time Tracking App Record Last Sync"] = date;
+                  this["QB Time Jobcode ID"] = String(jobCodeId);
+                }
+              }
+        name: Jobcodes Bulk Update
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: Status and Display Name in QBT
+        inputs:
+          code:
+            type: value
+            value: >
+              const axios = require('axios');
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                // Retrieve projects data from step results (from Airtable).
+                const projectsData = stepResults.retrieveEligibleProjects.results || [];
+                
+                // Read configuration.
+                const tsheetToken = configVars["QuickBooks Time Token"];
+
+                // Initialize QuickBooks Time (TSheets) API client.
+                const tsheetClient = axios.create({
+                  baseURL: `https://rest.tsheets.com/api/v1`,
+                  headers: {
+                    Authorization: `Bearer ${tsheetToken}`,
+                    'Content-Type': 'application/json'
+                  }
+                });
+
+                // Build an array of jobcode update payloads.
+                // In this example, we update jobcodes for projects that already have a "QB Time Jobcode ID".
+                // We use the project's "Timetracking App Record Display Name" as the new job code name and set active status to "yes".
+                const jobcodeUpdateItems = [];
+                projectsData.forEach(project => {
+                  if (project.fields["QB Time Jobcode ID"]) {
+                    jobcodeUpdateItems.push(new JobcodeUpdatePayload(project));
+                  }
+                });
+
+                logger.log("Total Jobcodes to Update:", jobcodeUpdateItems.length);
+
+                // Chunk payloads into groups of 200
+                const chunks = chunkArray(jobcodeUpdateItems, 200);
+                const updatedJobCodes = [];
+
+                for (const [i, chunk] of chunks.entries()) {
+                  const payload = { data: chunk };
+                  logger.log(`Updating chunk ${i + 1}/${chunks.length} (size=${chunk.length})`);
+                  try {
+                    const result = await retryOperation(
+                      () => updateJobCodes(tsheetClient, '/jobcodes', payload),
+                      [3, 3, 3]
+                    );
+                    logger.log(`Chunk ${i + 1} updated ${result.length} jobcodes`);
+                    updatedJobCodes.push(...result);
+                  } catch (err) {
+                    logger.error(`Failed to update chunk ${i + 1}:`, err.message);
+                    // You can decide whether to throw or continue
+                  }
+                }
+
+                logger.log("Total Jobcodes Successfully Updated:", updatedJobCodes.length);
+                return updatedJobCodes;
+              };
+
+
+              //
+
+              // --- Helper Functions ---
+
+              //
+
+
+              async function updateJobCodes(client, endpoint, payload) {
+                try {
+                  const response = await client.put(endpoint, payload);
+                  if (!response.data || !response.data.results || !response.data.results.jobcodes) return [];
+                  return Object.values(response.data.results.jobcodes);
+                } catch (error) {
+                  console.error(`${endpoint} update failed:`, error.response?.data || error.message);
+                  throw error;
+                }
+              }
+
+
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+
+
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delay of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(`Operation failed: ${error.message}. Retrying in ${delay} seconds...`);
+                    await sleep(delay * 1000);
+                  }
+                }
+                throw lastError;
+              }
+
+
+              function chunkArray(array, size) {
+                const chunks = [];
+                for (let i = 0; i < array.length; i += size) {
+                  chunks.push(array.slice(i, i + size));
+                }
+                return chunks;
+              }
+
+
+              //
+
+              // --- Payload Class ---
+
+              //
+
+
+              class JobcodeUpdatePayload {
+                /**
+                 * @param {string|number} id - The QuickBooks Time jobcode id to update.
+                 * @param {string} name - The new name for the jobcode.
+                 * @param {string} [active="yes"] - The new active status ("yes" or "no").
+                 */
+                constructor(project) {
+                  this.id = project.fields["QB Time Jobcode ID"];
+                  this.name = project.fields["Timetracking App Record Display Name"];
+                  this.active = project.fields?.["⚙️ Timetracking Job Active Status"] || true;
+                  this.assigned_to_all = !project.fields?.["QB Time Jobcode Assign to All"] ? "no" : "yes"
+                }
+              }
+        name: Update Jobcodes
+  - description: ''
+    endpointSecurityType: customer_optional
+    isAgentFlow: false
+    isSynchronous: false
+    name: 04 User Sync
+    steps:
+      - action:
+          key: schedule
+          component:
+            isPublic: true
+            key: schedule-triggers
+            version: LATEST
+        description: ''
+        inputs: {}
+        isTrigger: true
+        name: Trigger
+        schedule:
+          meta:
+            scheduleType: day
+            timeZone: Asia/Manila
+          type: value
+          value: 00 12 */1 * *
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: From QuickBooks Time
+        inputs:
+          code:
+            type: value
+            value: >-
+              const axios = require('axios');
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                const tsheetToken = configVars["QuickBooks Time Token"];
+
+                // Initialize TSheets API client.
+                const tsheetClient = axios.create({
+                  baseURL: `https://rest.tsheets.com/api/v1`,
+                  headers: {
+                    Authorization: `Bearer ${tsheetToken}`,
+                    'Content-Type': 'application/json'
+                  },
+                });
+
+                let allUsers = [];
+                let page = 1;
+                const pageSize = 200; // maximum records per call
+
+                while (true) {
+                  try {
+                    const users = await retryOperation(
+                      () => retriveUsers(tsheetClient, '/users', page),
+                      [3, 3, 3]
+                    );
+                    logger.log(`Retrieved ${users.length} user records on page ${page}`);
+                    allUsers = allUsers.concat(users);
+                    if (users.length < pageSize) break;
+                    page++;
+                  } catch (err) {
+                    logger.error(`Error retrieving Users on page ${page}:`, err.message);
+                    break;
+                  }
+                }
+                
+                logger.log("Total Users Retrieved: ", allUsers.length);
+                return allUsers;
+              };
+
+
+              async function retriveUsers(client, endpoint, page) {
+                try {
+                  // Construct query parameters.
+                  const params = new URLSearchParams({ page: page, per_page: 200, active: "yes" }).toString();
+                  const response = await client.get(`${endpoint}?${params}`);
+                  // Assuming the response structure contains user objects under results.users.
+                  if (!response.data || !response.data.results || !response.data.results.users) return [];
+                  return Object.values(response.data.results.users);
+                } catch (error) {
+                  console.error(`${endpoint} retrieval failed:`, error.response?.data || error.message);
+                  throw error;
+                }
+              }
+
+
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+
+
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delayInSeconds of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                    await sleep(delayInSeconds * 1000);
+                  }
+                }
+                throw lastError;
+              }
+        name: Retrieve All Users
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: From PaintOS People Table
+        inputs:
+          code:
+            type: value
+            value: >
+              const axios = require("axios");
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                const peopleTable = configVars["People Table"];
+                const base = configVars["Project Management Base"];
+                const { apiKey } = configVars["Airtable Connection"].fields;
+
+                // Initialize Airtable client.
+                const airtableClient = axios.create({
+                  baseURL: `https://api.airtable.com/v0/${base}`,
+                  headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                  },
+                });
+
+                let allPeople = [];
+                let offset = null;
+                const pageSize = 100; // Airtable page size
+
+                do {
+                  // Build the URL with pageSize and offset (if available)
+                  let url = `/${encodeURIComponent(peopleTable)}?pageSize=${pageSize}`;
+                  if (offset) {
+                    url += `&offset=${encodeURIComponent(offset)}`;
+                  }
+
+                  try {
+                    // Use retryOperation for robust API call.
+                    const response = await retryOperation(
+                      () => airtableClient.get(url),
+                      [3, 3, 3],
+                    );
+
+                    const records = response.data.records || [];
+                    allPeople = allPeople.concat(records);
+                    logger.log(
+                      `Retrieved ${records.length} records; offset: ${response.data.offset || "none"}`,
+                    );
+
+                    offset = response.data.offset;
+                  } catch (error) {
+                    logger.error("Error retrieving projects:", error.message);
+                    break;
+                  }
+                } while (offset);
+
+                logger.log("Total Employee Retrieved:", allPeople.length);
+                return allPeople.map((record) => ({
+                  id: record.id,
+                  fields: {
+                    "Time Tracking User ID": record.fields["Time Tracking User ID"],
+                    "Work Email": record.fields["Work Email"],
+                    "First Name": record.fields["First Name"],
+                    "Last Name": record.fields["Last Name"],
+                  },
+                }));
+              };
+
+
+              //
+
+              // --- Retry Operation Function and Sleep Helper ---
+
+              //
+
+
+              function sleep(ms) {
+                return new Promise((resolve) => setTimeout(resolve, ms));
+              }
+
+
+              /**
+               * Retries an async operation using specified delays (in seconds).
+               *
+               * @param {Function} operationFn - The async function to execute.
+               * @param {Array<number>} retryDelaysInSeconds - Delays (in seconds) between retries.
+               * @returns {Promise<any>} - The result of the async function if successful.
+               */
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delayInSeconds of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(
+                      `Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`,
+                    );
+                    await sleep(delayInSeconds * 1000);
+                  }
+                }
+                throw lastError;
+              }
+        name: Retrieve All People
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: To PaintOS People Table
+        inputs:
+          code:
+            type: value
+            value: |
+              const axios = require("axios");
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                // 1) Gather inputs
+                const userData = stepResults.retrieveAllUsers.results || [];
+                const peopleData = stepResults.retrieveAllPeople.results || [];
+                const peopleTable = encodeURIComponent(configVars["People Table"]);
+                const baseId = configVars["Project Management Base"];
+                const apiKey = configVars["Airtable Connection"].fields.apiKey;
+
+                // 2) Process each user from QB Time
+                const toUpdate = [];
+                const toCreate = [];
+
+                for (const user of userData) {
+                  const tidStr = String(user.id);
+
+                  // Check if we already have this Time Tracking User ID in Airtable
+                  let existing = peopleData.find(
+                    (rec) =>
+                      rec.fields["Time Tracking User ID"] != null &&
+                      String(rec.fields["Time Tracking User ID"]).trim() === tidStr,
+                  );
+
+                  if (existing) {
+                    // Record already has the correct Time Tracking ID - skip
+                    logger.log(
+                      `Skipping user ${user.display_name} - already has Time Tracking ID`,
+                    );
+                    continue;
+                  }
+
+                  // Reset existing
+                  existing = null;
+
+                  // Try to match by Work Email
+                  if (user.email) {
+                    existing = peopleData.find(
+                      (rec) => rec.fields["Work Email"] === user.email,
+                    );
+                  }
+
+                  // If no match, try Personal Email
+                  if (!existing && user.email) {
+                    existing = peopleData.find(
+                      (rec) => rec.fields["Personal Email"] === user.email,
+                    );
+                  }
+
+                  // If matched by email, just update the Time Tracking ID
+                  if (existing) {
+                    toUpdate.push({
+                      id: existing.id,
+                      fields: {
+                        "Time Tracking User ID": tidStr,
+                        "QB Time Username": user.username || "",
+                        "Employment Status": user.active ? "Active" : "Inactive",
+                      },
+                    });
+                    logger.log(
+                      `Will update ${user.display_name} with Time Tracking ID (matched by email)`,
+                    );
+                    continue;
+                  }
+
+                  // If we get here, no email match was found - try by display_name
+                  if (user.display_name) {
+                    existing = peopleData.find((rec) => {
+                      const firstName = rec.fields["First Name"];
+                      const lastName = rec.fields["Last Name"];
+
+                      if (!firstName || !lastName) return false;
+
+                      const airtableFullName = `${firstName} ${lastName}`
+                        .trim()
+                        .toLowerCase();
+                      const normalizedQBName = user.display_name.trim().toLowerCase();
+
+                      return airtableFullName === normalizedQBName;
+                    });
+                  }
+
+                  // If matched by name, update with Time Tracking ID and only add emails if missing
+                  if (existing) {
+                    const updateFields = {
+                      "Time Tracking User ID": tidStr,
+                      "QB Time Username": user.username || "",
+                      "Employment Status": user.active ? "Active" : "Inactive",
+                    };
+
+                    // Only add emails if they don't already exist
+                    if (!existing.fields["Work Email"] && user.email) {
+                      updateFields["Work Email"] = user.email;
+                    }
+                    if (!existing.fields["Personal Email"] && user.email) {
+                      updateFields["Personal Email"] = user.email;
+                    }
+
+                    toUpdate.push({
+                      id: existing.id,
+                      fields: updateFields,
+                    });
+                    logger.log(
+                      `Will update ${user.display_name} with Time Tracking ID (matched by name, preserving existing emails)`,
+                    );
+                  } else {
+                    // No match found - create new record
+                    toCreate.push({
+                      fields: {
+                        "First Name": user.first_name || "",
+                        "Last Name": user.last_name || "",
+                        "Time Tracking User ID": tidStr,
+                        "QB Time Username": user.username || "",
+                        "Work Email": user.email || "",
+                        "Personal Email": user.email || "",
+                        "Employment Status": user.active ? "Active" : "Inactive",
+                      },
+                    });
+                    logger.log(`Will create new record for ${user.display_name}`);
+                  }
+                }
+
+                logger.log(
+                  `Will UPDATE ${toUpdate.length} and CREATE ${toCreate.length} records.`,
+                );
+
+                // 3) Airtable HTTP client
+                const airtable = axios.create({
+                  baseURL: `https://api.airtable.com/v0/${baseId}/${peopleTable}`,
+                  headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                  },
+                });
+
+                // 4) PATCH updates in chunks of 10
+                const updateResults = [];
+                for (const [i, chunk] of chunkArray(toUpdate, 10).entries()) {
+                  logger.log(
+                    `PATCH chunk ${i + 1}/${Math.ceil(toUpdate.length / 10)} (${chunk.length} records)`,
+                  );
+                  try {
+                    const res = await retry(() => airtable.patch("", { records: chunk }));
+                    updateResults.push(res.data);
+                  } catch (e) {
+                    logger.error(`Failed PATCH chunk ${i + 1}:`, e.message);
+                    updateResults.push({ error: e.message });
+                  }
+                }
+
+                // 5) POST creates in chunks of 10
+                const createResults = [];
+                for (const [i, chunk] of chunkArray(toCreate, 10).entries()) {
+                  logger.log(
+                    `POST chunk ${i + 1}/${Math.ceil(toCreate.length / 10)} (${chunk.length} records)`,
+                  );
+                  try {
+                    const res = await retry(() => airtable.post("", { records: chunk }));
+                    createResults.push(res.data);
+                  } catch (e) {
+                    logger.error(`Failed POST chunk ${i + 1}:`, e.message);
+                    createResults.push({ error: e.message });
+                  }
+                }
+
+                // 6) Return everything
+                logger.log("Update results:", updateResults);
+                logger.log("Create results:", createResults);
+                return { updated: updateResults, created: createResults };
+              };
+
+              // --- Helpers (outside module) ---
+
+              function chunkArray(array, size) {
+                const chunks = [];
+                for (let i = 0; i < array.length; i += size) {
+                  chunks.push(array.slice(i, i + size));
+                }
+                return chunks;
+              }
+
+              async function retry(fn, delays = [5, 5, 5]) {
+                let lastError;
+                for (const d of delays) {
+                  try {
+                    return await fn();
+                  } catch (e) {
+                    lastError = e;
+                    console.warn(`Operation failed: ${e.message}. Retrying in ${d}s…`);
+                    await new Promise((r) => setTimeout(r, d * 1000));
+                  }
+                }
+                throw lastError;
+              }
+        name: Bulk Update Users
+  - description: ''
+    endpointSecurityType: customer_optional
+    isAgentFlow: false
+    isSynchronous: false
+    name: 05 Initial Timelogs Sync
+    steps:
+      - action:
+          key: instanceDeploy
+          component:
+            isPublic: true
+            key: management-triggers
+            version: LATEST
+        description: ''
+        inputs: {}
+        isTrigger: true
+        name: Trigger
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: ''
+        inputs:
+          code:
+            type: value
+            value: |-
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                let type = stepResults.trigger.results.body.contentType;
+                let data = stepResults.trigger.results.body.data;
+
+                if (type === "application/xml") {
+                  let days = String(data) === '{}' ? -30 : data;
+                  logger.log(days);
+                  return days;
+                } else {
+                  logger.warn("Content-Type must be application/xml, so I use '-30' as default duration.")
+                  return -30;
+                }
+              };
+        name: Default Days
+      - action:
+          key: adjustDateTime
+          component:
+            isPublic: true
+            key: datetime
+            version: LATEST
+        description: ''
+        inputs:
+          dateTimeInput:
+            type: reference
+            value: trigger.results.startedAt
+          daysInput:
+            type: reference
+            value: defaultDays.results
+          hoursInput:
+            type: value
+            value: ''
+          minutesInput:
+            type: value
+            value: ''
+          secondsInput:
+            type: value
+            value: ''
+        name: Adjust Date/Time
+      - action:
+          key: formatDateTime
+          component:
+            isPublic: true
+            key: datetime
+            version: LATEST
+        description: ''
+        inputs:
+          dateTime:
+            type: reference
+            value: adjustDateTime.results
+          format:
+            type: value
+            value: YYYY-MM-DDTHH:mm:ssZ
+          timeZone:
+            type: value
+            value: Etc/UTC
+        name: Format to ISO Date
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: From QuickBooks Time
+        inputs:
+          code:
+            type: value
+            value: >-
+              const axios = require('axios');
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                // Example: ISO date string for filtering timesheets (passed as a parameter)
+                const date = stepResults.formatToIsoDate.results;  
+
+                // Retrieve TSheets token from configVars (assuming it's defined)
+                const tsheetToken = configVars["QuickBooks Time Token"];
+
+                // Initialize TSheets API client.
+                const tsheetClient = axios.create({
+                  baseURL: `https://rest.tsheets.com/api/v1`,
+                  headers: {
+                    Authorization: `Bearer ${tsheetToken}`,
+                    'Content-Type': 'application/json'
+                  },
+                });
+
+                let allTimesheets = [];
+                let page = 1;
+                const pageSize = 200; // maximum records per call
+
+                while (true) {
+                  try {
+                    // Use retryOperation to call the API for this page.
+                    const timesheets = await retryOperation(
+                      () => retriveSheets(tsheetClient, '/timesheets', date, page),
+                      [3, 3, 3]
+                    );
+                    logger.log(`Retrieved ${timesheets.length} records on page ${page}`);
+                    // Append the records from this page to allTimesheets.
+                    allTimesheets = allTimesheets.concat(timesheets);
+
+                    // If the number of records returned is less than the pageSize, we assume this is the last page.
+                    if (timesheets.length < pageSize) {
+                      break;
+                    }
+                    // Otherwise, move to the next page.
+                    page++;
+                  } catch (err) {
+                    logger.error(`Error retrieving Time Sheets on page ${page}:`, err.message);
+                    break;
+                  }
+                }
+                  
+                // Sort timesheets from earliest to latest using last_modified
+                allTimesheets.sort((a, b) => new Date(a.last_modified) - new Date(b.last_modified));
+                
+                logger.log("Total Timesheets Retrieved: ", allTimesheets.length);
+                return allTimesheets;
+              };
+
+
+              async function retriveSheets(client, endpoint, date, page) {
+                try {
+                  // Construct query parameters.
+                  // Adjust the query string parameters as required by the API.
+                  const params = new URLSearchParams({ modified_since: date, page: page }).toString();    
+                  const response = await client.get(`${endpoint}?${params}`);
+                  
+                  // Assuming your API returns a JSON object where timesheets are nested under a key (e.g. "results")
+                  // and that each page returns an object with a property "timesheets"
+                  const data = extractAllTimesheetIds(response.data);
+                  return data || [];
+                } catch (error) {
+                  console.error(`${endpoint} retrieval failed:`, error.response?.data || error.message);
+                  throw error;
+                }
+              }
+
+
+              function extractAllTimesheetIds(data) {
+                // Adjust this function based on the structure of your API's response.
+                // For example, if response data looks like: { results: { timesheets: { id1: {}, id2: {} } }, more: true }
+                if (!data || !data.results || !data.results.timesheets) return [];
+                
+                return Object.values(data.results.timesheets);
+              }
+
+
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+
+
+              /**
+               * Retry an async operation using specified delays (in seconds).
+               *
+               * @param {Function} operationFn - The async function to execute.
+               * @param {Array<number>} retryDelaysInSeconds - Array of delays (seconds) between retries.
+               * @returns {Promise<any>} - The result of the async function if successful.
+               */
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delayInSeconds of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                    await sleep(delayInSeconds * 1000);
+                  }
+                }
+                throw lastError;
+              }
+        name: Retrieve All Time Sheets
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: From QuickBooks Time
+        inputs:
+          code:
+            type: value
+            value: >-
+              const axios = require('axios');
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                const tsheetToken = configVars["QuickBooks Time Token"];
+
+                // Initialize TSheets API client.
+                const tsheetClient = axios.create({
+                  baseURL: `https://rest.tsheets.com/api/v1`,
+                  headers: {
+                    Authorization: `Bearer ${tsheetToken}`,
+                    'Content-Type': 'application/json'
+                  },
+                });
+
+                let allUsers = [];
+                let page = 1;
+                const pageSize = 200; // maximum records per call
+
+                while (true) {
+                  try {
+                    const users = await retryOperation(
+                      () => retriveUsers(tsheetClient, '/users', page),
+                      [3, 3, 3]
+                    );
+                    logger.log(`Retrieved ${users.length} user records on page ${page}`);
+                    allUsers = allUsers.concat(users);
+                    if (users.length < pageSize) break;
+                    page++;
+                  } catch (err) {
+                    logger.error(`Error retrieving Users on page ${page}:`, err.message);
+                    break;
+                  }
+                }
+                
+                logger.log("Total Users Retrieved: ", allUsers.length);
+                return allUsers;
+              };
+
+
+              async function retriveUsers(client, endpoint, page) {
+                try {
+                  // Construct query parameters.
+                  const params = new URLSearchParams({ page: page, per_page: 200 }).toString();
+                  const response = await client.get(`${endpoint}?${params}`);
+                  // Assuming the response structure contains user objects under results.users.
+                  if (!response.data || !response.data.results || !response.data.results.users) return [];
+                  return Object.values(response.data.results.users);
+                } catch (error) {
+                  console.error(`${endpoint} retrieval failed:`, error.response?.data || error.message);
+                  throw error;
+                }
+              }
+
+
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+
+
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delayInSeconds of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                    await sleep(delayInSeconds * 1000);
+                  }
+                }
+                throw lastError;
+              }
+        name: Retrieve All Users
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: From QuickBooks Time
+        inputs:
+          code:
+            type: value
+            value: >-
+              const axios = require('axios');
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                const tsheetToken = configVars["QuickBooks Time Token"];
+
+                // Initialize TSheets API client.
+                const tsheetClient = axios.create({
+                  baseURL: `https://rest.tsheets.com/api/v1`,
+                  headers: {
+                    Authorization: `Bearer ${tsheetToken}`,
+                    'Content-Type': 'application/json'
+                  },
+                });
+
+                let allJobCodes = [];
+                let page = 1;
+                const pageSize = 200; // maximum records per call
+
+                while (true) {
+                  try {
+                    const jobCodes = await retryOperation(
+                      () => retriveJobCodes(tsheetClient, '/jobcodes', page),
+                      [3, 3, 3]
+                    );
+                    logger.log(`Retrieved ${jobCodes.length} job codes on page ${page}`);
+                    
+                    // Filter for active job codes
+                    allJobCodes = allJobCodes.concat(jobCodes);
+                    
+                    if (jobCodes.length < pageSize) break;
+                    page++;
+                  } catch (err) {
+                    logger.error(`Error retrieving JobCodes on page ${page}:`, err.message);
+                    break;
+                  }
+                }
+                
+                logger.log("Total Active JobCodes Retrieved: ", allJobCodes.length);
+                return allJobCodes;
+              };
+
+
+              async function retriveJobCodes(client, endpoint, page) {
+                try {
+                  const params = new URLSearchParams({ page: page, per_page: 200, active: true }).toString();
+                  const response = await client.get(`${endpoint}?${params}`);
+                  if (!response.data || !response.data.results || !response.data.results.jobcodes) return [];
+                  return Object.values(response.data.results.jobcodes);
+                } catch (error) {
+                  console.error(`${endpoint} retrieval failed:`, error.response?.data || error.message);
+                  throw error;
+                }
+              }
+
+
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+
+
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delayInSeconds of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                    await sleep(delayInSeconds * 1000);
+                  }
+                }
+                throw lastError;
+              }
+        name: Retrieve All Active JobCodes
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: From PaintOS Projects Table
+        inputs:
+          code:
+            type: value
+            value: >-
+              const axios = require('axios');
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                const projectTable = configVars["Projects Table"];
+                const base = configVars["Project Management Base"];
+                const { apiKey } = configVars["Airtable Connection"].fields;
+
+                // Initialize Airtable client.
+                const airtableClient = axios.create({
+                  baseURL: `https://api.airtable.com/v0/${base}`,
+                  headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                  },
+                });
+
+                let allProjects = [];
+                let offset = null;
+                const pageSize = 100; // Airtable page size
+
+                do {
+                  // Build the URL with pageSize and offset (if available)
+                  let url = `/${encodeURIComponent(projectTable)}?pageSize=${pageSize}`;
+                  if (offset) {
+                    url += `&offset=${encodeURIComponent(offset)}`;
+                  }
+                  
+                  try {
+                    // Use retryOperation for robust API call.
+                    const response = await retryOperation(
+                      () => airtableClient.get(url),
+                      [3, 3, 3]
+                    );
+                    
+                    const records = response.data.records || [];
+                    allProjects = allProjects.concat(records);
+                    logger.log(`Retrieved ${records.length} records; offset: ${response.data.offset || "none"}`);
+                    
+                    offset = response.data.offset;
+                  } catch (error) {
+                    logger.error("Error retrieving projects:", error.message);
+                    break;
+                  }
+                } while (offset);
+
+                logger.log("Total Projects Retrieved:", allProjects.length);
+                return allProjects.map(record => ({
+                    id: record.id,
+                    fields: {
+                      "QB Time Jobcode ID": record.fields["QB Time Jobcode ID"]
+                    }
+                }));
+              };
+
+
+              //
+
+              // --- Retry Operation Function and Sleep Helper ---
+
+              //
+
+
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+
+
+              /**
+               * Retries an async operation using specified delays (in seconds).
+               *
+               * @param {Function} operationFn - The async function to execute.
+               * @param {Array<number>} retryDelaysInSeconds - Delays (in seconds) between retries.
+               * @returns {Promise<any>} - The result of the async function if successful.
+               */
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delayInSeconds of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                    await sleep(delayInSeconds * 1000);
+                  }
+                }
+                throw lastError;
+              }
+        name: Retrieve All Projects
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: From PaintOS Projects Table
+        inputs:
+          code:
+            type: value
+            value: >-
+              const axios = require('axios');
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                const peopleTable = configVars["People Table"]
+                const base = configVars["Project Management Base"];
+                const { apiKey } = configVars["Airtable Connection"].fields;
+
+                // Initialize Airtable client.
+                const airtableClient = axios.create({
+                  baseURL: `https://api.airtable.com/v0/${base}`,
+                  headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                  },
+                });
+
+                let allPeople = [];
+                let offset = null;
+                const pageSize = 100; // Airtable page size
+
+                do {
+                  // Build the URL with pageSize and offset (if available)
+                  let url = `/${encodeURIComponent(peopleTable)}?pageSize=${pageSize}`;
+                  if (offset) {
+                    url += `&offset=${encodeURIComponent(offset)}`;
+                  }
+                  
+                  try {
+                    // Use retryOperation for robust API call.
+                    const response = await retryOperation(
+                      () => airtableClient.get(url),
+                      [3, 3, 3]
+                    );
+                    
+                    const records = response.data.records || [];
+                    allPeople = allPeople.concat(records);
+                    logger.log(`Retrieved ${records.length} records; offset: ${response.data.offset || "none"}`);
+                    
+                    offset = response.data.offset;
+                  } catch (error) {
+                    logger.error("Error retrieving projects:", error.message);
+                    break;
+                  }
+                } while (offset);
+
+                logger.log("Total Employee Retrieved:", allPeople.length);
+                return allPeople.map(record => ({
+                    id: record.id,
+                    fields: {
+                      "Time Tracking User ID": record.fields["Time Tracking User ID"]
+                    }
+                }));
+              };
+
+
+              //
+
+              // --- Retry Operation Function and Sleep Helper ---
+
+              //
+
+
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+
+
+              /**
+               * Retries an async operation using specified delays (in seconds).
+               *
+               * @param {Function} operationFn - The async function to execute.
+               * @param {Array<number>} retryDelaysInSeconds - Delays (in seconds) between retries.
+               * @returns {Promise<any>} - The result of the async function if successful.
+               */
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delayInSeconds of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                    await sleep(delayInSeconds * 1000);
+                  }
+                }
+                throw lastError;
+              }
+        name: Retrieve All People
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: To Timelogs Airtable
+        errorConfig:
+          delaySeconds: 2
+          errorHandlerType: retry
+          ignoreFinalError: false
+          maxAttempts: 1
+          usesExponentialBackoff: false
+        inputs:
+          code:
+            type: value
+            value: >-
+              const axios = require('axios');
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+
+                try {
+                  // Get the time entries from stepResults.
+                  const timeEntries = stepResults.retrieveAllTimeSheets?.results || [];
+                  const jobCodesData = stepResults.retrieveAllActiveJobcodes?.results || []
+                  const projects = stepResults.retrieveAllProjects?.results || []
+                  const people = stepResults.retrieveAllPeople?.results || []
+                  const breakCodeIDs = configVars["Non-Work Job Code Mapping"] || []
+                  const timeLogTable = configVars["Time Logs Table"];
+                  const base = configVars["Project Management Base"];
+                  const { apiKey } = configVars["Airtable Connection"].fields;
+
+                  logger.log("Break/Lunch Entry Tag(s): ", breakCodeIDs)
+
+                  // Initialize Airtable client.
+                  const airtableClient = axios.create({
+                    baseURL: `https://api.airtable.com/v0/${base}`,
+                    headers: {
+                      Authorization: `Bearer ${apiKey}`,
+                      'Content-Type': 'application/json',
+                    },
+                  });
+
+                  let timeLogRecords = [];
+
+                  // Process each time entry sequentially.
+                  for (const entry of timeEntries) {
+                    const jobCodeId = entry.jobcode_id;
+                    const userId = entry.user_id;
+
+                    let jobCode = filter(jobCodesData, jobCodeId)
+
+                    let project = getProject(projects, jobCodeId)
+
+                    // Create payloads for People and Time Logs based on retrieved data.
+                    let employee = getEmployee(people, userId)
+
+                    let timelogPayload = new TimeLogsPayload(entry, jobCode, project, employee, breakCodeIDs)
+
+                    timeLogRecords.push(timelogPayload);
+                  }
+
+                  // Process timeLogRecords in chunks of 10.
+                  const timeLogChunks = chunkArray(timeLogRecords, 10);
+                  const timeLogResponses = [];
+                  for (const chunk of timeLogChunks) {
+                    const timeLogPayload = {
+                      performUpsert: {
+                        fieldsToMergeOn: ["Time Entry ID"]
+                      },
+                      records: chunk
+                    };
+                    try {
+                      // Use retryOperation for bulk update.
+                      const response = await retryOperation(
+                        () => bulkUpdate(airtableClient, timeLogTable, timeLogPayload),
+                        [3, 3, 3]
+                      );
+                      timeLogResponses.push(response);
+                    } catch (error) {
+                      logger.error("Error during bulk update for time log chunk:", error.message);
+                      timeLogResponses.push({ error: error.message });
+                    }
+                  }
+                  logger.log("Time Log API Response: ", timeLogResponses);
+                  logger.log("Time Log API Response Count: ", timeLogResponses.length);
+                  return timeLogResponses
+                } catch(error) {
+                  logger.error("Unhandled error in code block", error);
+                  return { error: error.message };
+                }
+              };
+
+
+
+              // --- Retry Operation Function ---
+
+
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+
+
+              /**
+               * Retry an async operation using specified delays (in seconds).
+               *
+               * @param {Function} operationFn - The async function to execute.
+               * @param {Array<number>} retryDelaysInSeconds - Array of delays (seconds) between retries.
+               * @returns {Promise<any>} - The result of the async function if successful.
+               */
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delayInSeconds of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                    await sleep(delayInSeconds * 1000);
+                  }
+                }
+                throw lastError;
+              }
+
+
+              // --- API Call Functions ---
+
+
+              function filter(users, filterValue) {
+                if (!Array.isArray(users)) {
+                  throw new Error("The first argument must be an array.");
+                }
+                // Convert both user.id and filterValue to strings for the comparison.
+                return users.find(user => String(user.id) == String(filterValue));
+              }
+
+
+              function getQBTJobcodeNameByValue(jobcodeMap, value) {
+                if (!Array.isArray(jobcodeMap)) {
+                  throw new Error("jobcodeMap must be an array");
+                }
+                const found = jobcodeMap.find(item => String(item.value) === String(value));
+                return found ? found.key : "Jobcode used in time entry not found. Either inactive or is unmapped break code.";
+              }
+
+
+              function chunkArray(array, chunkSize) {
+                const chunks = [];
+                for (let i = 0; i < array.length; i += chunkSize) {
+                  chunks.push(array.slice(i, i + chunkSize));
+                }
+                return chunks;
+              }
+
+
+              async function bulkUpdate(client, tableName, data) {
+                try {
+                  const response = await client.patch(`/${encodeURIComponent(tableName)}`, data);
+                  return response.data || "";
+                } catch (error) {
+                  console.error("Bulk update failed:", error.response?.data || error.message);
+                  throw error;
+                }
+              }
+
+
+              function getEmployee(records, userId) {
+                return records.find(record => 
+                  record.fields?.["Time Tracking User ID"] == userId
+                );
+              }
+
+
+              function getProject(records, jobCodeId) {
+                return records.find(record => 
+                  record.fields["QB Time Jobcode ID"] == jobCodeId
+                );
+              }
+
+
+
+              // --- Payload Classes ---
+
+              class TimeLogsPayload {
+                constructor(timelog, jobCode, project, employee, breakCode) {
+                  this.fields = {
+                    "Time Entry ID": `${timelog.id}`,
+                    "Hours Worked": timelog.duration ? timelog.duration / 3600 : 0
+                  };
+
+                  // Add job code fields if available.
+                  if (jobCode) {
+                    this.fields["QB Time Jobcode Name"] = jobCode.name || "";
+                    this.fields["QB Time Jobcode ID"] = `${jobCode.id}` || "";
+                  } else {
+                    this.fields["QB Time Jobcode Name"] = getQBTJobcodeNameByValue(breakCode, timelog.jobcode_id)
+                    this.fields["QB Time Jobcode ID"] = String(timelog.jobcode_id) || "";
+                  }
+
+                  // Clocked In (start or fallback to date).
+                  this.fields["Clocked In"] = timelog.start || timelog.date || "";
+
+                  // Clocked Out.
+                  if (timelog.end) {
+                    this.fields["Clocked Out"] = timelog.end;
+                  }
+
+                  // Project (array format).
+                  if (project?.id) {
+                    this.fields["Project"] = [project.id];
+                  }
+
+                  // Set Employee field from timelog.user_id.
+                  if (employee?.id) {
+                    this.fields["Employee"] = [employee.id];
+                  }
+                }
+              }
+        name: Bulk Update Timelogs
+  - description: >-
+      The purpose of this flow is to archive or inactive ALL existing jobcodes
+      in the account. This is to remove test projects created by the automation.
+    endpointSecurityType: customer_optional
+    isAgentFlow: false
+    isSynchronous: false
+    name: 06 Inactive Jobcode Sync
+    steps:
+      - action:
+          key: webhook
+          component:
+            isPublic: true
+            key: webhook-triggers
+            version: LATEST
+        description: ''
+        inputs:
+          body:
+            type: value
+            value: ''
+          contentType:
+            type: value
+            value: ''
+          headers:
+            type: complex
+            value: []
+          statusCode:
+            type: value
+            value: ''
+        isTrigger: true
+        name: Trigger
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: To QuickBooks Time
+        inputs:
+          code:
+            type: value
+            value: |-
+              const axios = require('axios');
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                const projectTable = configVars["Projects Table"];
+                const base = configVars["Project Management Base"];
+                const { apiKey } = configVars["Airtable Connection"].fields;
+                const tsheetToken = configVars["QuickBooks Time Token"];
+
+                // Initialize QuickBooks Time (TSheets) API client.
+                const tsheetClient = axios.create({
+                  baseURL: `https://rest.tsheets.com/api/v1`,
+                  headers: {
+                    Authorization: `Bearer ${tsheetToken}`,
+                    'Content-Type': 'application/json'
+                  }
+                });
+
+                let allJobCodes = [];
+                let page = 1;
+                const pageSize = 200; // maximum records per call
+
+                while (true) {
+                  try {
+                    const jobCodes = await retryOperation(
+                      () => retriveJobCodes(tsheetClient, '/jobcodes', page),
+                      [3, 3, 3]
+                    );
+                    logger.log(`Retrieved ${jobCodes.length} job codes on page ${page}`);
+                    
+                    // Filter for active job codes
+                    const activeJobCodes = jobCodes.filter(jc => jc.active === true || jc.active === "yes");
+                    allJobCodes = allJobCodes.concat(activeJobCodes);
+                    
+                    if (jobCodes.length < pageSize) break;
+                    page++;
+                  } catch (err) {
+                    logger.error(`Error retrieving JobCodes on page ${page}:`, err.message);
+                    break;
+                  }
+                }
+                
+                allJobCodes.sort((a, b) => new Date(a.last_modified) - new Date(b.last_modified));
+                logger.log("Total Active JobCodes Retrieved: ", allJobCodes.length);
+                logger.log("Active JobCodes Retrieved: ", JSON.stringify(allJobCodes));
+
+                // Initialize Airtable client.
+                const airtableClient = axios.create({
+                  baseURL: `https://api.airtable.com/v0/${base}`,
+                  headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                  },
+                });
+
+                // const formula = `AND({${updateTimeTracker}}="TRUE",{${includeTimeTracker}}="TRUE")`;
+                // const encodedFormula = encodeURIComponent(formula);
+                let allProjects = [];
+                let offset = null;
+                const recordPageSize = 100; // Airtable page size
+
+                do {
+                  // Build the URL with pageSize and offset (if available)
+                  // let url = `/${encodeURIComponent(projectTable)}?pageSize=${pageSize}&filterByFormula=${encodedFormula}`;
+                  let url = `/${encodeURIComponent(projectTable)}?pageSize=${recordPageSize}`;
+                  if (offset) {
+                    url += `&offset=${encodeURIComponent(offset)}`;
+                  }
+                  
+                  try {
+                    // Use retryOperation for robust API call.
+                    const response = await retryOperation(
+                      () => airtableClient.get(url),
+                      [3, 3, 3]
+                    );
+                    
+                    const records = response.data.records || [];
+                    allProjects = allProjects.concat(records);
+                    logger.log(`Retrieved ${records.length} records; offset: ${response.data.offset || "none"}`);
+                    
+                    offset = response.data.offset;
+                  } catch (error) {
+                    logger.error("Error retrieving projects:", error.message);
+                    break;
+                  }
+                } while (offset);
+
+                logger.log("Total Projects Retrieved:", allProjects.length);
+                logger.log("Projects Retrieved:", JSON.stringify(allProjects));
+
+                const jobcodeUpdateItems = [];
+
+
+                allJobCodes.forEach(jobcode => {
+                  let project = queryRequestById(allProjects, jobcode.id)
+                  if (!project) {
+                    jobcodeUpdateItems.push(new JobcodeUpdatePayload(jobcode));
+                  }
+                });
+
+
+                logger.log("Total Jobcodes to Update:", jobcodeUpdateItems.length);
+
+                // split into chunks of max 200
+                const chunks = chunkArray(jobcodeUpdateItems, 200);
+                const updatedJobCodes = [];
+
+                for (const [i, chunk] of chunks.entries()) {
+                  const payload = { data: chunk };
+                  logger.log(`Updating chunk ${i+1}/${chunks.length} (size=${chunk.length})`);
+                  const result = await retryOperation(
+                    () => updateJobCodes(tsheetClient, '/jobcodes', payload),
+                    [3,3,3]
+                  );
+                  // 1) count
+                  logger.log(`Chunk ${i+1} returned ${result.length} jobcodes`);
+                  // 2) verify state
+                  logger.log(
+                    `Chunk ${i+1} active flags:`,
+                    result.map(jc => `${jc.id} → ${jc.active}`)
+                  );
+                  // 3) push only those that actually flipped
+                  const actuallyFlipped = result.filter(jc => jc.active === "no");
+                  updatedJobCodes.push(...actuallyFlipped);
+                }
+                
+                // Sort timesheets from earliest to latest using last_modified
+                logger.log("Total Jobcodes Successfully Updated:", updatedJobCodes.length);
+                return updatedJobCodes;
+              };
+
+              function chunkArray(array, size) {
+                const chunks = [];
+                for (let i = 0; i < array.length; i += size) {
+                  chunks.push(array.slice(i, i + size));
+                }
+                return chunks;
+              }
+
+              async function updateJobCodes(client, endpoint, payload) {
+                try {
+                  const response = await client.put(endpoint, payload);
+                  if (!response.data || !response.data.results || !response.data.results.jobcodes) return [];
+                  return Object.values(response.data.results.jobcodes);
+                } catch (error) {
+                  console.error(`${endpoint} update failed:`, error.response?.data || error.message);
+                  throw error;
+                }
+              }
+
+              async function retriveJobCodes(client, endpoint, page) {
+                try {
+                  const params = new URLSearchParams({ page: page, per_page: 200, active: true }).toString();
+                  const response = await client.get(`${endpoint}?${params}`);
+                  if (!response.data || !response.data.results || !response.data.results.jobcodes) return [];
+                  return Object.values(response.data.results.jobcodes);
+                } catch (error) {
+                  console.error(`${endpoint} retrieval failed:`, error.response?.data || error.message);
+                  throw error;
+                }
+              }
+
+              //
+              // --- Retry Operation Function and Sleep Helper ---
+              //
+
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+
+              /**
+               * Retries an async operation using specified delays (in seconds).
+               *
+               * @param {Function} operationFn - The async function to execute.
+               * @param {Array<number>} retryDelaysInSeconds - Delays (in seconds) between retries.
+               * @returns {Promise<any>} - The result of the async function if successful.
+               */
+              async function retryOperation(fn, delays = [5,5,5]) {
+                // try once per delay
+                for (const d of delays) {
+                  try {
+                    return await fn();
+                  } catch (err) {
+                    console.warn(`Attempt failed: ${err.message}. Retrying in ${d}s...`);
+                    await sleep(d * 1000);
+                  }
+                }
+                // final attempt—if it still fails, we catch and return null
+                try {
+                  return await fn();
+                } catch (err) {
+                  console.warn(`Final attempt failed (ignored): ${err.message}`);
+                  return null;    // <— swallow the error here
+                }
+              }
+
+              class JobcodeUpdatePayload {
+                /**
+                 * @param {string|number} id - The QuickBooks Time jobcode id to update.
+                 * @param {string} name - The new name for the jobcode.
+                 * @param {string} [active="yes"] - The new active status ("yes" or "no").
+                 */
+                constructor(jobcode) {
+                  this.id = jobcode.id;
+                  this.active = "no";
+                  this.connect_with_quickbooks = false;
+                }
+              }
+
+              function queryRequestById(requests, id) {
+                if (!Array.isArray(requests)) {
+                  throw new Error("`requests` must be an array");
+                }
+                const lookup = String(id).trim();
+                return requests.find(item => String(item.fields["QB Time Jobcode ID"]) === lookup) || null;
+              }
+        name: Update Inactive Jobcodes
+  - description: ''
+    endpointSecurityType: customer_optional
+    isAgentFlow: false
+    isSynchronous: false
+    name: 07 Jobcodes Location Sync
+    steps:
+      - action:
+          key: schedule
+          component:
+            isPublic: true
+            key: schedule-triggers
+            version: LATEST
+        description: ''
+        inputs: {}
+        isTrigger: true
+        name: Trigger
+        schedule:
+          meta:
+            scheduleType: minute
+            timeZone: ''
+          type: value
+          value: '*/5 * * * *'
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: IF QB Time Jobcode ID exist and QB Time Location ID is empty
+        inputs:
+          code:
+            type: value
+            value: >-
+              const axios = require('axios');
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                const projectTable = configVars["Projects Table"];
+                const base = configVars["Project Management Base"];
+                const { apiKey } = configVars["Airtable Connection"].fields;
+
+                // Initialize Airtable client.
+                const airtableClient = axios.create({
+                  baseURL: `https://api.airtable.com/v0/${base}`,
+                  headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                  },
+                });
+
+                const formula = `AND({QB Time Jobcode ID},{QB Time Location ID}="")`;
+                const encodedFormula = encodeURIComponent(formula);
+                let allProjects = [];
+                let offset = null;
+                const pageSize = 100; // Airtable page size
+
+                do {
+                  // Build the URL with pageSize and offset (if available)
+                  let url = `/${encodeURIComponent(projectTable)}?pageSize=${pageSize}&filterByFormula=${encodedFormula}`;
+                  if (offset) {
+                    url += `&offset=${encodeURIComponent(offset)}`;
+                  }
+                  
+                  try {
+                    // Use retryOperation for robust API call.
+                    const response = await retryOperation(
+                      () => airtableClient.get(url),
+                      [3, 3, 3]
+                    );
+                    
+                    const records = response.data.records || [];
+                    allProjects = allProjects.concat(records);
+                    logger.log(`Retrieved ${records.length} records; offset: ${response.data.offset || "none"}`);
+                    
+                    offset = response.data.offset;
+                  } catch (error) {
+                    logger.error("Error retrieving projects:", error.message);
+                    break;
+                  }
+                } while (offset);
+
+                logger.log("Total Projects Retrieved:", allProjects.length);
+                return allProjects;
+              };
+
+
+              //
+
+              // --- Retry Operation Function and Sleep Helper ---
+
+              //
+
+
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+
+
+              /**
+               * Retries an async operation using specified delays (in seconds).
+               *
+               * @param {Function} operationFn - The async function to execute.
+               * @param {Array<number>} retryDelaysInSeconds - Delays (in seconds) between retries.
+               * @returns {Promise<any>} - The result of the async function if successful.
+               */
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delayInSeconds of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                    await sleep(delayInSeconds * 1000);
+                  }
+                }
+                throw lastError;
+              }
+        name: Retrieve Eligible Projects
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: From QuickBooks Time Jobcodes
+        inputs:
+          code:
+            type: value
+            value: >
+              const axios = require("axios");
+
+
+              module.exports = async ({ logger, configVars }) => {
+                const tsheetToken = configVars["QuickBooks Time Token"];
+                const tsheetClient = axios.create({
+                  baseURL: `https://rest.tsheets.com/api/v1`,
+                  headers: {
+                    Authorization: `Bearer ${tsheetToken}`,
+                    "Content-Type": "application/json",
+                  },
+                });
+
+                // Define the date filter in ISO-8601 format (without milliseconds)
+                const modifiedSince = (() => {
+                  const dateStr = configVars?.["Location Last Modified Date"];
+                  if (!dateStr || dateStr === "none") return null;
+
+                  const date = new Date(dateStr);
+                  return isNaN(date) ? null : date.toISOString().split(".")[0] + "Z";
+                })();
+
+                let allLocations = [];
+                let page = 1;
+                const pageSize = 200;
+
+                while (true) {
+                  try {
+                    logger.log(`Fetching locations, page ${page}`);
+
+                    const params = new URLSearchParams({
+                      page: page,
+                      per_page: pageSize,
+                      ...(modifiedSince && { modified_since: modifiedSince }),
+                      //active: "yes",
+                    }).toString();
+
+                    const response = await retryOperation(
+                      () => tsheetClient.get(`/locations?${params}`),
+                      [5, 10, 15], // Set waiting times for retries. First 5, then 10, 15... etc.
+                    );
+
+                    // The API returns an object keyed by location-ID
+                    const locationsPage = response.data?.results?.locations
+                      ? Object.values(response.data.results.locations)
+                      : [];
+
+                    logger.log(` → Retrieved ${locationsPage.length} locations this page`);
+                    allLocations = allLocations.concat(locationsPage);
+
+                    // Stop if we got fewer than a full page
+                    if (locationsPage.length < pageSize) break;
+                    page++;
+                  } catch (err) {
+                    logger.error(
+                      `Error fetching locations on page ${page} after retries:`,
+                      err.message,
+                    );
+                    break;
+                  }
+                }
+
+                const filterLocations = allLocations.filter((loc) => {
+                  return loc.linked_objects["jobcodes"] != "";
+                });
+
+                logger.info(`✅ Total locations fetched: ${filterLocations.length}`);
+                return filterLocations;
+              };
+
+
+              //
+
+              // --- Retry Operation Function and Sleep Helper ---
+
+              //
+
+
+              function sleep(ms) {
+                return new Promise((resolve) => setTimeout(resolve, ms));
+              }
+
+
+              /**
+               * Retries an async operation using specified delays (in seconds).
+               * Handles rate limiting with exponential backoff.
+               *
+               * @param {Function} operationFn - The async function to execute.
+               * @param {Array<number>} retryDelaysInSeconds - Delays (in seconds) between retries.
+               * @returns {Promise<any>} - The result of the async function if successful.
+               */
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 10, 15]) {
+                let lastError;
+
+                // First attempt
+                try {
+                  return await operationFn();
+                } catch (error) {
+                  lastError = error;
+
+                  // Check if it's a rate limiting error
+                  const isRateLimit =
+                    error.response?.status === 429 ||
+                    error.response?.status === 503 ||
+                    error.message?.toLowerCase().includes("rate limit");
+
+                  if (isRateLimit) {
+                    console.warn(`Rate limit hit: ${error.message}`);
+                  } else {
+                    console.warn(`Operation failed: ${error.message}`);
+                  }
+                }
+
+                // Retry attempts
+                for (let i = 0; i < retryDelaysInSeconds.length; i++) {
+                  const delayInSeconds = retryDelaysInSeconds[i];
+                  console.warn(`Retrying in ${delayInSeconds} seconds... (attempt ${i + 2})`);
+                  await sleep(delayInSeconds * 1000);
+
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+
+                    const isRateLimit =
+                      error.response?.status === 429 ||
+                      error.response?.status === 503 ||
+                      error.message?.toLowerCase().includes("too many requests");
+
+                    if (isRateLimit) {
+                      console.warn(`Rate limit hit again: ${error.message}`);
+                    } else {
+                      console.warn(`Retry ${i + 2} failed: ${error.message}`);
+                    }
+                  }
+                }
+
+                throw lastError;
+              }
+        name: Retrieve Locations
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: ''
+        inputs:
+          code:
+            type: value
+            value: |
+              const axios = require("axios");
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                // Retrieve projects data and existing locations from step results.
+                const projectsData = stepResults.retrieveEligibleProjects.results || [];
+                const locationsData = stepResults.retrieveLocations.results || [];
+
+                if (!projectsData.length) {
+                  logger.info("All existing projects have locations. Nothing to do here.");
+                  return { createdLocations: [], retrievedLocations: [] };
+                }
+
+                // Read configuration.
+                const projectTable = configVars["Projects Table"];
+                const base = configVars["Project Management Base"];
+                const { apiKey } = configVars["Airtable Connection"].fields;
+                const tsheetToken = configVars["QuickBooks Time Token"];
+
+                // Initialize clients.
+                const airtableClient = axios.create({
+                  baseURL: `https://api.airtable.com/v0/${base}`,
+                  headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                  },
+                });
+                const tsheetClient = axios.create({
+                  baseURL: `https://rest.tsheets.com/api/v1`,
+                  headers: {
+                    Authorization: `Bearer ${tsheetToken}`,
+                    "Content-Type": "application/json",
+                  },
+                });
+
+                const existingAirtableUpdates = []; // For existing locations
+                const toCreate = []; // New locations to create
+                const retrievedLocations = []; // Existing location objects
+                const createdLocations = []; // Newly created location objects
+
+                // 1️⃣ Determine existing vs new locations
+                for (const project of projectsData) {
+                  const jobCodeId = project.fields["QB Time Jobcode ID"] || "";
+                  const payload = new LocationPayload(project, jobCodeId).data[0];
+                  logger.log(payload);
+
+                  // Skip if address is incomplete
+                  if (!payload.addr1 || !payload.city || !payload.state || !payload.zip) {
+                    logger.warn(`❌ Skipping project ${project.id} — incomplete address`);
+                    existingAirtableUpdates.push({
+                      id: project.id,
+                      fields: {
+                        "⚙️ Boolean Automation System Status":
+                          "❌ Missing address fields; no location created.",
+                      },
+                    });
+                    continue;
+                  }
+
+                  // Check for existing location
+                  const existing = findLocationByJobcode(locationsData, jobCodeId);
+                  if (existing) {
+                    logger.log(
+                      `🔎 Found valid existing location ${existing.id} for project ${project.id}`,
+                    );
+                    retrievedLocations.push(existing);
+                    existingAirtableUpdates.push({
+                      id: project.id,
+                      fields: {
+                        "QB Time Location ID": String(existing.id),
+                        "⚙️ Boolean Automation System Status": "✅ Using existing location",
+                      },
+                    });
+                  } else {
+                    toCreate.push({ projectId: project.id, payload });
+                  }
+                }
+
+                logger.info(
+                  `✅ ${retrievedLocations.length} projects reused existing locations`,
+                );
+                logger.info(`🆕 ${toCreate.length} projects need new locations`);
+
+                // 2️⃣ Update Airtable for existing locations first
+                if (existingAirtableUpdates.length > 0) {
+                  logger.info("Updating Airtable for existing locations...");
+                  const existingUpdateChunks = chunkArray(existingAirtableUpdates, 10);
+
+                  for (const [i, batch] of existingUpdateChunks.entries()) {
+                    const payload = { records: batch };
+                    logger.log(
+                      `Existing locations Airtable update ${i + 1}/${existingUpdateChunks.length}`,
+                    );
+
+                    try {
+                      await retryOperation(
+                        () => bulkUpdate(airtableClient, projectTable, payload),
+                        [3, 3, 3],
+                      );
+                      logger.log(`✅ Updated ${batch.length} existing location records`);
+                    } catch (err) {
+                      logger.error(
+                        `❌ Failed to update existing locations batch ${i + 1}:`,
+                        err.message,
+                      );
+                    }
+                  }
+                }
+
+                // Process chunk -> Update in Airtable -> Repeat until done.
+                if (toCreate.length > 0) {
+                  const locationChunks = chunkArray(toCreate, 50);
+
+                  for (const [i, chunk] of locationChunks.entries()) {
+                    logger.info(
+                      `\n🔄 Processing chunk ${i + 1}/${locationChunks.length} (${chunk.length} new locations)`,
+                    );
+
+                    // Step A: Create locations in QBO for this chunk
+                    const bulkPayload = { data: chunk.map((x) => x.payload) };
+                    logger.log(`Creating QBO locations chunk ${i + 1}:`, bulkPayload);
+
+                    let chunkCreatedLocations;
+                    try {
+                      chunkCreatedLocations = await retryOperation(
+                        () => createLocations(tsheetClient, "/locations", bulkPayload),
+                        [3, 3, 3],
+                      );
+                      logger.log(
+                        `✅ QBO chunk ${i + 1} created ${chunkCreatedLocations.length} locations`,
+                      );
+                    } catch (err) {
+                      logger.error(
+                        `❌ Failed to create QBO locations chunk ${i + 1}:`,
+                        err.message,
+                      );
+
+                      // Mark these projects as failed in Airtable
+                      const failedAirtableUpdates = chunk.map((item) => ({
+                        id: item.projectId,
+                        fields: {
+                          "⚙️ Boolean Automation System Status": `❌ QBO location creation failed: ${err.message}`,
+                        },
+                      }));
+
+                      // Update Airtable with failure status
+                      try {
+                        const failedChunks = chunkArray(failedAirtableUpdates, 10);
+                        for (const failedBatch of failedChunks) {
+                          await retryOperation(
+                            () =>
+                              bulkUpdate(airtableClient, projectTable, {
+                                records: failedBatch,
+                              }),
+                            [3, 3, 3],
+                          );
+                        }
+                        logger.log(
+                          `Updated Airtable with failure status for ${failedAirtableUpdates.length} projects`,
+                        );
+                      } catch (airtableErr) {
+                        logger.error(
+                          `Failed to update Airtable with error status:`,
+                          airtableErr.message,
+                        );
+                      }
+
+                      continue; // Skip to next chunk
+                    }
+
+                    // Step B: Immediately update Airtable with the new QBO location IDs
+                    const chunkAirtableUpdates = chunkCreatedLocations.map(
+                      (location, idx) => {
+                        const projectId = chunk[idx].projectId;
+                        createdLocations.push(location); // Track all successfully created locations
+
+                        return {
+                          id: projectId,
+                          fields: {
+                            "QB Time Location ID": String(location.id),
+                            "⚙️ Boolean Automation System Status":
+                              "✅ Location created successfully",
+                          },
+                        };
+                      },
+                    );
+
+                    // Update Airtable for this chunk's locations
+                    const airtableChunks = chunkArray(chunkAirtableUpdates, 10);
+
+                    for (const [j, airtableBatch] of airtableChunks.entries()) {
+                      const payload = { records: airtableBatch };
+                      logger.log(
+                        `Updating Airtable for chunk ${i + 1}, batch ${j + 1}/${airtableChunks.length}`,
+                      );
+
+                      try {
+                        await retryOperation(
+                          () => bulkUpdate(airtableClient, projectTable, payload),
+                          [3, 3, 3],
+                        );
+                        logger.log(
+                          `✅ Airtable updated for chunk ${i + 1}, batch ${j + 1} (${airtableBatch.length} records)`,
+                        );
+                      } catch (err) {
+                        logger.error(
+                          `❌ Airtable update failed for chunk ${i + 1}, batch ${j + 1}:`,
+                          err.message,
+                        );
+
+                        // Critical: QBO locations exist but Airtable update failed
+                        const orphanedLocations = airtableBatch.map((record) => ({
+                          projectId: record.id,
+                          locationId: record.fields["QB Time Location ID"],
+                        }));
+
+                        logger.error(
+                          `⚠️ MANUAL REVIEW REQUIRED - Orphaned QBO locations:`,
+                          orphanedLocations,
+                        );
+                      }
+                    }
+
+                    logger.info(
+                      `✅ Completed processing chunk ${i + 1}/${locationChunks.length}`,
+                    );
+                  }
+                }
+
+                // 4️⃣ Final Summary
+                logger.info(`\n🎉 PROCESSING COMPLETE:`);
+                logger.info(`   📍 Existing locations reused: ${retrievedLocations.length}`);
+                logger.info(`   🆕 New locations created: ${createdLocations.length}`);
+                logger.info(
+                  `   📊 Total locations processed: ${retrievedLocations.length + createdLocations.length}`,
+                );
+
+                return { createdLocations, retrievedLocations };
+              };
+
+              // ————— Helper Functions —————
+
+              function chunkArray(array, size) {
+                const out = [];
+                for (let i = 0; i < array.length; i += size) {
+                  out.push(array.slice(i, i + size));
+                }
+                return out;
+              }
+
+              async function createLocations(client, endpoint, payload) {
+                const res = await client.post(endpoint, payload);
+                return res.data?.results?.locations
+                  ? Object.values(res.data.results.locations)
+                  : [];
+              }
+
+              async function bulkUpdate(client, tableName, data) {
+                const res = await client.patch(`/${encodeURIComponent(tableName)}`, data);
+                return res.data;
+              }
+
+              function sleep(ms) {
+                return new Promise((r) => setTimeout(r, ms));
+              }
+
+              async function retryOperation(fn, delays = [5, 5, 5]) {
+                let err;
+                for (const d of delays) {
+                  try {
+                    return await fn();
+                  } catch (e) {
+                    err = e;
+                    console.warn(`Retry in ${d}s:`, e.message);
+                    await sleep(d * 1000);
+                  }
+                }
+                throw err;
+              }
+
+              /**
+               * Find the QBT location object linked to a given jobcode.
+               * @param {Array<Object>} locations
+               * @param {string|number} jobCodeId
+               * @returns {Object|null}
+               */
+              function findLocationByJobcode(locations, jobCodeId) {
+                const target = String(jobCodeId);
+                const match = locations.find((loc) => {
+                  const codes = loc.linked_objects?.jobcodes;
+                  return Array.isArray(codes) && codes.map(String).includes(target);
+                });
+                return match || null;
+              }
+
+              // ————— Payload Class —————
+
+              class LocationPayload {
+                constructor(project, jobCodeId) {
+                  this.data = [
+                    {
+                      addr1: normalize(project.fields["Job Site Street Address"]),
+                      city: normalize(project.fields["Job Site City"]),
+                      state: normalize(project.fields["Job Site State"]),
+                      zip: normalize(project.fields["Job Site Postal Code"]),
+                      label: normalize(project.fields["Full Job Site Address"]) + " USA",
+                      linked_objects: { jobcodes: jobCodeId ? [jobCodeId] : [] },
+                    },
+                  ];
+                }
+              }
+
+              function normalize(field) {
+                if (!field) return "";
+                if (Array.isArray(field)) {
+                  return field.length ? field[0] : "";
+                }
+                return field; // it's already a string (or scalar)
+              }
+        name: Upsert Location
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: 'To Quickbooks Time '
+        inputs:
+          code:
+            type: value
+            value: |-
+              const axios = require('axios');
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                // 1️⃣ Grab the list of existing locations from the previous step
+                //    and the Airtable projects so we can pull fresh addresses.
+                const retrievedLocations = stepResults.upsertLocation.results?.retrievedLocations || [];
+                const projectsData = stepResults.retrieveEligibleProjects.results || [];
+
+                if (!retrievedLocations.length) {
+                  logger.info("No existing locations to update – nothing to do.");
+                  return [];
+                }
+
+                function normalize(field) {
+                  if (!field) return "";
+                  if (Array.isArray(field)) {
+                    return field.length ? field[0] : "";
+                  }
+                  return field;  // it's already a string (or scalar)
+                }
+
+                // 2️⃣ Build our “to‐update” list by matching each loc → project
+                const locationUpdates = retrievedLocations
+                  .map(loc => {
+                    const linked = (loc.linked_objects?.jobcodes || []).map(String);
+                    const proj  = projectsData.find(p => linked.includes(String(p.fields["QB Time Jobcode ID"])));
+                    if (!proj) {
+                      logger.warn(`No project for loc ${loc.id} (jobcodes: ${linked}), skipping.`);
+                      return null;
+                    }
+                    const f = proj.fields;
+                    return { 
+                      id: loc.id,
+                      addr1: normalize(f["Job Site Street Address"]),
+                      city:  normalize(f["Job Site City"]),
+                      state: normalize(f["Job Site State"]),
+                      zip:   normalize(f["Job Site Postal Code"]),
+                      label: normalize(f["Full Job Site Address"]) + " USA"
+                    };
+                  })
+                  .filter(Boolean);
+
+                if (!locationUpdates.length) {
+                  logger.info("No location/address pairs to update after matching.");
+                  return [];
+                }
+
+                // 3️⃣ Initialize your QuickBooks Time client
+                const tsheetToken = configVars["QuickBooks Time Token"];
+                const tsheetClient = axios.create({
+                  baseURL: `https://rest.tsheets.com/api/v1`,
+                  headers: {
+                    Authorization: `Bearer ${tsheetToken}`,
+                    'Content-Type': 'application/json'
+                  }
+                });
+
+                // 4️⃣ Chunk into batches of 50 (QBT limit)
+                const chunks = chunkArray(locationUpdates, 50);
+                const updatedLocations = [];
+
+                for (const [i, batch] of chunks.entries()) {
+                  const payload = {
+                    data: batch.map(loc => ({
+                      id:    loc.id,
+                      addr1: loc.addr1,
+                      city:  loc.city,
+                      state: loc.state,
+                      zip:   loc.zip,
+                      label: loc.label
+                    }))
+                  };
+                  logger.log(`Updating locations chunk ${i + 1}/${chunks.length}`, payload);
+
+                  let results;
+                  try {
+                    results = await retryOperation(
+                      () => updateLocations(tsheetClient, '/locations', payload),
+                      [3, 3, 3]
+                    );
+                    logger.log(`→ Chunk ${i + 1} updated ${results.length} locations`);
+                  } catch (err) {
+                    logger.error(`Failed to update chunk ${i + 1}:`, err.message);
+                    continue;
+                  }
+
+                  // build a lookup from ID → original address payload
+                  const originalMap = new Map(
+                    batch.map(loc => [ String(loc.id), loc ])
+                  );
+
+                  // now log each change
+                  for (const updatedLoc of results) {
+                    const orig = originalMap.get(String(updatedLoc.id));
+                    if (!orig) continue;
+                    const oldFull = `${orig.addr1}, ${orig.city}, ${orig.state} ${orig.zip}`;
+                    const newFull = `${updatedLoc.addr1}, ${updatedLoc.city}, ${updatedLoc.state} ${updatedLoc.zip}`;
+                    logger.log(`  ${oldFull} → ${newFull}`);
+                  }
+
+                  updatedLocations.push(...results);
+                }
+                logger.info(`✅ Total locations updated: ${updatedLocations.length}`);
+                logger.info(`⚠️ Skipped ${retrievedLocations.length - locationUpdates.length} locations with no matching project.`);
+                return updatedLocations;
+              };
+
+              // ————— Helper: bulk‐update QBT locations —————
+              async function updateLocations(client, endpoint, payload) {
+                const res = await client.put(endpoint, payload);
+                if (!res.data?.results?.locations) return [];
+                return Object.values(res.data.results.locations);
+              }
+
+              // ————— Helper: chunk an array —————
+              function chunkArray(array, size) {
+                const out = [];
+                for (let i = 0; i < array.length; i += size) {
+                  out.push(array.slice(i, i + size));
+                }
+                return out;
+              }
+
+              // ————— Helper: retry with simple backoff —————
+              function sleep(ms) {
+                return new Promise(r => setTimeout(r, ms));
+              }
+              async function retryOperation(fn, delays = [5,5,5]) {
+                let lastErr;
+                for (const d of delays) {
+                  try {
+                    return await fn();
+                  } catch (err) {
+                    lastErr = err;
+                    console.warn(`Retrying in ${d}s: ${err.message}`);
+                    await sleep(d * 1000);
+                  }
+                }
+                // final attempt
+                return await fn();
+              }
+        name: Update Location Address
+  - description: ''
+    endpointSecurityType: customer_optional
+    isAgentFlow: false
+    isSynchronous: false
+    name: 08 Sync Delete Timelogs
+    steps:
+      - action:
+          key: schedule
+          component:
+            isPublic: true
+            key: schedule-triggers
+            version: LATEST
+        description: ''
+        inputs: {}
+        isTrigger: true
+        name: Trigger
+        schedule:
+          meta:
+            scheduleType: hour
+            timeZone: ''
+          type: value
+          value: 0 */1 * * *
+      - action:
+          key: adjustDateTime
+          component:
+            isPublic: true
+            key: datetime
+            version: LATEST
+        description: ''
+        inputs:
+          dateTimeInput:
+            type: reference
+            value: trigger.results.startedAt
+          daysInput:
+            type: template
+            value: '-{{#How Far Back to Pull Deleted Logs}}'
+          hoursInput:
+            type: value
+            value: ''
+          minutesInput:
+            type: value
+            value: ''
+          secondsInput:
+            type: value
+            value: ''
+        name: Adjust Date/Time
+      - action:
+          key: formatDateTime
+          component:
+            isPublic: true
+            key: datetime
+            version: LATEST
+        description: ''
+        inputs:
+          dateTime:
+            type: reference
+            value: adjustDateTime.results
+          format:
+            type: value
+            value: YYYY-MM-DDTHH:mm:ssZ
+          timeZone:
+            type: value
+            value: Etc/UTC
+        name: Format to ISO Date
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: From QuickBooks Time
+        inputs:
+          code:
+            type: value
+            value: >-
+              const axios = require('axios');
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                // Example: ISO date string for filtering timesheets (passed as a parameter)
+                const date = stepResults.formatToIsoDate.results;  
+                // const date = "2024-01-01T00:00:00Z";
+
+                // Retrieve TSheets token from configVars (assuming it's defined)
+                const tsheetToken = configVars["QuickBooks Time Token"];
+
+                // Initialize TSheets API client.
+                const tsheetClient = axios.create({
+                  baseURL: `https://rest.tsheets.com/api/v1`,
+                  headers: {
+                    Authorization: `Bearer ${tsheetToken}`,
+                    'Content-Type': 'application/json'
+                  },
+                });
+
+                let allTimesheets = [];
+                let page = 1;
+                const pageSize = 200; // maximum records per call
+
+                while (true) {
+                  try {
+                    // Use retryOperation to call the API for this page.
+                    const timesheets = await retryOperation(
+                      () => retriveSheets(tsheetClient, '/timesheets_deleted', date, page),
+                      [3, 3, 3]
+                    );
+                    logger.log(`Retrieved ${timesheets.length} records on page ${page}`);
+                    // Append the records from this page to allTimesheets.
+                    allTimesheets = allTimesheets.concat(timesheets);
+
+                    // If the number of records returned is less than the pageSize, we assume this is the last page.
+                    if (timesheets.length < pageSize) {
+                      break;
+                    }
+                    // Otherwise, move to the next page.
+                    page++;
+                  } catch (err) {
+                    logger.error(`Error retrieving Time Sheets on page ${page}:`, err.message);
+                    break;
+                  }
+                }
+                
+                // Sort timesheets from earliest to latest using last_modified
+                allTimesheets.sort((a, b) => new Date(a.last_modified) - new Date(b.last_modified));
+                
+                logger.log("Total Timesheets Retrieved: ", allTimesheets.length);
+
+                return allTimesheets;
+              };
+
+
+              async function retriveSheets(client, endpoint, date, page) {
+                try {
+                  // Construct query parameters.
+                  // Adjust the query string parameters as required by the API.
+                  const params = new URLSearchParams({ modified_since: date, page: page }).toString();    
+                  const response = await client.get(`${endpoint}?${params}`);
+                  
+                  // Assuming your API returns a JSON object where timesheets are nested under a key (e.g. "results")
+                  // and that each page returns an object with a property "timesheets"
+                  const data = extractAllTimesheetIds(response.data);
+                  return data || [];
+                } catch (error) {
+                  console.error(`${endpoint} retrieval failed:`, error.response?.data || error.message);
+                  throw error;
+                }
+              }
+
+
+              function extractAllTimesheetIds(data) {
+                // Adjust this function based on the structure of your API's response.
+                // For example, if response data looks like: { results: { timesheets: { id1: {}, id2: {} } }, more: true }
+                if (!data || !data.results || !data.results.timesheets_deleted) return [];
+                
+                return Object.values(data.results.timesheets_deleted);
+              }
+
+
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+
+
+              /**
+               * Retry an async operation using specified delays (in seconds).
+               *
+               * @param {Function} operationFn - The async function to execute.
+               * @param {Array<number>} retryDelaysInSeconds - Array of delays (seconds) between retries.
+               * @returns {Promise<any>} - The result of the async function if successful.
+               */
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delayInSeconds of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                    await sleep(delayInSeconds * 1000);
+                  }
+                }
+                throw lastError;
+              }
+        name: Retrieve All Deleted Time Sheets
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: From PaintOS Time Logs Table
+        inputs:
+          code:
+            type: value
+            value: >-
+              const axios = require('axios');
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                const timeLogsTable = configVars["Time Logs Table"];
+                const base = configVars["Project Management Base"];
+                const { apiKey } = configVars["Airtable Connection"].fields;
+
+                // Initialize Airtable client.
+                const airtableClient = axios.create({
+                  baseURL: `https://api.airtable.com/v0/${base}`,
+                  headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                  },
+                });
+
+                let allTimeLogs = [];
+                let offset = null;
+                const pageSize = 100;
+
+                do {
+                  let url = `/${encodeURIComponent(timeLogsTable)}?pageSize=${pageSize}`;
+                  if (offset) {
+                    url += `&offset=${encodeURIComponent(offset)}`;
+                  }
+
+                  try {
+                    const response = await retryOperation(
+                      () => airtableClient.get(url),
+                      [3, 3, 3]
+                    );
+
+                    const records = response.data.records || [];
+                    allTimeLogs = allTimeLogs.concat(records);
+
+                    logger.log(`Retrieved ${records.length} records; offset: ${response.data.offset || "none"}`);
+                    offset = response.data.offset;
+                  } catch (error) {
+                    logger.error("Error retrieving Time Logs:", error.message);
+                    break;
+                  }
+                } while (offset);
+
+                logger.log("Total Time Logs Retrieved:", allTimeLogs.length);
+
+                // Map out only the fields you care about from each time log
+                return allTimeLogs.map(record => ({
+                  id: record.id,
+                  fields: {
+                    "Time Entry ID": record.fields["Time Entry ID"],
+                    "QB Time Jobcode ID": record.fields["QB Time Jobcode ID"],
+                    "QB Time Jobcode Name": record.fields["QB Time Jobcode Name"]
+                  }
+                }));
+              };
+
+
+              //
+
+              // --- Retry Operation Function and Sleep Helper ---
+
+              //
+
+
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+
+
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delayInSeconds of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                    await sleep(delayInSeconds * 1000);
+                  }
+                }
+                throw lastError;
+              }
+        name: Retrieve All Time Logs
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: To Timelogs Airtable
+        errorConfig:
+          delaySeconds: 2
+          errorHandlerType: retry
+          ignoreFinalError: false
+          maxAttempts: 1
+          usesExponentialBackoff: false
+        inputs:
+          code:
+            type: value
+            value: >-
+              const axios = require('axios');
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                try {
+                  const timeEntries = stepResults.retrieveAllDeletedTimeSheets.results || [];
+                  const timeLogRecords = stepResults.retrieveAllTimeLogs.results || [];
+                  const timeLogsTable = configVars["Time Logs Table"];
+                  const base = configVars["Project Management Base"];
+                  const { apiKey } = configVars["Airtable Connection"].fields;
+
+                  const airtableClient = axios.create({
+                    baseURL: `https://api.airtable.com/v0/${base}`,
+                    headers: {
+                      Authorization: `Bearer ${apiKey}`,
+                      'Content-Type': 'application/json',
+                    },
+                  });
+
+                  // Build a set of deleted time entry IDs for fast lookup
+                  const deletedEntryIds = new Set(timeEntries.map(entry => String(entry.id)));
+
+                  // Collect Airtable record IDs where "Time Entry ID" is in the deleted list
+                  const recordIdsToDelete = timeLogRecords
+                    .filter(record => deletedEntryIds.has(String(record.fields?.["Time Entry ID"])))
+                    .map(record => record.id);
+
+                  logger.log(`Found ${recordIdsToDelete.length} Time Logs to delete`);
+
+                  const deletedChunks = [];
+                  const chunked = chunkArray(recordIdsToDelete, 10);
+
+                  for (const chunk of chunked) {
+                    try {
+                      const response = await retryOperation(
+                        () => deleteRecords(airtableClient, timeLogsTable, chunk),
+                        [3, 3, 3]
+                      );
+                      deletedChunks.push(response);
+                    } catch (error) {
+                      logger.error("Error during bulk delete:", error.message);
+                      deletedChunks.push({ error: error.message });
+                    }
+                  }
+
+                  logger.log("Time Log Delete Response Count:", deletedChunks.length);
+                  return deletedChunks;
+                } catch (error) {
+                  logger.error("Unhandled error in code block", error);
+                  return { error: error.message };
+                }
+              };
+
+
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+
+
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delayInSeconds of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                    await sleep(delayInSeconds * 1000);
+                  }
+                }
+                throw lastError;
+              }
+
+
+              function chunkArray(array, chunkSize) {
+                const chunks = [];
+                for (let i = 0; i < array.length; i += chunkSize) {
+                  chunks.push(array.slice(i, i + chunkSize));
+                }
+                return chunks;
+              }
+
+
+              async function deleteRecords(client, tableName, recordIds) {
+                const params = new URLSearchParams();
+                recordIds.forEach(id => params.append('records[]', id));
+
+                const response = await client.delete(`/${encodeURIComponent(tableName)}?${params.toString()}`);
+                return response.data || "";
+              }
+        name: Delete Timelogs
+      - action:
+          key: runCode
+          component:
+            isPublic: true
+            key: code
+            version: LATEST
+        description: To Timelogs Airtable
+        errorConfig:
+          delaySeconds: 2
+          errorHandlerType: retry
+          ignoreFinalError: false
+          maxAttempts: 1
+          usesExponentialBackoff: false
+        inputs:
+          code:
+            type: value
+            value: >-
+              const axios = require('axios');
+
+
+              module.exports = async ({ logger, configVars }, stepResults) => {
+                try {
+                  const timeLogRecords = stepResults.retrieveAllTimeLogs.results || [];
+                  const timeLogsTable = configVars["Time Logs Table"];
+                  const base = configVars["Project Management Base"];
+                  const { apiKey } = configVars["Airtable Connection"].fields;
+                  const autoDeleteNonWorkLogs = configVars["Auto-Delete Non-Work Time Logs"]; 
+                  const nonWorkJobCodes = configVars["Non-Work Job Code Mapping"] || [];
+
+                  const airtableClient = axios.create({
+                    baseURL: `https://api.airtable.com/v0/${base}`,
+                    headers: {
+                      Authorization: `Bearer ${apiKey}`,
+                      'Content-Type': 'application/json',
+                    },
+                  });
+
+                  const nonWorkJobCodeIds = nonWorkJobCodes.map(code => Number(code.value));
+                  let nonWorkRecordIdsToDelete = [];
+                  if (autoDeleteNonWorkLogs) {
+                    // Pre-compute job code IDs once
+
+                    nonWorkRecordIdsToDelete = timeLogRecords
+                      .filter(record => {
+                        const jobCodeId = Number(record.fields?.["QB Time Jobcode ID"]);
+                        const jobCodeName = record.fields?.["QB Time Jobcode Name"]
+                        return nonWorkJobCodeIds.includes(jobCodeId) || jobCodeName === "Jobcode used in time entry not found. Either inactive or is unmapped break code."
+                      })
+                      .map(record => ({
+                        id: record.id,
+                        jobCodeId: Number(record.fields?.["QB Time Jobcode ID"]),
+                        jobCodeName: record.fields?.["QB Time Jobcode Name"]
+                      }));
+                  }
+
+
+
+                  
+                  logger.log(
+                    "Unique Jobcodes:",
+                    ...Array.from(new Set(nonWorkJobCodeIds))
+                  );
+
+                  let recordsToDelete = nonWorkRecordIdsToDelete.map(item => item.id);
+
+
+                  logger.log(`Found ${recordsToDelete.length} Time Logs to delete`);
+
+                  const deletedChunks = [];
+                  const chunked = chunkArray(recordsToDelete, 10);
+
+                  for (const chunk of chunked) {
+                    try {
+                      const response = await retryOperation(
+                        () => deleteRecords(airtableClient, timeLogsTable, chunk),
+                        [3, 3, 3]
+                      );
+                      deletedChunks.push(response);
+                    } catch (error) {
+                      logger.error("Error during bulk delete:", error.message);
+                      deletedChunks.push({ error: error.message });
+                    }
+                  }
+
+                  logger.log("Time Log Delete Response Count:", deletedChunks.length);
+                  return deletedChunks;
+                } catch (error) {
+                  logger.error("Unhandled error in code block", error);
+                  return { error: error.message };
+                }
+              };
+
+
+              function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+              }
+
+
+              async function retryOperation(operationFn, retryDelaysInSeconds =
+              [5, 5, 5]) {
+                let lastError;
+                for (const delayInSeconds of retryDelaysInSeconds) {
+                  try {
+                    return await operationFn();
+                  } catch (error) {
+                    lastError = error;
+                    console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                    await sleep(delayInSeconds * 1000);
+                  }
+                }
+                throw lastError;
+              }
+
+
+              function chunkArray(array, chunkSize) {
+                const chunks = [];
+                for (let i = 0; i < array.length; i += chunkSize) {
+                  chunks.push(array.slice(i, i + chunkSize));
+                }
+                return chunks;
+              }
+
+
+              async function deleteRecords(client, tableName, recordIds) {
+                const params = new URLSearchParams();
+                recordIds.forEach(id => params.append('records[]', id));
+
+                const response = await client.delete(`/${encodeURIComponent(tableName)}?${params.toString()}`);
+                return response.data || "";
+              }
+        name: Delete Non-Work Time Logs
+labels:
+  - quickbooks time
+  - airtable
+name: QuickBooks Time Tracking System
+requiredConfigVars:
+  - connection:
+      key: personalAccessToken
+      component:
+        isPublic: true
+        key: airtable
+        version: LATEST
+      template: AT Support Personal Token
+    dataType: connection
+    inputs: {}
+    key: Airtable Connection
+    meta:
+      visibleToCustomerDeployer: true
+      visibleToOrgDeployer: true
+    onPremiseConnectionConfig: disallowed
+    orgOnly: false
+  - dataSource:
+      key: selectBase
+      component:
+        isPublic: true
+        key: airtable
+        version: LATEST
+    dataType: picklist
+    defaultValue: ''
+    description: >-
+      Please select your Airtable Base. Ensure that you're using the Boolean
+      PaintOS template.
+    inputs:
+      airtableConnection:
+        meta:
+          orgOnly: true
+          visibleToCustomerDeployer: false
+          visibleToOrgDeployer: false
+        type: configVar
+        value: Airtable Connection
+      includeId:
+        meta:
+          orgOnly: true
+          visibleToCustomerDeployer: false
+          visibleToOrgDeployer: false
+        type: value
+        value: 'false'
+    key: Project Management Base
+    meta:
+      visibleToCustomerDeployer: true
+      visibleToOrgDeployer: true
+    orgOnly: false
+  - dataSource:
+      key: selectTable
+      component:
+        isPublic: true
+        key: airtable
+        version: LATEST
+    dataType: picklist
+    defaultValue: ''
+    inputs:
+      airtableConnection:
+        meta:
+          orgOnly: true
+          visibleToCustomerDeployer: false
+          visibleToOrgDeployer: false
+        type: configVar
+        value: Airtable Connection
+      baseId:
+        meta:
+          orgOnly: true
+          visibleToCustomerDeployer: false
+          visibleToOrgDeployer: false
+        type: configVar
+        value: Project Management Base
+      includeId:
+        meta:
+          orgOnly: true
+          visibleToCustomerDeployer: false
+          visibleToOrgDeployer: false
+        type: value
+        value: 'true'
+    key: Time Logs Table
+    meta:
+      visibleToCustomerDeployer: true
+      visibleToOrgDeployer: true
+    orgOnly: false
+  - dataSource:
+      key: selectTable
+      component:
+        isPublic: true
+        key: airtable
+        version: LATEST
+    dataType: picklist
+    defaultValue: ''
+    inputs:
+      airtableConnection:
+        meta:
+          orgOnly: true
+          visibleToCustomerDeployer: false
+          visibleToOrgDeployer: false
+        type: configVar
+        value: Airtable Connection
+      baseId:
+        meta:
+          orgOnly: true
+          visibleToCustomerDeployer: false
+          visibleToOrgDeployer: false
+        type: configVar
+        value: Project Management Base
+      includeId:
+        meta:
+          orgOnly: true
+          visibleToCustomerDeployer: false
+          visibleToOrgDeployer: false
+        type: value
+        value: 'true'
+    key: People Table
+    orgOnly: false
+  - dataSource:
+      key: selectTable
+      component:
+        isPublic: true
+        key: airtable
+        version: LATEST
+    dataType: picklist
+    defaultValue: ''
+    inputs:
+      airtableConnection:
+        meta:
+          orgOnly: true
+          visibleToCustomerDeployer: false
+          visibleToOrgDeployer: false
+        type: configVar
+        value: Airtable Connection
+      baseId:
+        meta:
+          orgOnly: true
+          visibleToCustomerDeployer: false
+          visibleToOrgDeployer: false
+        type: configVar
+        value: Project Management Base
+      includeId:
+        meta:
+          orgOnly: true
+          visibleToCustomerDeployer: false
+          visibleToOrgDeployer: false
+        type: value
+        value: 'true'
+    key: Projects Table
+    orgOnly: false
+  - dataSource:
+      key: runCodePicklist
+      component:
+        isPublic: true
+        key: code
+        version: LATEST
+    dataType: picklist
+    defaultValue: ''
+    inputs:
+      code:
+        meta:
+          orgOnly: true
+          visibleToCustomerDeployer: false
+          visibleToOrgDeployer: false
+        type: value
+        value: |-
+          module.exports = async (context, { connection, contextValue }) => {
+
+            const {
+              fields: { apiKey },
+            } = connection;
+
+            // Pulling Airtable fields
+            const airtable = JSON.parse(contextValue);
+            const baseId = airtable.baseId;
+            const tableId = airtable.tableId;
+            const airtableApiUrl = `https://api.airtable.com/v0/meta/bases/${baseId}/tables`;
+
+            try {
+              // Fetch table schema from Airtable using the valid access token
+              const response = await fetch(airtableApiUrl, {
+                method: 'GET',
+                headers: {
+                  'Authorization': `Bearer ${apiKey}`,
+                  'Content-Type': 'application/json',
+                },
+              });
+
+              if (!response.ok) {
+                throw new Error(`Failed to fetch table schema: ${response.statusText}`);
+              }
+
+              const tableData = await response.json();
+              const table = tableData.tables?.find((tbl) => tbl.id === tableId);
+              if (!table) {
+                throw new Error(`Table with ID ${tableId} not found in base ${baseId}.`);
+              }
+
+              // Map fields to the desired format
+              const airtableMappingFields = table.fields
+                .filter((fld) => {
+                  return (
+                    fld.type !== "singleCollaborator" &&
+                    fld.type !== "multipleCollaborators" &&
+                    fld.type !== "multipleAttachments" &&
+                    fld.type !== "createdTime" &&
+                    fld.type !== "multipleLookupValues" &&
+                    fld.type !== "autoNumber" &&
+                    fld.type !== "lastModifiedTime" &&
+                    fld.type !== "button" &&
+                    fld.type !== "createdBy" &&
+                    fld.type !== "lastModifiedBy"
+                  );
+                })
+                .map((field) => ({
+                  label: `${field.name} (id: ${field.id})`,
+                  key: field.id,
+                }))
+                .sort((a, b) => (a.title < b.title ? -1 : 1));
+
+              // Return the picklist options
+              return {
+                result: airtableMappingFields,
+              };
+              
+            } catch (error) {
+              // Log error for debugging
+              console.error(`Error: ${error.message}`);
+              throw error;
+            }
+          };
+      connection:
+        meta:
+          orgOnly: true
+          visibleToCustomerDeployer: false
+          visibleToOrgDeployer: false
+        type: configVar
+        value: Airtable Connection
+      contextValue:
+        meta:
+          orgOnly: true
+          visibleToCustomerDeployer: false
+          visibleToOrgDeployer: false
+        type: template
+        value: |-
+          {
+          "baseId": "{{#Project Management Base}}",
+          "tableId": "{{#Projects Table}}"
+          }
+    key: ⚙️ Update Time Tracking App Record
+    orgOnly: false
+  - dataSource:
+      key: runCodePicklist
+      component:
+        isPublic: true
+        key: code
+        version: LATEST
+    dataType: picklist
+    defaultValue: ''
+    inputs:
+      code:
+        meta:
+          orgOnly: true
+          visibleToCustomerDeployer: false
+          visibleToOrgDeployer: false
+        type: value
+        value: |-
+          module.exports = async (context, { connection, contextValue }) => {
+
+            const {
+              fields: { apiKey },
+            } = connection;
+
+            // Pulling Airtable fields
+            const airtable = JSON.parse(contextValue);
+            const baseId = airtable.baseId;
+            const tableId = airtable.tableId;
+            const airtableApiUrl = `https://api.airtable.com/v0/meta/bases/${baseId}/tables`;
+
+            try {
+              // Fetch table schema from Airtable using the valid access token
+              const response = await fetch(airtableApiUrl, {
+                method: 'GET',
+                headers: {
+                  'Authorization': `Bearer ${apiKey}`,
+                  'Content-Type': 'application/json',
+                },
+              });
+
+              if (!response.ok) {
+                throw new Error(`Failed to fetch table schema: ${response.statusText}`);
+              }
+
+              const tableData = await response.json();
+              const table = tableData.tables?.find((tbl) => tbl.id === tableId);
+              if (!table) {
+                throw new Error(`Table with ID ${tableId} not found in base ${baseId}.`);
+              }
+
+              // Map fields to the desired format
+              const airtableMappingFields = table.fields
+                .filter((fld) => {
+                  return (
+                    fld.type !== "singleCollaborator" &&
+                    fld.type !== "multipleCollaborators" &&
+                    fld.type !== "multipleAttachments" &&
+                    fld.type !== "createdTime" &&
+                    fld.type !== "multipleLookupValues" &&
+                    fld.type !== "autoNumber" &&
+                    fld.type !== "lastModifiedTime" &&
+                    fld.type !== "button" &&
+                    fld.type !== "createdBy" &&
+                    fld.type !== "lastModifiedBy"
+                  );
+                })
+                .map((field) => ({
+                  label: `${field.name} (id: ${field.id})`,
+                  key: field.id,
+                }))
+                .sort((a, b) => (a.title < b.title ? -1 : 1));
+
+              // Return the picklist options
+              return {
+                result: airtableMappingFields,
+              };
+              
+            } catch (error) {
+              // Log error for debugging
+              console.error(`Error: ${error.message}`);
+              throw error;
+            }
+          };
+      connection:
+        meta:
+          orgOnly: true
+          visibleToCustomerDeployer: false
+          visibleToOrgDeployer: false
+        type: configVar
+        value: Airtable Connection
+      contextValue:
+        meta:
+          orgOnly: true
+          visibleToCustomerDeployer: false
+          visibleToOrgDeployer: false
+        type: template
+        value: |-
+          {
+          "baseId": "{{#Project Management Base}}",
+          "tableId": "{{#Projects Table}}"
+          }
+    key: ⚙️ Include In Timetracking App Upsert Automation
+    orgOnly: false
+  - dataType: string
+    defaultValue: ''
+    key: QuickBooks Time Token
+    meta:
+      visibleToCustomerDeployer: true
+      visibleToOrgDeployer: true
+    orgOnly: false
+  - collectionType: keyvaluelist
+    dataType: number
+    defaultValue: '[]'
+    description: >-
+      Define which Job Code IDs in QuickBooks Time should be treated as non-work
+      categories (e.g., Break, Lunch, Meeting, or other administrative codes).
+      Use key-value pairs where the key is the category name and the value is
+      the Job Code ID. This helps the system properly classify and manage
+      non-billable or administrative time when processing time entries.
+    key: Non-Work Job Code Mapping
+    orgOnly: false
+  - dataType: number
+    defaultValue: '14'
+    description: >-
+      Determines the number of days prior to today to include deleted time logs
+      in the sync. Note: Don't add negative symbol.
+    key: How Far Back to Pull Deleted Logs
+    orgOnly: false
+  - dataType: boolean
+    defaultValue: 'false'
+    description: >-
+      Enable or disable automatic deletion of time logs mapped to non-work
+      categories. When enabled, the time logs associated with the Non-Work Job
+      Codes will be removed from Airtable during synchronization to keep the
+      time log focused actual works.
+    key: Auto-Delete Non-Work Time Logs
+    orgOnly: false
+  - dataType: string
+    defaultValue: yyyy-mm-dd
+    description: >-
+      Set as "none" if not needed. The automation will pick up locations only
+      from this date onwards. Date input format: yyyy-mm-dd
+    key: Location Last Modified Date
+    orgOnly: false
