@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    :root {
+      --primary-color: {{PRIMARY_COLOR}};
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 1080px;
+      height: 1350px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(180deg, {{PRIMARY_COLOR}}08 0%, {{PRIMARY_COLOR}}15 100%);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ---- Brand Bar ---- */
+    .brand-bar {
+      width: 100%;
+      height: 60px;
+      background: var(--primary-color);
+      color: #ffffff;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ---- Title ---- */
+    .title {
+      text-align: center;
+      font-size: 32px;
+      font-weight: 800;
+      color: #1a1a2e;
+      padding: 32px 48px 24px;
+      line-height: 1.25;
+      flex-shrink: 0;
+    }
+
+    /* ---- Flowchart Container ---- */
+    .flowchart {
+      flex: 1;
+      display: flex;
+      padding: 8px 48px 0;
+      overflow: hidden;
+    }
+
+    /* ---- Vertical Layout ---- */
+    .flowchart.vertical {
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .step-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+
+    .step-node {
+      display: flex;
+      align-items: center;
+      background: #ffffff;
+      border: 3px solid var(--primary-color);
+      border-radius: 12px;
+      padding: 16px 24px 16px 16px;
+      max-width: 700px;
+      width: 100%;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      gap: 14px;
+    }
+
+    .step-number {
+      width: 34px;
+      height: 34px;
+      min-width: 34px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .step-label {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1a1a2e;
+      line-height: 1.35;
+    }
+
+    /* ---- Connector ---- */
+    .connector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .connector-bar {
+      width: 3px;
+      height: 18px;
+      background: var(--primary-color);
+    }
+
+    .connector-arrow {
+      width: 0;
+      height: 0;
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+      border-top: 8px solid var(--primary-color);
+    }
+
+    /* ---- Swimlane Layout ---- */
+    .flowchart.swimlane {
+      flex-direction: row;
+      justify-content: center;
+      gap: 24px;
+      padding-top: 8px;
+    }
+
+    .lane {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 280px;
+      max-width: 320px;
+      flex: 1;
+    }
+
+    .lane-header {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary-color);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 16px;
+      text-align: center;
+      padding: 8px 16px;
+      border-bottom: 3px solid var(--primary-color);
+      width: 100%;
+    }
+
+    .lane .step-node {
+      max-width: 100%;
+    }
+
+    /* ---- Cross-lane Connector ---- */
+    .cross-lane-indicator {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 0;
+    }
+
+    .cross-lane-line {
+      width: 40px;
+      height: 0;
+      border-top: 2px dashed var(--primary-color);
+    }
+
+    /* ---- Footer ---- */
+    .footer {
+      text-align: center;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--primary-color);
+      padding: 16px 48px 24px;
+      flex-shrink: 0;
+      opacity: 0.75;
+    }
+  </style>
+</head>
+<body>
+  <div class="brand-bar">{{PLATFORM_NAME}}</div>
+  <div class="title">{{TITLE}}</div>
+  <div class="flowchart" id="flowchart"></div>
+  <div class="footer">Powered by {{PLATFORM_NAME}}</div>
+
+  <script>
+    const steps = {{STEPS_JSON}};
+    const layout = '{{LAYOUT}}';
+    const container = document.getElementById('flowchart');
+
+    /**
+     * Create a step node element with numbered circle.
+     * @param {object} step - { label, actor }
+     * @param {number} num  - 1-based step number
+     * @returns {HTMLElement}
+     */
+    function createStepNode(step, num) {
+      const node = document.createElement('div');
+      node.className = 'step-node';
+
+      const circle = document.createElement('div');
+      circle.className = 'step-number';
+      circle.textContent = String(num);
+
+      const label = document.createElement('div');
+      label.className = 'step-label';
+      label.textContent = step.label;
+
+      node.appendChild(circle);
+      node.appendChild(label);
+      return node;
+    }
+
+    /**
+     * Create a vertical connector with downward arrow.
+     * @returns {HTMLElement}
+     */
+    function createConnector() {
+      const wrap = document.createElement('div');
+      wrap.className = 'connector';
+
+      const bar = document.createElement('div');
+      bar.className = 'connector-bar';
+
+      const arrow = document.createElement('div');
+      arrow.className = 'connector-arrow';
+
+      wrap.appendChild(bar);
+      wrap.appendChild(arrow);
+      return wrap;
+    }
+
+    // ------------------------------------------------------------------
+    // Vertical layout: single centered column of steps
+    // ------------------------------------------------------------------
+    if (layout === 'vertical') {
+      container.classList.add('vertical');
+
+      steps.forEach(function (step, idx) {
+        var wrapper = document.createElement('div');
+        wrapper.className = 'step-wrapper';
+
+        wrapper.appendChild(createStepNode(step, idx + 1));
+
+        if (idx < steps.length - 1) {
+          wrapper.appendChild(createConnector());
+        }
+
+        container.appendChild(wrapper);
+      });
+    }
+
+    // ------------------------------------------------------------------
+    // Swimlane layout: group steps by actor into side-by-side lanes
+    // ------------------------------------------------------------------
+    else if (layout === 'swimlane') {
+      container.classList.add('swimlane');
+
+      // Collect unique actors in order of first appearance
+      var actorOrder = [];
+      var laneMap = {};
+
+      steps.forEach(function (step, idx) {
+        var actor = step.actor || 'System';
+        if (!laneMap[actor]) {
+          laneMap[actor] = [];
+          actorOrder.push(actor);
+        }
+        // Track original index for numbering
+        laneMap[actor].push({ step: step, globalIndex: idx });
+      });
+
+      // Limit to 3 lanes max to fit in 1080px width
+      var displayActors = actorOrder.slice(0, 3);
+
+      // If there are more than 3 actors, merge remaining into the last lane
+      if (actorOrder.length > 3) {
+        var lastActor = displayActors[2];
+        for (var i = 3; i < actorOrder.length; i++) {
+          laneMap[lastActor] = laneMap[lastActor].concat(laneMap[actorOrder[i]]);
+        }
+        // Re-sort by globalIndex to maintain order
+        laneMap[lastActor].sort(function (a, b) { return a.globalIndex - b.globalIndex; });
+      }
+
+      displayActors.forEach(function (actor) {
+        var lane = document.createElement('div');
+        lane.className = 'lane';
+
+        var header = document.createElement('div');
+        header.className = 'lane-header';
+        header.textContent = actor;
+        lane.appendChild(header);
+
+        var items = laneMap[actor];
+        items.forEach(function (item, idx) {
+          lane.appendChild(createStepNode(item.step, item.globalIndex + 1));
+
+          if (idx < items.length - 1) {
+            lane.appendChild(createConnector());
+          }
+        });
+
+        container.appendChild(lane);
+      });
+    }
+  </script>
+</body>
+</html>
