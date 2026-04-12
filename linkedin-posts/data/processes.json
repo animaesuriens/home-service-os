@@ -1,0 +1,6225 @@
+{
+  "generatedAt": "2026-04-12T15:43:07.026Z",
+  "totalProcesses": 76,
+  "journeyStages": {
+    "Lead Capture": 3,
+    "Lead Qualification": 1,
+    "Appointment Booking": 4,
+    "Estimating": 1,
+    "Sales/Proposal": 11,
+    "Contract Management": 3,
+    "Job Setup": 1,
+    "Production Tracking": 4,
+    "Time Tracking": 7,
+    "Invoicing": 8,
+    "Expense Management": 7,
+    "Reporting": 2,
+    "Uncategorized": 24
+  },
+  "crossFileConnections": [
+    {
+      "sourceFile": "job-management-integration-export.yml",
+      "sourceFlow": "10 Error Notification Sender",
+      "sourceStep": "POST Request",
+      "targetFile": "gmail-and-ring-central-communicator-export.yml",
+      "webhookConfigVar": "Email Sender Webhook URL",
+      "depth": 1
+    }
+  ],
+  "processes": [
+    {
+      "id": "P-26",
+      "name": "Lead Follow Up flow",
+      "journeyStage": "Lead Capture",
+      "sourceFiles": [
+        "boolean-marketing-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-marketing-integration-export.yml",
+        "flowName": "06 Lead Follow Up flow",
+        "flowNumber": "06",
+        "description": "New Call/Meeting Engagement in HubSpot deal",
+        "stepCount": 3,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Sleep",
+            "actionKey": "sleep",
+            "componentKey": "sleep",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Engagements",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 3,
+      "apps": [
+        "Webhook Triggers",
+        "Sleep"
+      ],
+      "description": "New Call/Meeting Engagement in HubSpot deal",
+      "keySteps": [
+        "Sleep"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-23",
+      "name": "Marketing Vendor / Channel Lead Data Mapping",
+      "journeyStage": "Lead Capture",
+      "sourceFiles": [
+        "boolean-marketing-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-marketing-integration-export.yml",
+        "flowName": "03 Marketing Vendor / Channel Lead Data Mapping",
+        "flowNumber": "03",
+        "description": "Purpose: Format incoming lead data from whatever JSON format a marketing vendor/channel has lead data into the standard format that we need to process the new lead",
+        "stepCount": 9,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Generate Payload",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Lookup Project",
+            "actionKey": "invokeFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Lookup Sources",
+            "actionKey": "invokeFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Final Contact Payload",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Contact",
+            "actionKey": "invokeFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Final Deal Payload",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Deal",
+            "actionKey": "invokeFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Deal Error Handler",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [
+        {
+          "fileName": "boolean-marketing-integration-export.yml",
+          "flowName": "03.1 Customer-Selected Project Type -> Project Type Conversion",
+          "flowNumber": "03.1",
+          "stepCount": 2,
+          "steps": [
+            {
+              "name": "Trigger",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Project Type Branch",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        },
+        {
+          "fileName": "boolean-marketing-integration-export.yml",
+          "flowName": "03.2 Customer-Selected Marketing Source -> Multi-Source Conversion",
+          "flowNumber": "03.2",
+          "stepCount": 2,
+          "steps": [
+            {
+              "name": "Trigger",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Marketing Source Branch",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        },
+        {
+          "fileName": "boolean-marketing-integration-export.yml",
+          "flowName": "03.3 Update/Create HubSpot Contact",
+          "flowNumber": "03.3",
+          "stepCount": 8,
+          "steps": [
+            {
+              "name": "Trigger",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Override payload",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Search Contact by id",
+              "actionKey": "getContact",
+              "componentKey": "hubspot",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Search Contact by email",
+              "actionKey": "getContact",
+              "componentKey": "hubspot",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Select Executed Step Result",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Merged Payload",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Contact Branch",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "HS Contact Final Output",
+              "actionKey": "selectExecutedStepResult",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        },
+        {
+          "fileName": "boolean-marketing-integration-export.yml",
+          "flowName": "03.4 Update/Create HubSpot Deal",
+          "flowNumber": "03.4",
+          "stepCount": 2,
+          "steps": [
+            {
+              "name": "Trigger",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Check properties exist",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        }
+      ],
+      "crossFileConnections": [],
+      "totalStepCount": 23,
+      "apps": [
+        "Webhook Triggers",
+        "HubSpot"
+      ],
+      "description": "Purpose: Format incoming lead data from whatever JSON format a marketing vendor/channel has lead data into the standard format that we need to process the new lead",
+      "keySteps": [
+        "Lookup Project",
+        "Lookup Sources",
+        "Get Contact",
+        "Get Deal",
+        "Search Contact by id",
+        "Search Contact by email",
+        "HS Contact Final Output"
+      ],
+      "inefficiencies": [
+        "Complex flow could be simplified (15+ steps)",
+        "Custom code could be replaced with native actions"
+      ]
+    },
+    {
+      "id": "P-25",
+      "name": "MQL HubSpot Webform Submission",
+      "journeyStage": "Lead Capture",
+      "sourceFiles": [
+        "boolean-marketing-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-marketing-integration-export.yml",
+        "flowName": "05 MQL HubSpot Webform Submission",
+        "flowNumber": "05",
+        "description": "New contact created in HubSpot with associated deal",
+        "stepCount": 4,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Contact Properties",
+            "actionKey": "rawRequest",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "List Contact Properties",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Deals",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 4,
+      "apps": [
+        "Webhook Triggers",
+        "HubSpot"
+      ],
+      "description": "New contact created in HubSpot with associated deal",
+      "keySteps": [
+        "Get Contact Properties"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-24",
+      "name": "MQL to SQL Initiator Webhook",
+      "journeyStage": "Lead Qualification",
+      "sourceFiles": [
+        "boolean-marketing-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-marketing-integration-export.yml",
+        "flowName": "04 MQL to SQL Initiator Webhook",
+        "flowNumber": "04",
+        "description": "Deal Trigger from HS then send data to YCBM to autofill the page",
+        "stepCount": 5,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Retrieve Deal Properties",
+            "actionKey": "rawRequest",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Deal Properties",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Deal details",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Branch on Expression",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 5,
+      "apps": [
+        "Webhook Triggers",
+        "HubSpot"
+      ],
+      "description": "Deal Trigger from HS then send data to YCBM to autofill the page",
+      "keySteps": [
+        "Retrieve Deal Properties"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-29",
+      "name": "Appointment Reschedule",
+      "journeyStage": "Appointment Booking",
+      "sourceFiles": [
+        "boolean-marketing-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-marketing-integration-export.yml",
+        "flowName": "10 Appointment Reschedule",
+        "flowNumber": "10",
+        "description": "Updates the hubspot estimated date when the YCBM Rescheduled",
+        "stepCount": 2,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Is YCBM ID exist?",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 2,
+      "apps": [
+        "Webhook Triggers"
+      ],
+      "description": "Updates the hubspot estimated date when the YCBM Rescheduled",
+      "keySteps": [],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-31",
+      "name": "Contact Level Booking Link",
+      "journeyStage": "Appointment Booking",
+      "sourceFiles": [
+        "boolean-marketing-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-marketing-integration-export.yml",
+        "flowName": "12 Contact Level Booking Link",
+        "flowNumber": "12",
+        "description": "",
+        "stepCount": 2,
+        "steps": [
+          {
+            "name": "HTTP",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Branch on Expression",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [
+        {
+          "fileName": "boolean-marketing-integration-export.yml",
+          "flowName": "12.1 Generate YCBM Customer Facing Pre-filled Link",
+          "flowNumber": "12.1",
+          "stepCount": 2,
+          "steps": [
+            {
+              "name": "HTTP",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Branch on Expression",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        }
+      ],
+      "crossFileConnections": [],
+      "totalStepCount": 4,
+      "apps": [
+        "Webhook Triggers"
+      ],
+      "description": "Contact Level Booking Link",
+      "keySteps": [
+        "HTTP"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-27",
+      "name": "New Appointment",
+      "journeyStage": "Appointment Booking",
+      "sourceFiles": [
+        "boolean-marketing-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-marketing-integration-export.yml",
+        "flowName": "07 New Appointment",
+        "flowNumber": "07",
+        "description": "Triggers when a new appointment is initiated then it will create a deal, PS quote, and CompanyCam project.",
+        "stepCount": 14,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "crossFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Branch on Expression 3",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Override Payload",
+            "actionKey": "selectExecutedStepResult",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Owner",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Initial Deal Payload",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Lookup Project Type",
+            "actionKey": "invokeFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Lookup Sources",
+            "actionKey": "invokeFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Extract Email",
+            "actionKey": "match",
+            "componentKey": "text-manipulation",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "YCBM HS Contact Sync",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "If Searchable Branch",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Output Contact",
+            "actionKey": "selectExecutedStepResult",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Array of Project Types",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Check dealStage",
+            "actionKey": "invokeFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "dealStage marketing pipeline?",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [
+        {
+          "fileName": "boolean-marketing-integration-export.yml",
+          "flowName": "07.1 Sub Flow - Check Incoming Open Deal",
+          "flowNumber": "07.1",
+          "stepCount": 2,
+          "steps": [
+            {
+              "name": "HTTP",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Check Deal Stage",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        }
+      ],
+      "crossFileConnections": [],
+      "totalStepCount": 16,
+      "apps": [
+        "Text Manipulation"
+      ],
+      "description": "Triggers when a new appointment is initiated then it will create a deal, PS quote, and photo storage project.",
+      "keySteps": [
+        "Override Payload",
+        "Lookup Project Type",
+        "Lookup Sources",
+        "Extract Email",
+        "Output Contact",
+        "Check dealStage"
+      ],
+      "inefficiencies": [
+        "Complex flow could be simplified (15+ steps)",
+        "Custom code could be replaced with native actions"
+      ]
+    },
+    {
+      "id": "P-08",
+      "name": "accounting software Bills",
+      "journeyStage": "Appointment Booking",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "09.1 Quickbooks Bills",
+        "flowNumber": "09",
+        "description": "",
+        "stepCount": 6,
+        "steps": [
+          {
+            "name": "Runs Every Day",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Flow is enabled in Wizard?",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Calculated Date",
+            "actionKey": "adjustDateTime",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Format Date/Time",
+            "actionKey": "formatDateTime",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Start Index",
+            "actionKey": "saveExecutionValue",
+            "componentKey": "persist-data",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop N Times",
+            "actionKey": "loopNTimes",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [
+        {
+          "fileName": "boolean-accounting-system-export.yml",
+          "flowName": "09.1 Quickbooks Bills",
+          "flowNumber": "09.1",
+          "stepCount": 6,
+          "steps": [
+            {
+              "name": "Runs Every Day",
+              "actionKey": "schedule",
+              "componentKey": "schedule-triggers",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Flow is enabled in Wizard?",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Calculated Date",
+              "actionKey": "adjustDateTime",
+              "componentKey": "datetime",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Format Date/Time",
+              "actionKey": "formatDateTime",
+              "componentKey": "datetime",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Start Index",
+              "actionKey": "saveExecutionValue",
+              "componentKey": "persist-data",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Loop N Times",
+              "actionKey": "loopNTimes",
+              "componentKey": "loop",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        },
+        {
+          "fileName": "boolean-accounting-system-export.yml",
+          "flowName": "09.1 Quickbooks Bills - Subflow",
+          "flowNumber": "09.1",
+          "stepCount": 9,
+          "steps": [
+            {
+              "name": "Trigger",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Find Customer Ref",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Customer Ref exists?",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Is an Item?",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Expense Payload",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Upsert Expense Record",
+              "actionKey": "rawRequest",
+              "componentKey": "airtable",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Crossflow Payload",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Save Attachments",
+              "actionKey": "invokeFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Stop Execution (Success)",
+              "actionKey": "stopExecution",
+              "componentKey": "stop-execution",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        },
+        {
+          "fileName": "boolean-accounting-system-export.yml",
+          "flowName": "09.2 Quickbooks VendorCredits",
+          "flowNumber": "09.2",
+          "stepCount": 6,
+          "steps": [
+            {
+              "name": "Runs Every Day",
+              "actionKey": "schedule",
+              "componentKey": "schedule-triggers",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Flow is enabled in Wizard?",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Calculated Date",
+              "actionKey": "adjustDateTime",
+              "componentKey": "datetime",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Format Date/Time",
+              "actionKey": "formatDateTime",
+              "componentKey": "datetime",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Set Start Position",
+              "actionKey": "saveExecutionValue",
+              "componentKey": "persist-data",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Loop N Times",
+              "actionKey": "loopNTimes",
+              "componentKey": "loop",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        },
+        {
+          "fileName": "boolean-accounting-system-export.yml",
+          "flowName": "09.2 Quickbooks VendorCredits - Subflow",
+          "flowNumber": "09.2",
+          "stepCount": 10,
+          "steps": [
+            {
+              "name": "Trigger",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Get Expense Record",
+              "actionKey": "listRecords",
+              "componentKey": "airtable",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Find Customer Ref",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Customer Ref exists?",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Is an Item?",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Expense Payload",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Upsert Expense Record",
+              "actionKey": "rawRequest",
+              "componentKey": "airtable",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Crossflow Payload",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Save Attachments",
+              "actionKey": "invokeFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Stop Execution (Success)",
+              "actionKey": "stopExecution",
+              "componentKey": "stop-execution",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        },
+        {
+          "fileName": "boolean-accounting-system-export.yml",
+          "flowName": "09.3 Quickbooks Expenses/Purchases",
+          "flowNumber": "09.3",
+          "stepCount": 6,
+          "steps": [
+            {
+              "name": "Runs Every Day",
+              "actionKey": "schedule",
+              "componentKey": "schedule-triggers",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Flow is enabled in Wizard?",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Calculated Date",
+              "actionKey": "adjustDateTime",
+              "componentKey": "datetime",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Format Date/Time",
+              "actionKey": "formatDateTime",
+              "componentKey": "datetime",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Start Index",
+              "actionKey": "saveExecutionValue",
+              "componentKey": "persist-data",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Loop N Times",
+              "actionKey": "loopNTimes",
+              "componentKey": "loop",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        },
+        {
+          "fileName": "boolean-accounting-system-export.yml",
+          "flowName": "09.3 Quickbooks Expenses/Purchases - Subflow",
+          "flowNumber": "09.3",
+          "stepCount": 10,
+          "steps": [
+            {
+              "name": "Trigger",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Get Expense Record",
+              "actionKey": "listRecords",
+              "componentKey": "airtable",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Find Customer Ref",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Customer Ref exists?",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Is an Item?",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Expense Payload",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Upsert Expense Record",
+              "actionKey": "rawRequest",
+              "componentKey": "airtable",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Crossflow Payload",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Save Attachments",
+              "actionKey": "invokeFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Stop Execution (Success)",
+              "actionKey": "stopExecution",
+              "componentKey": "stop-execution",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        }
+      ],
+      "crossFileConnections": [],
+      "totalStepCount": 53,
+      "apps": [
+        "Schedule Triggers",
+        "Datetime",
+        "Persist Data",
+        "Airtable",
+        "Stop Execution"
+      ],
+      "description": "accounting software Bills: Flow is enabled in Wizard?, Calculated Date, Format Date/Time, ...",
+      "keySteps": [
+        "Runs Every Day",
+        "Calculated Date",
+        "Format Date/Time",
+        "Start Index",
+        "Loop N Times",
+        "Runs Every Day",
+        "Calculated Date",
+        "Format Date/Time",
+        "Start Index",
+        "Loop N Times"
+      ],
+      "inefficiencies": [
+        "Complex flow could be simplified (15+ steps)",
+        "Custom code could be replaced with native actions",
+        "Repetitive datetime API calls could be batched (8 calls)"
+      ]
+    },
+    {
+      "id": "P-35",
+      "name": "estimating tool > HubSpot | Process Quote - Estimate > Deal Sync",
+      "journeyStage": "Estimating",
+      "sourceFiles": [
+        "boolean-sales-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-sales-integration-export.yml",
+        "flowName": "01 PaintScout > HubSpot | Process Quote - Estimate > Deal Sync",
+        "flowNumber": "01",
+        "description": "PaintScout > HubSpot | Process Quote - Estimate > Deal Sync",
+        "stepCount": 6,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Estimate Date To Sync",
+            "actionKey": "convertToEpoch",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Time X Minutes Ago",
+            "actionKey": "adjustDateTime",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Time X Minutes Ago to Epoch",
+            "actionKey": "convertToEpoch",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "List Quotes",
+            "actionKey": "listQuotes",
+            "componentKey": "paintScoutApi",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Quotes",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [
+        {
+          "fileName": "boolean-sales-integration-export.yml",
+          "flowName": "01.1 Proccess Deal Sync",
+          "flowNumber": "01.1",
+          "stepCount": 2,
+          "steps": [
+            {
+              "name": "Trigger",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Branch on Expression",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        }
+      ],
+      "crossFileConnections": [],
+      "totalStepCount": 8,
+      "apps": [
+        "Schedule Triggers",
+        "Datetime",
+        "estimating tool"
+      ],
+      "description": "estimating tool > HubSpot | Process Quote - Estimate > Deal Sync",
+      "keySteps": [
+        "Estimate Date To Sync",
+        "Time X Minutes Ago",
+        "Time X Minutes Ago to Epoch",
+        "List Quotes"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-44",
+      "name": "Cancelled Deal Sync",
+      "journeyStage": "Sales/Proposal",
+      "sourceFiles": [
+        "boolean-sales-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-sales-integration-export.yml",
+        "flowName": "14 Cancelled Deal Sync",
+        "flowNumber": "14",
+        "description": "",
+        "stepCount": 2,
+        "steps": [
+          {
+            "name": "Cross Flow",
+            "actionKey": "crossFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Branch on Expression",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 2,
+      "apps": [],
+      "description": "Cancelled Deal Sync",
+      "keySteps": [],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-40",
+      "name": "Change Order Label Processor",
+      "journeyStage": "Sales/Proposal",
+      "sourceFiles": [
+        "boolean-sales-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-sales-integration-export.yml",
+        "flowName": "11 Change Order Label Processor",
+        "flowNumber": "11",
+        "description": "Counts the number of CO in HS",
+        "stepCount": 4,
+        "steps": [
+          {
+            "name": "HTTP",
+            "actionKey": "crossFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Deal Payload",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Deals with same job record id",
+            "actionKey": "rawRequest",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "CO count",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 4,
+      "apps": [
+        "HubSpot"
+      ],
+      "description": "Counts the number of CO in HS",
+      "keySteps": [
+        "Get Deals with same job record id"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-64",
+      "name": "Change Order Label Processor",
+      "journeyStage": "Sales/Proposal",
+      "sourceFiles": [
+        "job-management-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "job-management-integration-export.yml",
+        "flowName": "13 Change Order Label Processor",
+        "flowNumber": "13",
+        "description": "Counts the number of CO in HS",
+        "stepCount": 4,
+        "steps": [
+          {
+            "name": "HTTP",
+            "actionKey": "crossFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Deal Payload",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Deals with same job record id",
+            "actionKey": "rawRequest",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "CO count",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 4,
+      "apps": [
+        "HubSpot"
+      ],
+      "description": "Counts the number of CO in HS",
+      "keySteps": [
+        "Get Deals with same job record id"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-36",
+      "name": "Change Order Process",
+      "journeyStage": "Sales/Proposal",
+      "sourceFiles": [
+        "boolean-sales-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-sales-integration-export.yml",
+        "flowName": "03 Change Order Process",
+        "flowNumber": "03",
+        "description": "03 Change Order Process",
+        "stepCount": 22,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "crossFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Split Sources",
+            "actionKey": "split",
+            "componentKey": "text-manipulation",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Source IDs Count",
+            "actionKey": "length",
+            "componentKey": "collection-tools",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Deal Properties",
+            "actionKey": "rawRequest",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "List Deal Properties Label",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "List Deal Properties Object",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Deal",
+            "actionKey": "rawRequest",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Contact Association",
+            "actionKey": "readAssociations",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Company Association",
+            "actionKey": "readAssociations",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Sales Rate",
+            "actionKey": "divide",
+            "componentKey": "math",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Deals Amount",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Deals Hours",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Deals Labor",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Deals Discount",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Deals Materials",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Sum Deal Amounts",
+            "actionKey": "aggregate",
+            "componentKey": "collection-tools",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Sum Deal Hours",
+            "actionKey": "aggregate",
+            "componentKey": "collection-tools",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Sum Deal Labor",
+            "actionKey": "aggregate",
+            "componentKey": "collection-tools",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Sum Deal Materials",
+            "actionKey": "aggregate",
+            "componentKey": "collection-tools",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Sum Deal Discount",
+            "actionKey": "aggregate",
+            "componentKey": "collection-tools",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "CO Hours and Amount",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Difference Branch",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 22,
+      "apps": [
+        "Text Manipulation",
+        "Collection Tools",
+        "HubSpot",
+        "Math"
+      ],
+      "description": "03 Change Order Process",
+      "keySteps": [
+        "Split Sources",
+        "Source IDs Count",
+        "Get Deal Properties",
+        "Get Deal",
+        "Get Contact Association",
+        "Get Company Association",
+        "Sales Rate",
+        "Sum Deal Amounts",
+        "Sum Deal Hours",
+        "Sum Deal Labor"
+      ],
+      "inefficiencies": [
+        "Complex flow could be simplified (15+ steps)",
+        "Custom code could be replaced with native actions",
+        "Repetitive collection-tools API calls could be batched (6 calls)"
+      ]
+    },
+    {
+      "id": "P-37",
+      "name": "Create Any Missing estimating tool, HubSpot Deal & photo storage",
+      "journeyStage": "Sales/Proposal",
+      "sourceFiles": [
+        "boolean-sales-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-sales-integration-export.yml",
+        "flowName": "02 Create Any Missing PaintScout, HubSpot Deal & CompanyCam",
+        "flowNumber": "02",
+        "description": "Create Any Missing PaintScout, HubSpot Deal & CompanyCam",
+        "stepCount": 2,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "crossFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Contact Detail Branch",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 2,
+      "apps": [],
+      "description": "Create Any Missing estimating tool, HubSpot Deal & photo storage",
+      "keySteps": [],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-39",
+      "name": "Deal Naming System Trigger",
+      "journeyStage": "Sales/Proposal",
+      "sourceFiles": [
+        "boolean-sales-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-sales-integration-export.yml",
+        "flowName": "10 Deal Naming System Trigger",
+        "flowNumber": "10",
+        "description": "",
+        "stepCount": 5,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Adjust Date/Time",
+            "actionKey": "adjustDateTime",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Time 2 Minutes Ago to Epoch",
+            "actionKey": "convertToEpoch",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Deals",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over HS Deals",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 5,
+      "apps": [
+        "Schedule Triggers",
+        "Datetime"
+      ],
+      "description": "Deal Naming System Trigger: Adjust Date/Time, Time 2 Minutes Ago to Epoch, Get Deals, ...",
+      "keySteps": [
+        "Adjust Date/Time",
+        "Time 2 Minutes Ago to Epoch"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-32",
+      "name": "Get Latest Open Deal",
+      "journeyStage": "Sales/Proposal",
+      "sourceFiles": [
+        "boolean-marketing-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-marketing-integration-export.yml",
+        "flowName": "13 Get Latest Open Deal",
+        "flowNumber": "13",
+        "description": "",
+        "stepCount": 2,
+        "steps": [
+          {
+            "name": "HTTP",
+            "actionKey": "crossFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Branch on Expression",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 2,
+      "apps": [],
+      "description": "Get Latest Open Deal",
+      "keySteps": [],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-59",
+      "name": "Process Change Order",
+      "journeyStage": "Sales/Proposal",
+      "sourceFiles": [
+        "job-management-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "job-management-integration-export.yml",
+        "flowName": "04 Process Change Order",
+        "flowNumber": "04",
+        "description": "Creates change order record in Addendums table",
+        "stepCount": 7,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "crossFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Fields",
+            "actionKey": "rawRequest",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Mappable Fields",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Job",
+            "actionKey": "listRecords",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Check if Project Exist",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Project",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Projects",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 7,
+      "apps": [
+        "Airtable"
+      ],
+      "description": "Creates change order record in Addendums table",
+      "keySteps": [
+        "Get Fields",
+        "Get Job"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-58",
+      "name": "Process Deal",
+      "journeyStage": "Sales/Proposal",
+      "sourceFiles": [
+        "job-management-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "job-management-integration-export.yml",
+        "flowName": "03 Process Deal",
+        "flowNumber": "03",
+        "description": "Processing won deals to Jobs table in PaintOS",
+        "stepCount": 5,
+        "steps": [
+          {
+            "name": "Process Deal Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Code Block",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Deal Properties",
+            "actionKey": "rawRequest",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Companies Properties",
+            "actionKey": "rawRequest",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Deals",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 5,
+      "apps": [
+        "Webhook Triggers",
+        "HubSpot"
+      ],
+      "description": "Processing won deals to Jobs table in PaintOS",
+      "keySteps": [
+        "Get Deal Properties",
+        "Get Companies Properties"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-48",
+      "name": "Register HS Deal Owner",
+      "journeyStage": "Sales/Proposal",
+      "sourceFiles": [
+        "boolean-sales-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-sales-integration-export.yml",
+        "flowName": "92 Register HS Deal Owner",
+        "flowNumber": "92",
+        "description": "",
+        "stepCount": 4,
+        "steps": [
+          {
+            "name": "Trigger Daily",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Owner",
+            "actionKey": "rawRequest",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "List People",
+            "actionKey": "listRecords",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Upsert Deal Owners",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 4,
+      "apps": [
+        "Schedule Triggers",
+        "HubSpot",
+        "Airtable"
+      ],
+      "description": "Register HS Deal Owner: Get Owner, List People, Upsert Deal Owners",
+      "keySteps": [
+        "Get Owner",
+        "List People"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-46",
+      "name": "Set/Update HS Deal Name & photo storage Project Name",
+      "journeyStage": "Sales/Proposal",
+      "sourceFiles": [
+        "boolean-sales-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-sales-integration-export.yml",
+        "flowName": "90 Set/Update HS Deal Name & CompanyCam Project Name",
+        "flowNumber": "90",
+        "description": "",
+        "stepCount": 2,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "HS Deal ID Exists",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 2,
+      "apps": [
+        "Webhook Triggers"
+      ],
+      "description": "Set/Update HS Deal Name & photo storage Project Name: HS Deal ID Exists",
+      "keySteps": [],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-60",
+      "name": "Contract Sent",
+      "journeyStage": "Contract Management",
+      "sourceFiles": [
+        "job-management-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "job-management-integration-export.yml",
+        "flowName": "05 Contract Sent",
+        "flowNumber": "05",
+        "description": "Send eSignature Contract for all Addendum Type",
+        "stepCount": 3,
+        "steps": [
+          {
+            "name": "Contract Sent Trigger",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "CO Records",
+            "actionKey": "listRecords",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Addendums",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 3,
+      "apps": [
+        "Schedule Triggers",
+        "Airtable"
+      ],
+      "description": "Send eSignature Contract for all Addendum Type",
+      "keySteps": [
+        "CO Records"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-61",
+      "name": "Contract Signed",
+      "journeyStage": "Contract Management",
+      "sourceFiles": [
+        "job-management-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "job-management-integration-export.yml",
+        "flowName": "06 Contract Signed",
+        "flowNumber": "06",
+        "description": "Watch Signed eSignature Contract for all Addendum Type",
+        "stepCount": 4,
+        "steps": [
+          {
+            "name": "Contract Signed Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Format Date",
+            "actionKey": "convertToISOString",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Addendum Record",
+            "actionKey": "getRecord",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Branch on Expression",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 4,
+      "apps": [
+        "Webhook Triggers",
+        "Datetime",
+        "Airtable"
+      ],
+      "description": "Watch Signed eSignature Contract for all Addendum Type",
+      "keySteps": [
+        "Format Date",
+        "Get Addendum Record"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-09",
+      "name": "Subcontractor Bill Payment",
+      "journeyStage": "Contract Management",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "10 Subcontractor Bill Payment",
+        "flowNumber": "10",
+        "description": "",
+        "stepCount": 4,
+        "steps": [
+          {
+            "name": "Subcontractor Bill Payment Trigger",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Expenses sync enabled?",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "List Expenses",
+            "actionKey": "listRecords",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Expenses",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 4,
+      "apps": [
+        "Schedule Triggers",
+        "Airtable"
+      ],
+      "description": "Subcontractor Bill Payment: Expenses sync enabled?, List Expenses, Loop Over Expenses",
+      "keySteps": [
+        "List Expenses"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-62",
+      "name": "Create Addendums",
+      "journeyStage": "Job Setup",
+      "sourceFiles": [
+        "job-management-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "job-management-integration-export.yml",
+        "flowName": "07 Create Addendums",
+        "flowNumber": "07",
+        "description": "Creates new Addendums deal in HubSpot for field types.",
+        "stepCount": 7,
+        "steps": [
+          {
+            "name": "Create Addendums Trigger",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Parse Json Form",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get filter",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "List Addendums",
+            "actionKey": "listRecords",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over COs",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Stop Execution",
+            "actionKey": "stopExecution",
+            "componentKey": "stop-execution",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Mock List",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [
+        {
+          "fileName": "job-management-integration-export.yml",
+          "flowName": "Subflow - 07 Create Addendums",
+          "flowNumber": null,
+          "stepCount": 3,
+          "steps": [
+            {
+              "name": "Create Addendums Trigger",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Sleep",
+              "actionKey": "sleep",
+              "componentKey": "sleep",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Check if CO has Job assigned",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        }
+      ],
+      "crossFileConnections": [],
+      "totalStepCount": 10,
+      "apps": [
+        "Schedule Triggers",
+        "Airtable",
+        "Stop Execution",
+        "Sleep"
+      ],
+      "description": "Creates new Addendums deal in HubSpot for field types.",
+      "keySteps": [
+        "List Addendums",
+        "Stop Execution",
+        "Sleep"
+      ],
+      "inefficiencies": [
+        "Custom code could be replaced with native actions"
+      ]
+    },
+    {
+      "id": "P-51",
+      "name": "Process Timelog",
+      "journeyStage": "Production Tracking",
+      "sourceFiles": [
+        "daily-production-data-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "daily-production-data-export.yml",
+        "flowName": "Process Timelog",
+        "flowNumber": null,
+        "description": "",
+        "stepCount": 2,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "crossFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Project exists?",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 2,
+      "apps": [],
+      "description": "Process Timelog: Project exists?",
+      "keySteps": [],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-52",
+      "name": "Sync QBT",
+      "journeyStage": "Production Tracking",
+      "sourceFiles": [
+        "daily-production-data-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "daily-production-data-export.yml",
+        "flowName": "03 Sync QBT",
+        "flowNumber": "03",
+        "description": "",
+        "stepCount": 3,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Stop Execution",
+            "actionKey": "stopExecution",
+            "componentKey": "stop-execution",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "List Records",
+            "actionKey": "listRecords",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 3,
+      "apps": [
+        "Schedule Triggers",
+        "Stop Execution",
+        "Airtable"
+      ],
+      "description": "Sync QBT: Stop Execution, List Records",
+      "keySteps": [
+        "Stop Execution",
+        "List Records"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-50",
+      "name": "Update DPD",
+      "journeyStage": "Production Tracking",
+      "sourceFiles": [
+        "daily-production-data-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "daily-production-data-export.yml",
+        "flowName": "02 Update DPD",
+        "flowNumber": "02",
+        "description": "",
+        "stepCount": 3,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "List Time Logs",
+            "actionKey": "listRecords",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Time Logs",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 3,
+      "apps": [
+        "Schedule Triggers",
+        "Airtable"
+      ],
+      "description": "Update DPD: List Time Logs, Loop Time Logs",
+      "keySteps": [
+        "List Time Logs"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-49",
+      "name": "Update DPD Schedule",
+      "journeyStage": "Production Tracking",
+      "sourceFiles": [
+        "daily-production-data-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "daily-production-data-export.yml",
+        "flowName": "01 Update DPD Schedule",
+        "flowNumber": "01",
+        "description": "This updates the daily production data records when the associated project's start and end dates are updated.",
+        "stepCount": 3,
+        "steps": [
+          {
+            "name": "Runs 30 Minutes",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "List Projects",
+            "actionKey": "listRecords",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Projects",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 3,
+      "apps": [
+        "Schedule Triggers",
+        "Airtable"
+      ],
+      "description": "This updates the daily production data records when the associated project's start and end dates are updated.",
+      "keySteps": [
+        "Runs 30 Minutes",
+        "List Projects"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-72",
+      "name": "Inactive Jobcode Sync",
+      "journeyStage": "Time Tracking",
+      "sourceFiles": [
+        "quick-books-time-tracking-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "quick-books-time-tracking-system-export.yml",
+        "flowName": "06 Inactive Jobcode Sync",
+        "flowNumber": "06",
+        "description": "The purpose of this flow is to archive or inactive ALL existing jobcodes in the account. This is to remove test projects created by the automation.",
+        "stepCount": 2,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Update Inactive Jobcodes",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 2,
+      "apps": [
+        "Webhook Triggers"
+      ],
+      "description": "The purpose of this flow is to archive or inactive ALL existing jobcodes in the account. This is to remove test projects created by the automation.",
+      "keySteps": [],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-71",
+      "name": "Initial Timelogs Sync",
+      "journeyStage": "Time Tracking",
+      "sourceFiles": [
+        "quick-books-time-tracking-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "quick-books-time-tracking-system-export.yml",
+        "flowName": "05 Initial Timelogs Sync",
+        "flowNumber": "05",
+        "description": "",
+        "stepCount": 10,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "instanceDeploy",
+            "componentKey": "management-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Default Days",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Adjust Date/Time",
+            "actionKey": "adjustDateTime",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Format to ISO Date",
+            "actionKey": "formatDateTime",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Retrieve All Time Sheets",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Retrieve All Users",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Retrieve All Active JobCodes",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Retrieve All Projects",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Retrieve All People",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Bulk Update Timelogs",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 10,
+      "apps": [
+        "Management Triggers",
+        "Datetime"
+      ],
+      "description": "Initial Timelogs Sync: Default Days, Adjust Date/Time, Format to ISO Date, ...",
+      "keySteps": [
+        "Adjust Date/Time",
+        "Format to ISO Date"
+      ],
+      "inefficiencies": [
+        "Custom code could be replaced with native actions"
+      ]
+    },
+    {
+      "id": "P-69",
+      "name": "Job Codes Sync",
+      "journeyStage": "Time Tracking",
+      "sourceFiles": [
+        "quick-books-time-tracking-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "quick-books-time-tracking-system-export.yml",
+        "flowName": "02 Job Codes Sync",
+        "flowNumber": "02",
+        "description": "",
+        "stepCount": 5,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Retrieve Eligible Projects",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Retrieve All Active Jobcodes",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Jobcodes Bulk Update",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Update Jobcodes",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 5,
+      "apps": [
+        "Schedule Triggers"
+      ],
+      "description": "Job Codes Sync: Retrieve Eligible Projects, Retrieve All Active Jobcodes, Jobcodes Bulk Update, ...",
+      "keySteps": [],
+      "inefficiencies": [
+        "Custom code could be replaced with native actions"
+      ]
+    },
+    {
+      "id": "P-73",
+      "name": "Jobcodes Location Sync",
+      "journeyStage": "Time Tracking",
+      "sourceFiles": [
+        "quick-books-time-tracking-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "quick-books-time-tracking-system-export.yml",
+        "flowName": "07 Jobcodes Location Sync",
+        "flowNumber": "07",
+        "description": "",
+        "stepCount": 5,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Retrieve Eligible Projects",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Retrieve Locations",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Upsert Location",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Update Location Address",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 5,
+      "apps": [
+        "Schedule Triggers"
+      ],
+      "description": "Jobcodes Location Sync: Retrieve Eligible Projects, Retrieve Locations, Upsert Location, ...",
+      "keySteps": [],
+      "inefficiencies": [
+        "Custom code could be replaced with native actions"
+      ]
+    },
+    {
+      "id": "P-74",
+      "name": "Sync Delete Timelogs",
+      "journeyStage": "Time Tracking",
+      "sourceFiles": [
+        "quick-books-time-tracking-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "quick-books-time-tracking-system-export.yml",
+        "flowName": "08 Sync Delete Timelogs",
+        "flowNumber": "08",
+        "description": "",
+        "stepCount": 7,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Adjust Date/Time",
+            "actionKey": "adjustDateTime",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Format to ISO Date",
+            "actionKey": "formatDateTime",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Retrieve All Deleted Time Sheets",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Retrieve All Time Logs",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Delete Timelogs",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Delete Non-Work Time Logs",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 7,
+      "apps": [
+        "Schedule Triggers",
+        "Datetime"
+      ],
+      "description": "Sync Delete Timelogs: Adjust Date/Time, Format to ISO Date, Retrieve All Deleted Time Sheets, ...",
+      "keySteps": [
+        "Adjust Date/Time",
+        "Format to ISO Date"
+      ],
+      "inefficiencies": [
+        "Custom code could be replaced with native actions"
+      ]
+    },
+    {
+      "id": "P-68",
+      "name": "Time Tracking System",
+      "journeyStage": "Time Tracking",
+      "sourceFiles": [
+        "quick-books-time-tracking-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "quick-books-time-tracking-system-export.yml",
+        "flowName": "01 Time Tracking System",
+        "flowNumber": "01",
+        "description": "",
+        "stepCount": 9,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Adjust Date/Time",
+            "actionKey": "adjustDateTime",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Format to ISO Date",
+            "actionKey": "formatDateTime",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Retrieve All Time Sheets",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Retrieve All Users",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Retrieve All Active JobCodes",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Retrieve All Projects",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Retrieve All People",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Bulk Update Timelogs",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 9,
+      "apps": [
+        "Schedule Triggers",
+        "Datetime"
+      ],
+      "description": "Time Tracking System: Adjust Date/Time, Format to ISO Date, Retrieve All Time Sheets, ...",
+      "keySteps": [
+        "Adjust Date/Time",
+        "Format to ISO Date"
+      ],
+      "inefficiencies": [
+        "Custom code could be replaced with native actions"
+      ]
+    },
+    {
+      "id": "P-70",
+      "name": "User Sync",
+      "journeyStage": "Time Tracking",
+      "sourceFiles": [
+        "quick-books-time-tracking-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "quick-books-time-tracking-system-export.yml",
+        "flowName": "04 User Sync",
+        "flowNumber": "04",
+        "description": "",
+        "stepCount": 4,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Retrieve All Users",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Retrieve All People",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Bulk Update Users",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 4,
+      "apps": [
+        "Schedule Triggers"
+      ],
+      "description": "User Sync: Retrieve All Users, Retrieve All People, Bulk Update Users",
+      "keySteps": [],
+      "inefficiencies": [
+        "Custom code could be replaced with native actions"
+      ]
+    },
+    {
+      "id": "P-19",
+      "name": "[Manual Sync] Sync All Invoices and Transactions",
+      "journeyStage": "Invoicing",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "21 [Manual Sync] Sync All Invoices and Transactions",
+        "flowNumber": "21",
+        "description": "",
+        "stepCount": 6,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Cursor",
+            "actionKey": "getCrossFlowValue",
+            "componentKey": "persist-data",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "List Project Types",
+            "actionKey": "listRecords",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Map Project Types",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Fetch QBO Invoices",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Records to be processed?",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 6,
+      "apps": [
+        "Webhook Triggers",
+        "Persist Data",
+        "Airtable"
+      ],
+      "description": "[Manual Sync] Sync All Invoices and Transactions: Get Cursor, List Project Types, Map Project Types, ...",
+      "keySteps": [
+        "Get Cursor",
+        "List Project Types"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-41",
+      "name": "[Ongoing] 11 Invoice and Work Order URL",
+      "journeyStage": "Invoicing",
+      "sourceFiles": [
+        "boolean-sales-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-sales-integration-export.yml",
+        "flowName": "[Ongoing] 11 Invoice and Work Order URL",
+        "flowNumber": null,
+        "description": "PaintScout > HubSpot > Invoice and work order url Sync",
+        "stepCount": 10,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Accepted Quotes",
+            "actionKey": "rawRequest",
+            "componentKey": "paintScoutApi",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Items",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Stop Execution 2",
+            "actionKey": "stopExecution",
+            "componentKey": "stop-execution",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Estimate Date To Sync",
+            "actionKey": "convertToEpoch",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Time 2 Minutes Ago",
+            "actionKey": "adjustDateTime",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Time 2 Minutes Ago to Epoch",
+            "actionKey": "convertToEpoch",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Code Block",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "List Quotes",
+            "actionKey": "listQuotes",
+            "componentKey": "paintScoutApi",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Quotes",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 10,
+      "apps": [
+        "Webhook Triggers",
+        "estimating tool",
+        "Stop Execution",
+        "Datetime"
+      ],
+      "description": "estimating tool > HubSpot > Invoice and work order url Sync",
+      "keySteps": [
+        "Get Accepted Quotes",
+        "Stop Execution 2",
+        "Estimate Date To Sync",
+        "Time 2 Minutes Ago",
+        "Time 2 Minutes Ago to Epoch",
+        "List Quotes"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-04",
+      "name": "Create Invoice in AT from Unbilled Line Items",
+      "journeyStage": "Invoicing",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "05 Create Invoice in AT from Unbilled Line Items",
+        "flowNumber": "05",
+        "description": "",
+        "stepCount": 3,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Job",
+            "actionKey": "getRecord",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Job Found?",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [
+        {
+          "fileName": "boolean-accounting-system-export.yml",
+          "flowName": "05.1 Create Invoice in QBO",
+          "flowNumber": "05.1",
+          "stepCount": 15,
+          "steps": [
+            {
+              "name": "Trigger",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Get Preferences",
+              "actionKey": "rawRequest",
+              "componentKey": "quickbooks",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Get Invoice",
+              "actionKey": "getRecord",
+              "componentKey": "airtable",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Get Job",
+              "actionKey": "getRecord",
+              "componentKey": "airtable",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Get Customer By Id",
+              "actionKey": "getCustomerById",
+              "componentKey": "quickbooks",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "(Job) Customer Payload",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Update Parent Customer",
+              "actionKey": "rawRequest",
+              "componentKey": "quickbooks",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "List Invoices Linked to Job",
+              "actionKey": "listRecords",
+              "componentKey": "airtable",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Invoice Lines IDs string",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Get Invoice Lines",
+              "actionKey": "listRecords",
+              "componentKey": "airtable",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Create Lines Array",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Fill Custom Fields",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Create Invoice Payload",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Create Invoice",
+              "actionKey": "createInvoice",
+              "componentKey": "quickbooks",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Invoice created successfully?",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        }
+      ],
+      "crossFileConnections": [],
+      "totalStepCount": 18,
+      "apps": [
+        "Webhook Triggers",
+        "Airtable",
+        "accounting software"
+      ],
+      "description": "Create Invoice in AT from Unbilled Line Items: Get Job, Job Found?, Get Preferences, ...",
+      "keySteps": [
+        "Get Job",
+        "Get Preferences",
+        "Get Invoice",
+        "Get Job",
+        "Get Customer By Id",
+        "Update Parent Customer",
+        "List Invoices Linked to Job",
+        "Get Invoice Lines",
+        "Create Invoice"
+      ],
+      "inefficiencies": [
+        "Complex flow could be simplified (15+ steps)",
+        "Custom code could be replaced with native actions"
+      ]
+    },
+    {
+      "id": "P-11",
+      "name": "Import Invoices from accounting software",
+      "journeyStage": "Invoicing",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "13 Import Invoices from QBO",
+        "flowNumber": "13",
+        "description": "Given a Job Record ID",
+        "stepCount": 8,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Initial Status",
+            "actionKey": "updateRecord",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Job",
+            "actionKey": "listRecords",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "List Project Types",
+            "actionKey": "listRecords",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Map Project Types",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get All Invoices",
+            "actionKey": "rawRequest",
+            "componentKey": "quickbooks",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Filter Voided Invoices",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Got any invocies from QBO?",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 8,
+      "apps": [
+        "Webhook Triggers",
+        "Airtable",
+        "accounting software"
+      ],
+      "description": "Given a Job Record ID",
+      "keySteps": [
+        "Initial Status",
+        "Get Job",
+        "List Project Types",
+        "Get All Invoices"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-05",
+      "name": "Send or ReSend Invoice",
+      "journeyStage": "Invoicing",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "06 Send or ReSend Invoice",
+        "flowNumber": "06",
+        "description": "",
+        "stepCount": 4,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Invoice",
+            "actionKey": "getRecord",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Send Invoice",
+            "actionKey": "rawRequest",
+            "componentKey": "quickbooks",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Status Branch",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 4,
+      "apps": [
+        "Webhook Triggers",
+        "Airtable",
+        "accounting software"
+      ],
+      "description": "Send or ReSend Invoice: Get Invoice, Send Invoice, Status Branch",
+      "keySteps": [
+        "Get Invoice",
+        "Send Invoice"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-18",
+      "name": "Sync Modified Invoices and Transactions",
+      "journeyStage": "Invoicing",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "20 Sync Modified Invoices and Transactions",
+        "flowNumber": "20",
+        "description": "Sync invoices that were modified for the last x hours",
+        "stepCount": 6,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Cursor",
+            "actionKey": "getCrossFlowValue",
+            "componentKey": "persist-data",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "List Project Types",
+            "actionKey": "listRecords",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Map Project Types",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Fetch QBO Invoices",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Records to be processed?",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [
+        {
+          "fileName": "boolean-accounting-system-export.yml",
+          "flowName": "20.1 Process Invoice",
+          "flowNumber": "20.1",
+          "stepCount": 10,
+          "steps": [
+            {
+              "name": "Trigger",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Find Associated Job",
+              "actionKey": "listRecords",
+              "componentKey": "airtable",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Bill to String",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Invoice Payload",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Upsert Invoice",
+              "actionKey": "rawRequest",
+              "componentKey": "airtable",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Process Invoice Line Items",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Crossflow Payload",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Process Payments",
+              "actionKey": "invokeFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "PDF Subflow Payload",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Save Invoice PDF",
+              "actionKey": "invokeFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        },
+        {
+          "fileName": "boolean-accounting-system-export.yml",
+          "flowName": "20.2 Process Linked Transactions",
+          "flowNumber": "20.2",
+          "stepCount": 4,
+          "steps": [
+            {
+              "name": "Trigger",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Filter Transactions",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Get All Payment Methods",
+              "actionKey": "rawRequest",
+              "componentKey": "quickbooks",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Loop Over Payments",
+              "actionKey": "loopOverItems",
+              "componentKey": "loop",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        }
+      ],
+      "crossFileConnections": [],
+      "totalStepCount": 20,
+      "apps": [
+        "Schedule Triggers",
+        "Persist Data",
+        "Airtable",
+        "accounting software"
+      ],
+      "description": "Sync invoices that were modified for the last x hours",
+      "keySteps": [
+        "Get Cursor",
+        "List Project Types",
+        "Find Associated Job",
+        "Upsert Invoice",
+        "Process Payments",
+        "Save Invoice PDF",
+        "Get All Payment Methods"
+      ],
+      "inefficiencies": [
+        "Complex flow could be simplified (15+ steps)",
+        "Custom code could be replaced with native actions"
+      ]
+    },
+    {
+      "id": "P-20",
+      "name": "Update Invoice in accounting software",
+      "journeyStage": "Invoicing",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "22 Update Invoice in QBO",
+        "flowNumber": "22",
+        "description": "",
+        "stepCount": 13,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Branch on Expression",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Invoice",
+            "actionKey": "getRecord",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Invoice By Id",
+            "actionKey": "getInvoiceById",
+            "componentKey": "quickbooks",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Job",
+            "actionKey": "getRecord",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "List Invoices Linked to Job",
+            "actionKey": "listRecords",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Invoice Lines IDs string",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Invoice Lines",
+            "actionKey": "listRecords",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Create Lines Array",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Fill Custom Fields",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Update Invoice Payload",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Update Invoice",
+            "actionKey": "rawRequest",
+            "componentKey": "quickbooks",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Invoice created successfully?",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 13,
+      "apps": [
+        "Webhook Triggers",
+        "Airtable",
+        "accounting software"
+      ],
+      "description": "Update Invoice in accounting software: Get Invoice, Get Invoice By Id, Get Job, ...",
+      "keySteps": [
+        "Get Invoice",
+        "Get Invoice By Id",
+        "Get Job",
+        "List Invoices Linked to Job",
+        "Get Invoice Lines",
+        "Update Invoice"
+      ],
+      "inefficiencies": [
+        "Custom code could be replaced with native actions"
+      ]
+    },
+    {
+      "id": "P-06",
+      "name": "Void Invoice",
+      "journeyStage": "Invoicing",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "07 Void Invoice",
+        "flowNumber": "07",
+        "description": "",
+        "stepCount": 7,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Invoice",
+            "actionKey": "getRecord",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Invoice By Id",
+            "actionKey": "getInvoiceById",
+            "componentKey": "quickbooks",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Update Doc Number Payload",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Update Doc Number",
+            "actionKey": "rawRequest",
+            "componentKey": "quickbooks",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Void Invoice",
+            "actionKey": "voidInvoice",
+            "componentKey": "quickbooks",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Update Successful?",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 7,
+      "apps": [
+        "Webhook Triggers",
+        "Airtable",
+        "accounting software"
+      ],
+      "description": "Void Invoice: Get Invoice, Get Invoice By Id, Update Doc Number Payload, ...",
+      "keySteps": [
+        "Get Invoice",
+        "Get Invoice By Id",
+        "Update Doc Number",
+        "Void Invoice"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-07",
+      "name": "Initial Sync QB Bills",
+      "journeyStage": "Expense Management",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "08 Initial Sync QB Bills",
+        "flowNumber": "08",
+        "description": "",
+        "stepCount": 11,
+        "steps": [
+          {
+            "name": "Instance Deploy - QB Expenses",
+            "actionKey": "instanceDeploy",
+            "componentKey": "management-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Current Time",
+            "actionKey": "getCurrentDateTime",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Stopwatch Time",
+            "actionKey": "adjustDateTime",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Expenses Sync enabled?",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Start Position Value",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Set Start Position",
+            "actionKey": "saveExecutionValue",
+            "componentKey": "persist-data",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Calculated Date",
+            "actionKey": "adjustDateTime",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Format Date/Time",
+            "actionKey": "formatDateTime",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop N Times",
+            "actionKey": "loopNTimes",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Progress",
+            "actionKey": "getExecutionValue",
+            "componentKey": "persist-data",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Stop Execution 2",
+            "actionKey": "stopExecution",
+            "componentKey": "stop-execution",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [
+        {
+          "fileName": "boolean-accounting-system-export.yml",
+          "flowName": "08.1 Quickbooks Sync Bills Subflow",
+          "flowNumber": "08.1",
+          "stepCount": 7,
+          "steps": [
+            {
+              "name": "Trigger",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Find Customer Ref",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Customer Ref exists?",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Is an Item?",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Expense Payload",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Upsert Expense Record",
+              "actionKey": "rawRequest",
+              "componentKey": "airtable",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Stop Execution (Success)",
+              "actionKey": "stopExecution",
+              "componentKey": "stop-execution",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        }
+      ],
+      "crossFileConnections": [],
+      "totalStepCount": 18,
+      "apps": [
+        "Management Triggers",
+        "Datetime",
+        "Persist Data",
+        "Stop Execution",
+        "Airtable"
+      ],
+      "description": "Initial Sync QB Bills: Current Time, Stopwatch Time, Expenses Sync enabled?, ...",
+      "keySteps": [
+        "Instance Deploy - QB Expenses",
+        "Current Time",
+        "Stopwatch Time",
+        "Set Start Position",
+        "Calculated Date",
+        "Format Date/Time",
+        "Loop N Times",
+        "Get Progress",
+        "Stop Execution 2",
+        "Upsert Expense Record"
+      ],
+      "inefficiencies": [
+        "Complex flow could be simplified (15+ steps)",
+        "Custom code could be replaced with native actions"
+      ]
+    },
+    {
+      "id": "P-21",
+      "name": "Save Expense's Attachments in Airtable",
+      "journeyStage": "Expense Management",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "30 Save Expense's Attachments in Airtable",
+        "flowNumber": "30",
+        "description": "Early version of a subflow to upload attachments from QBO expenses to drive.",
+        "stepCount": 10,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "crossFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Download Attachables URL",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Attachables",
+            "actionKey": "rawRequest",
+            "componentKey": "quickbooks",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Attachables fetched?",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Attachables",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Attachables URLs",
+            "actionKey": "getExecutionValue",
+            "componentKey": "persist-data",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Attachables Payload",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Update Record",
+            "actionKey": "updateRecord",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Sleep",
+            "actionKey": "sleep",
+            "componentKey": "sleep",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Stop Execution (Success)",
+            "actionKey": "stopExecution",
+            "componentKey": "stop-execution",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 10,
+      "apps": [
+        "accounting software",
+        "Persist Data",
+        "Airtable",
+        "Sleep",
+        "Stop Execution"
+      ],
+      "description": "Early version of a subflow to upload attachments from accounting software expenses to drive.",
+      "keySteps": [
+        "Get Attachables",
+        "Get Attachables URLs",
+        "Update Record",
+        "Sleep",
+        "Stop Execution (Success)"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-22",
+      "name": "Sync Payment",
+      "journeyStage": "Expense Management",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "Sync Payment",
+        "flowNumber": null,
+        "description": "",
+        "stepCount": 2,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "crossFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Check Operation",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 2,
+      "apps": [],
+      "description": "Sync Payment: Check Operation",
+      "keySteps": [],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-03",
+      "name": "Sync accounting software Customer",
+      "journeyStage": "Expense Management",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "04 Sync QBO Customer",
+        "flowNumber": "04",
+        "description": "",
+        "stepCount": 4,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "crossFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Is this a Job or Project?",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Customer Payload",
+            "actionKey": "selectExecutedStepResult",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Update Parent Customer",
+            "actionKey": "rawRequest",
+            "componentKey": "quickbooks",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 4,
+      "apps": [
+        "accounting software"
+      ],
+      "description": "Sync accounting software Customer: Is this a Job or Project?, Customer Payload, Update Parent Customer",
+      "keySteps": [
+        "Customer Payload",
+        "Update Parent Customer"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-16",
+      "name": "Sync Vendors accounting software -> AT",
+      "journeyStage": "Expense Management",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "18 Sync Vendors QBO -> AT",
+        "flowNumber": "18",
+        "description": "Fetch Vendors from QBO and sync in AT",
+        "stepCount": 3,
+        "steps": [
+          {
+            "name": "New Flow Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Execution - Save Value",
+            "actionKey": "saveExecutionValue",
+            "componentKey": "persist-data",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop N Times",
+            "actionKey": "loopNTimes",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 3,
+      "apps": [
+        "Webhook Triggers",
+        "Persist Data"
+      ],
+      "description": "Fetch Vendors from accounting software and sync in AT",
+      "keySteps": [
+        "Execution - Save Value",
+        "Loop N Times"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-01",
+      "name": "Upsert accounting software Parent Customer Linked to Jobs",
+      "journeyStage": "Expense Management",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "02 Upsert QBO Parent Customer Linked to Jobs",
+        "flowNumber": "02",
+        "description": "Upsert QBO Parent Customer Linked to Jobs",
+        "stepCount": 3,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "List Jobs",
+            "actionKey": "listRecords",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Jobs",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [
+        {
+          "fileName": "boolean-accounting-system-export.yml",
+          "flowName": "02.1 Process Job",
+          "flowNumber": "02.1",
+          "stepCount": 2,
+          "steps": [
+            {
+              "name": "Trigger",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "QBO Parent Customer ID Exists?",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        }
+      ],
+      "crossFileConnections": [],
+      "totalStepCount": 5,
+      "apps": [
+        "Schedule Triggers",
+        "Airtable"
+      ],
+      "description": "Upsert accounting software Parent Customer Linked to Jobs",
+      "keySteps": [
+        "List Jobs"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-02",
+      "name": "Upsert accounting software Sub Customer Linked to Projects",
+      "journeyStage": "Expense Management",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "03 Upsert QBO Sub Customer Linked to Projects",
+        "flowNumber": "03",
+        "description": "Upsert QBO Sub Customer Linked to Projects",
+        "stepCount": 3,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "List Projects",
+            "actionKey": "listRecords",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Projects",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [
+        {
+          "fileName": "boolean-accounting-system-export.yml",
+          "flowName": "03.1 Process Project",
+          "flowNumber": "03.1",
+          "stepCount": 2,
+          "steps": [
+            {
+              "name": "Trigger",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "QBO Sub Customer ID Exists?",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        }
+      ],
+      "crossFileConnections": [],
+      "totalStepCount": 5,
+      "apps": [
+        "Schedule Triggers",
+        "Airtable"
+      ],
+      "description": "Upsert accounting software Sub Customer Linked to Projects",
+      "keySteps": [
+        "List Projects"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-75",
+      "name": "On deploy",
+      "journeyStage": "Reporting",
+      "sourceFiles": [
+        "sales-and-marketing-reporting-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "sales-and-marketing-reporting-export.yml",
+        "flowName": "01 On deploy",
+        "flowNumber": "01",
+        "description": "",
+        "stepCount": 3,
+        "steps": [
+          {
+            "name": "On deploy",
+            "actionKey": "instanceDeploy",
+            "componentKey": "management-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Config Variables",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Items",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [
+        {
+          "fileName": "sales-and-marketing-reporting-export.yml",
+          "flowName": "01.1 Process Mass Syncing",
+          "flowNumber": "01.1",
+          "stepCount": 3,
+          "steps": [
+            {
+              "name": "Cross Flow",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Branch on Expression",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Stop Execution",
+              "actionKey": "stopExecution",
+              "componentKey": "stop-execution",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        }
+      ],
+      "crossFileConnections": [],
+      "totalStepCount": 6,
+      "apps": [
+        "Management Triggers",
+        "Stop Execution"
+      ],
+      "description": "On deploy: Get Config Variables, Stop Execution",
+      "keySteps": [
+        "On deploy",
+        "Stop Execution"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-76",
+      "name": "Sync every 2 minutes",
+      "journeyStage": "Reporting",
+      "sourceFiles": [
+        "sales-and-marketing-reporting-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "sales-and-marketing-reporting-export.yml",
+        "flowName": "02 Sync every 2 minutes",
+        "flowNumber": "02",
+        "description": "",
+        "stepCount": 3,
+        "steps": [
+          {
+            "name": "Scheduled",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Config Variables",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Items",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [
+        {
+          "fileName": "sales-and-marketing-reporting-export.yml",
+          "flowName": "02.1 Process Sync Every 5 Minutes",
+          "flowNumber": "02.1",
+          "stepCount": 6,
+          "steps": [
+            {
+              "name": "Cross Flow",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Adjust Date/Time",
+              "actionKey": "adjustDateTime",
+              "componentKey": "datetime",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Time 2 Minutes Ago to Epoch",
+              "actionKey": "convertToEpoch",
+              "componentKey": "datetime",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Generate get deal payload",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Loop Over Items",
+              "actionKey": "loopOverItems",
+              "componentKey": "loop",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Process Delete Sync",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        },
+        {
+          "fileName": "sales-and-marketing-reporting-export.yml",
+          "flowName": "02.2 Process Upsert/Data",
+          "flowNumber": "02.2",
+          "stepCount": 3,
+          "steps": [
+            {
+              "name": "Cross Flow",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Upsert",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Stop Execution 2",
+              "actionKey": "stopExecution",
+              "componentKey": "stop-execution",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        }
+      ],
+      "crossFileConnections": [],
+      "totalStepCount": 12,
+      "apps": [
+        "Schedule Triggers",
+        "Datetime",
+        "Stop Execution"
+      ],
+      "description": "Sync every 2 minutes: Get Config Variables, Adjust Date/Time, Time 2 Minutes Ago to Epoch, ...",
+      "keySteps": [
+        "Scheduled",
+        "Adjust Date/Time",
+        "Time 2 Minutes Ago to Epoch",
+        "Stop Execution 2"
+      ],
+      "inefficiencies": [
+        "Custom code could be replaced with native actions"
+      ]
+    },
+    {
+      "id": "P-34",
+      "name": "- Message Transpiler",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "boolean-marketing-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-marketing-integration-export.yml",
+        "flowName": "15 - Message Transpiler",
+        "flowNumber": "15",
+        "description": "",
+        "stepCount": 5,
+        "steps": [
+          {
+            "name": "HTTP",
+            "actionKey": "crossFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get latest open deal",
+            "actionKey": "invokeFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get YCBM Link",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Short Link",
+            "actionKey": "httpPost",
+            "componentKey": "http",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Branch on Expression",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 5,
+      "apps": [
+        "Http"
+      ],
+      "description": "- Message Transpiler: Get latest open deal, Get YCBM Link, Get Short Link",
+      "keySteps": [
+        "Get latest open deal",
+        "Get Short Link"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-28",
+      "name": "Appointment Cancelled",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "boolean-marketing-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-marketing-integration-export.yml",
+        "flowName": "08 Appointment Cancelled",
+        "flowNumber": "08",
+        "description": "Triggers when an appointment is cancelled then update the deal and calendar",
+        "stepCount": 4,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Initial data",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Search",
+            "actionKey": "rawRequest",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Branch on Expression",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 4,
+      "apps": [
+        "Webhook Triggers",
+        "HubSpot"
+      ],
+      "description": "Triggers when an appointment is cancelled then update the deal and calendar",
+      "keySteps": [
+        "Search"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-33",
+      "name": "Auto Reply Business Hours",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "boolean-marketing-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-marketing-integration-export.yml",
+        "flowName": "14 Auto Reply Business Hours",
+        "flowNumber": "14",
+        "description": "",
+        "stepCount": 2,
+        "steps": [
+          {
+            "name": "HTTP",
+            "actionKey": "crossFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Branch on Expression",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 2,
+      "apps": [],
+      "description": "Auto Reply Business Hours",
+      "keySteps": [],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-66",
+      "name": "Company Sync",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "job-management-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "job-management-integration-export.yml",
+        "flowName": "09 Company Sync",
+        "flowNumber": "09",
+        "description": "Sync Companies between HubSpot and Airtable",
+        "stepCount": 2,
+        "steps": [
+          {
+            "name": "Cron",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Branch on Expression",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 2,
+      "apps": [
+        "Schedule Triggers"
+      ],
+      "description": "Sync Companies between HubSpot and Airtable",
+      "keySteps": [
+        "Cron"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-65",
+      "name": "Contact Sync",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "job-management-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "job-management-integration-export.yml",
+        "flowName": "08 Contact Sync",
+        "flowNumber": "08",
+        "description": "Sync Contacts between HubSpot and Airtable",
+        "stepCount": 2,
+        "steps": [
+          {
+            "name": "Cron",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Branch on Expression",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 2,
+      "apps": [
+        "Schedule Triggers"
+      ],
+      "description": "Sync Contacts between HubSpot and Airtable",
+      "keySteps": [
+        "Cron"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-54",
+      "name": "Create Available Event Calendar",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "gmail-and-ring-central-communicator-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "gmail-and-ring-central-communicator-export.yml",
+        "flowName": "02 Create Available Event Calendar",
+        "flowNumber": "02",
+        "description": "",
+        "stepCount": 2,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Create Open Calendar",
+            "actionKey": "rawRequest",
+            "componentKey": "google-calendar",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 2,
+      "apps": [
+        "Webhook Triggers",
+        "your calendar"
+      ],
+      "description": "Create Available Event Calendar: Create Open Calendar",
+      "keySteps": [
+        "Create Open Calendar"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-42",
+      "name": "Customer-Selected Project Type -> Project Type Conversion",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "boolean-sales-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-sales-integration-export.yml",
+        "flowName": "12 Customer-Selected Project Type -> Project Type Conversion",
+        "flowNumber": "12",
+        "description": "",
+        "stepCount": 2,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "crossFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Branch on Value",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 2,
+      "apps": [],
+      "description": "Customer-Selected Project Type -> Project Type Conversion: Branch on Value",
+      "keySteps": [],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-67",
+      "name": "Error Notification Sender",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "job-management-integration-export.yml",
+        "gmail-and-ring-central-communicator-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "job-management-integration-export.yml",
+        "flowName": "10 Error Notification Sender",
+        "flowNumber": "10",
+        "description": "",
+        "stepCount": 3,
+        "steps": [
+          {
+            "name": "Cross",
+            "actionKey": "crossFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Error Payload",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "POST Request",
+            "actionKey": "httpPost",
+            "componentKey": "http",
+            "isTrigger": false,
+            "hasWebhookCall": true
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [
+        {
+          "targetFile": "gmail-and-ring-central-communicator-export.yml",
+          "webhookConfigVar": "Email Sender Webhook URL",
+          "description": "POST Request calls gmail-and-ring-central-communicator via Email Sender Webhook URL"
+        }
+      ],
+      "totalStepCount": 3,
+      "apps": [
+        "Http"
+      ],
+      "isMultiFile": true,
+      "description": "Error Notification Sender: Error Payload, POST Request",
+      "keySteps": [
+        "POST Request"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-30",
+      "name": "Estimate Date Converter",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "boolean-marketing-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-marketing-integration-export.yml",
+        "flowName": "11 Estimate Date Converter",
+        "flowNumber": "11",
+        "description": "",
+        "stepCount": 2,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "crossFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Convert Date Estimate",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 2,
+      "apps": [],
+      "description": "Estimate Date Converter: Convert Date Estimate",
+      "keySteps": [],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-14",
+      "name": "Fetch customers from accounting software",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "15 Fetch customers from QBO",
+        "flowNumber": "15",
+        "description": "",
+        "stepCount": 4,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Build Query",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Start Index",
+            "actionKey": "saveExecutionValue",
+            "componentKey": "persist-data",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop N Times",
+            "actionKey": "loopNTimes",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 4,
+      "apps": [
+        "Webhook Triggers",
+        "Persist Data"
+      ],
+      "description": "Fetch customers from accounting software: Build Query, Start Index, Loop N Times",
+      "keySteps": [
+        "Start Index",
+        "Loop N Times"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-13",
+      "name": "Fetch Departments",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "16 Fetch Departments",
+        "flowNumber": "16",
+        "description": "",
+        "stepCount": 3,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Stop Execution",
+            "actionKey": "stopExecution",
+            "componentKey": "stop-execution",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Department",
+            "actionKey": "queryResource",
+            "componentKey": "quickbooks",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 3,
+      "apps": [
+        "Webhook Triggers",
+        "Stop Execution",
+        "accounting software"
+      ],
+      "description": "Fetch Departments: Stop Execution, Get Department",
+      "keySteps": [
+        "Stop Execution",
+        "Get Department"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-17",
+      "name": "Fetch Tax Codes",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "19 Fetch Tax Codes",
+        "flowNumber": "19",
+        "description": "",
+        "stepCount": 3,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Fetch All TaxCodes",
+            "actionKey": "rawRequest",
+            "componentKey": "quickbooks",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over TaxCodes",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 3,
+      "apps": [
+        "Webhook Triggers",
+        "accounting software"
+      ],
+      "description": "Fetch Tax Codes: Fetch All TaxCodes, Loop Over TaxCodes",
+      "keySteps": [],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-53",
+      "name": "your email Sender",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "gmail-and-ring-central-communicator-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "gmail-and-ring-central-communicator-export.yml",
+        "flowName": "01 Gmail Sender",
+        "flowNumber": "01",
+        "description": "",
+        "stepCount": 5,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get User Info",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "String or JSON Checker",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Generate Receiver Info",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Send Message",
+            "actionKey": "rawRequest",
+            "componentKey": "google-gmail",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 5,
+      "apps": [
+        "Webhook Triggers",
+        "your email"
+      ],
+      "description": "your email Sender: Get User Info, String or JSON Checker, Generate Receiver Info, ...",
+      "keySteps": [
+        "Send Message"
+      ],
+      "inefficiencies": [
+        "Custom code could be replaced with native actions"
+      ]
+    },
+    {
+      "id": "P-12",
+      "name": "Grab Items/Classes from QB",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "14 Grab Items/Classes from QB",
+        "flowNumber": "14",
+        "description": "",
+        "stepCount": 9,
+        "steps": [
+          {
+            "name": "Update Class in QB Trigger",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Existing Accounts",
+            "actionKey": "loopNTimes",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Create List",
+            "actionKey": "flatten",
+            "componentKey": "collection-tools",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Filtered List",
+            "actionKey": "filter",
+            "componentKey": "collection-tools",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Accounts",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Items",
+            "actionKey": "rawRequest",
+            "componentKey": "quickbooks",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Items",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Classes",
+            "actionKey": "rawRequest",
+            "componentKey": "quickbooks",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Class",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 9,
+      "apps": [
+        "Schedule Triggers",
+        "Collection Tools",
+        "accounting software"
+      ],
+      "description": "Grab Items/Classes from QB: Loop Over Existing Accounts, Create List, Filtered List, ...",
+      "keySteps": [
+        "Loop Over Existing Accounts",
+        "Create List",
+        "Filtered List",
+        "Get Items",
+        "Get Classes"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-63",
+      "name": "Hubspot mapper to file field",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "job-management-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "job-management-integration-export.yml",
+        "flowName": "12 Hubspot mapper to file field",
+        "flowNumber": "12",
+        "description": "Maps file field and sync the file between HS to AT",
+        "stepCount": 5,
+        "steps": [
+          {
+            "name": "Cross Flow",
+            "actionKey": "crossFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Deal Properties",
+            "actionKey": "rawRequest",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Deal Payload",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Deal",
+            "actionKey": "rawRequest",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Download and upload file",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 5,
+      "apps": [
+        "HubSpot"
+      ],
+      "description": "Maps file field and sync the file between HS to AT",
+      "keySteps": [
+        "Get Deal Properties",
+        "Get Deal"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-47",
+      "name": "Hubspot SMS Sent Logger",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "boolean-sales-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-sales-integration-export.yml",
+        "flowName": "91 Hubspot SMS Sent Logger",
+        "flowNumber": "91",
+        "description": "",
+        "stepCount": 6,
+        "steps": [
+          {
+            "name": "HTTP",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Hubspot Phone Formatter",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Hubspot Phone Formatter From",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Branch on Expression",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Contact",
+            "actionKey": "selectExecutedStepResult",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Does contact exist",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 6,
+      "apps": [
+        "Webhook Triggers"
+      ],
+      "description": "Hubspot SMS Sent Logger: Hubspot Phone Formatter, Hubspot Phone Formatter From, Get Contact, ...",
+      "keySteps": [
+        "HTTP",
+        "Get Contact"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-15",
+      "name": "Manual Update accounting software Customer Status",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "17 Manual Update QBO Customer Status",
+        "flowNumber": "17",
+        "description": "",
+        "stepCount": 3,
+        "steps": [
+          {
+            "name": "Manual Update QBO Customer Status Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "List Records",
+            "actionKey": "listRecords",
+            "componentKey": "airtable",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Items",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 3,
+      "apps": [
+        "Webhook Triggers",
+        "Airtable"
+      ],
+      "description": "Manual Update accounting software Customer Status: List Records",
+      "keySteps": [
+        "List Records"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-45",
+      "name": "estimating tool All Data Sync to HubSpot",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "boolean-sales-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-sales-integration-export.yml",
+        "flowName": "15 PaintScout All Data Sync to HubSpot",
+        "flowNumber": "15",
+        "description": "",
+        "stepCount": 14,
+        "steps": [
+          {
+            "name": "HTTP",
+            "actionKey": "recursiveTrigger",
+            "componentKey": "recursive-flow",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get All Owners",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Project Types",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get All Companies",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get All PS Quotes",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get All PS Contacts",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "HS Payload Contact",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Bulk upsert contact",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get All HS Contacts",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get all HS Deals",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "PS Quote x HS Deal Sync",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Branch on Expression",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Stop Execution",
+            "actionKey": "stopExecution",
+            "componentKey": "stop-execution",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "CompanyCam Sync X HubSpot Deal",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [
+        {
+          "fileName": "boolean-sales-integration-export.yml",
+          "flowName": "15.1 Sub PaintScout All Data Sync to HubSpot - Contact Association",
+          "flowNumber": "15.1",
+          "stepCount": 5,
+          "steps": [
+            {
+              "name": "HTTP",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "List Deals",
+              "actionKey": "listDeals",
+              "componentKey": "hubspot",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "List Contacts",
+              "actionKey": "listContacts",
+              "componentKey": "hubspot",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Bulk Contact Association",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Stop Execution",
+              "actionKey": "stopExecution",
+              "componentKey": "stop-execution",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        }
+      ],
+      "crossFileConnections": [],
+      "totalStepCount": 19,
+      "apps": [
+        "Recursive Flow",
+        "Stop Execution",
+        "HubSpot"
+      ],
+      "description": "estimating tool All Data Sync to HubSpot: Get All Owners, Get Project Types, Get All Companies, ...",
+      "keySteps": [
+        "HTTP",
+        "Stop Execution",
+        "List Deals",
+        "List Contacts",
+        "Stop Execution"
+      ],
+      "inefficiencies": [
+        "Complex flow could be simplified (15+ steps)",
+        "Custom code could be replaced with native actions"
+      ]
+    },
+    {
+      "id": "P-38",
+      "name": "estimating tool Default Identifier",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "boolean-sales-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-sales-integration-export.yml",
+        "flowName": "09 PaintScout Default Identifier",
+        "flowNumber": "09",
+        "description": "",
+        "stepCount": 13,
+        "steps": [
+          {
+            "name": "Http",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Convert To String",
+            "actionKey": "convertToString",
+            "componentKey": "change-data-format",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Deal ID Value Branch",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Deal Properties",
+            "actionKey": "rawRequest",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Contact Properties",
+            "actionKey": "rawRequest",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Company Properties",
+            "actionKey": "rawRequest",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Convert Deal Properties to array",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Deal",
+            "actionKey": "rawRequest",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Associated Contact",
+            "actionKey": "readAssociations",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Associated Company",
+            "actionKey": "readAssociations",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Contact",
+            "actionKey": "rawRequest",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Company",
+            "actionKey": "rawRequest",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Branch on Expression",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 13,
+      "apps": [
+        "Webhook Triggers",
+        "Change Data Format",
+        "HubSpot"
+      ],
+      "description": "estimating tool Default Identifier: Convert To String, Deal ID Value Branch, Get Deal Properties, ...",
+      "keySteps": [
+        "Http",
+        "Convert To String",
+        "Get Deal Properties",
+        "Get Contact Properties",
+        "Get Company Properties",
+        "Get Deal",
+        "Get Associated Contact",
+        "Get Associated Company",
+        "Get Contact",
+        "Get Company"
+      ],
+      "inefficiencies": [
+        "Repetitive hubspot API calls could be batched (8 calls)"
+      ]
+    },
+    {
+      "id": "P-10",
+      "name": "accounting software Transactions",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "11 QBO Transactions",
+        "flowNumber": "11",
+        "description": "",
+        "stepCount": 8,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "schedule",
+            "componentKey": "schedule-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Adjust Date/Time",
+            "actionKey": "adjustDateTime",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Format Date/Time",
+            "actionKey": "formatDateTime",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get All Payment Methods",
+            "actionKey": "rawRequest",
+            "componentKey": "quickbooks",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Sales Receipts",
+            "actionKey": "rawRequest",
+            "componentKey": "quickbooks",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Sales Receipt Branch",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Payments",
+            "actionKey": "rawRequest",
+            "componentKey": "quickbooks",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Payments Branch",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 8,
+      "apps": [
+        "Schedule Triggers",
+        "Datetime",
+        "accounting software"
+      ],
+      "description": "accounting software Transactions: Adjust Date/Time, Format Date/Time, Get All Payment Methods, ...",
+      "keySteps": [
+        "Adjust Date/Time",
+        "Format Date/Time",
+        "Get All Payment Methods",
+        "Get Sales Receipts",
+        "Get Payments"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-55",
+      "name": "RC Text Sender",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "gmail-and-ring-central-communicator-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "gmail-and-ring-central-communicator-export.yml",
+        "flowName": "03 RC Text Sender",
+        "flowNumber": "03",
+        "description": "",
+        "stepCount": 3,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Json Format Checker",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Branch on Expression",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 3,
+      "apps": [
+        "Webhook Triggers"
+      ],
+      "description": "RC Text Sender: Json Format Checker",
+      "keySteps": [],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-57",
+      "name": "Register HS Users",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "job-management-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "job-management-integration-export.yml",
+        "flowName": "02 Register HS Users",
+        "flowNumber": "02",
+        "description": "Update People table in PaintOS with HubSpot active users.",
+        "stepCount": 3,
+        "steps": [
+          {
+            "name": "HS User IDs Trigger",
+            "actionKey": "instanceDeploy",
+            "componentKey": "management-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Owner",
+            "actionKey": "rawRequest",
+            "componentKey": "hubspot",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Loop Over Owners",
+            "actionKey": "loopOverItems",
+            "componentKey": "loop",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [
+        {
+          "fileName": "job-management-integration-export.yml",
+          "flowName": "Subflow - 02 Register HS Users",
+          "flowNumber": null,
+          "stepCount": 3,
+          "steps": [
+            {
+              "name": "HS User IDs Trigger",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "HS Owner x People Table",
+              "actionKey": "rawRequest",
+              "componentKey": "airtable",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Branch on Expression",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        }
+      ],
+      "crossFileConnections": [],
+      "totalStepCount": 6,
+      "apps": [
+        "Management Triggers",
+        "HubSpot",
+        "Airtable"
+      ],
+      "description": "Update People table in PaintOS with HubSpot active users.",
+      "keySteps": [
+        "Get Owner",
+        "HS Owner x People Table"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-43",
+      "name": "TNT Contact Flow",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "boolean-sales-integration-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-sales-integration-export.yml",
+        "flowName": "13 TNT Contact Flow",
+        "flowNumber": "13",
+        "description": "",
+        "stepCount": 2,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Update TNT Contact",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 2,
+      "apps": [
+        "Webhook Triggers"
+      ],
+      "description": "TNT Contact Flow: Update TNT Contact",
+      "keySteps": [],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-56",
+      "name": "Update Estimate Calendar",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "gmail-and-ring-central-communicator-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "gmail-and-ring-central-communicator-export.yml",
+        "flowName": "05 Update Estimate Calendar",
+        "flowNumber": "05",
+        "description": "",
+        "stepCount": 5,
+        "steps": [
+          {
+            "name": "Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Start UTC",
+            "actionKey": "formatDateTime",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "End UTC",
+            "actionKey": "formatDateTime",
+            "componentKey": "datetime",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Search Event",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Branch on Expression",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 5,
+      "apps": [
+        "Webhook Triggers",
+        "Datetime"
+      ],
+      "description": "Update Estimate Calendar: Start UTC, End UTC, Search Event",
+      "keySteps": [
+        "Start UTC",
+        "End UTC"
+      ],
+      "inefficiencies": []
+    }
+  ]
+}

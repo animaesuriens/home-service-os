@@ -6,19 +6,31 @@
 // Per PROJECT.md: Generic names for tools except HubSpot/Airtable
 const TOOL_MAP = {
   'paintscout': 'estimating tool',
+  'paintscout-api': 'estimating tool',
+  'paintscoutapi': 'estimating tool',
   'companycam': 'photo storage',
+  'companycam-api': 'photo storage',
+  'companycamapi': 'photo storage',
   'youcanbookme': 'appointment scheduler',
   'youcanbook.me': 'appointment scheduler',
+  'youcanbookme-api': 'appointment scheduler',
   'ringcentral': 'SMS platform',
+  'ringcentral-api': 'SMS platform',
+  'ringcentralapi': 'SMS platform',
   'quickbooks-time': 'time tracking app',
   'quickbooks time': 'time tracking app',
+  'quickbookstime': 'time tracking app',
   'google-calendar': 'your calendar',
   'google calendar': 'your calendar',
+  'googlecalendar': 'your calendar',
   'gmail': 'your email',
+  'gmail-api': 'your email',
   'google-sheets': 'your spreadsheet',
   'google sheets': 'your spreadsheet',
+  'googlesheets': 'your spreadsheet',
   'quickbooks-online': 'accounting software',
   'quickbooks online': 'accounting software',
+  'quickbooksonline': 'accounting software',
   'quickbooks': 'accounting software',
   'qbo': 'accounting software'
 };
@@ -45,9 +57,11 @@ function genericizeTools(componentKeys) {
       return capitalizeExplicitTool(key);
     }
 
-    // Map through TOOL_MAP
-    if (TOOL_MAP[keyLower]) {
-      return TOOL_MAP[keyLower];
+    // Map through TOOL_MAP (case-insensitive check)
+    for (const [toolKey, genericName] of Object.entries(TOOL_MAP)) {
+      if (keyLower.includes(toolKey)) {
+        return genericName;
+      }
     }
 
     // Unknown tool - title case it
