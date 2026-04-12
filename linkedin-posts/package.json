@@ -1,0 +1,16 @@
+{
+  "name": "linkedin-automation-portfolio",
+  "version": "1.0.0",
+  "description": "LinkedIn post generator from Prismatic YAML exports",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "parse": "node scripts/parse-yaml.js",
+    "analyze": "node scripts/analyze-processes.js",
+    "generate-map": "node scripts/generate-map.js"
+  },
+  "dependencies": {
+    "yaml": "2.8.3",
+    "fs-extra": "11.3.4"
+  }
+}
