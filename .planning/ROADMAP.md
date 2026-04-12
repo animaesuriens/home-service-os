@@ -11,7 +11,7 @@ This roadmap transforms 8 Prismatic YAML export files into a portfolio of Linked
 
 ## Phases
 
-- [ ] **Phase 1: Process Mapping** - Extract and organize logical processes from YAML files
+- [x] **Phase 1: Process Mapping** - Extract and organize logical processes from YAML files (completed 2026-04-12)
 - [ ] **Phase 2: Content & Diagram Pipeline** - Generate posts and platform-themed flowcharts
 - [ ] **Phase 3: Organization & Index** - Structure output folder and create navigation
 
@@ -32,14 +32,14 @@ This roadmap transforms 8 Prismatic YAML export files into a portfolio of Linked
 5. Processes are ordered following customer journey (lead → estimate → sale → job → invoice)
 6. An internal process map document exists listing all identified processes with descriptions
 
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 01-01-PLAN.md — Parse all 8 YAML files, extract flow structures, filter infrastructure flows
-- [ ] 01-02-PLAN.md — Trace connections, group processes, order by journey, generate PROCESS-MAP.md
+- [x] 01-02-PLAN.md — Trace connections, group processes, order by journey, generate PROCESS-MAP.md
 
 ### Phase 2: Content & Diagram Pipeline
-**Goal**: Generate 3 platform versions of posts and diagrams for each identified process
+**Goal**: Generate ~10-12 bundled LinkedIn posts (3 platform versions each) with matching Playwright-rendered flowchart diagrams
 
 **Depends on**: Phase 1
 
@@ -55,7 +55,12 @@ Plans:
 7. Diagrams contain 8-10 steps maximum with swimlane layout for multi-actor processes
 8. Diagrams are generated programmatically using automated tooling
 
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Install dependencies, create bundle curator, generate bundles.json
+- [ ] 02-02-PLAN.md — Create HTML diagram template and Playwright renderer library
+- [ ] 02-03-PLAN.md — Generate all posts via Claude API and all diagrams via Playwright, verify quality
 
 **UI hint**: yes
 
@@ -79,8 +84,8 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Process Mapping | 1/2 | In Progress|  |
-| 2. Content & Diagram Pipeline | 0/0 | Not started | - |
+| 1. Process Mapping | 2/2 | Complete   | 2026-04-12 |
+| 2. Content & Diagram Pipeline | 0/3 | Planned | - |
 | 3. Organization & Index | 0/0 | Not started | - |
 
 ## Notes
@@ -101,4 +106,4 @@ Plans:
 - 3 phases deliver complete portfolio
 
 ---
-*Last updated: 2026-04-12 after Phase 1 planning*
+*Last updated: 2026-04-13 after Phase 2 planning*
