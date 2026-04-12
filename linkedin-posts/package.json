@@ -7,10 +7,17 @@
   "scripts": {
     "parse": "node scripts/parse-yaml.js",
     "analyze": "node scripts/analyze-processes.js",
-    "generate-map": "node scripts/generate-map.js"
+    "generate-map": "node scripts/generate-map.js",
+    "stage1:bundles": "node scripts/generate-bundles.js",
+    "stage2:posts": "node scripts/generate-posts.js",
+    "stage3:diagrams": "node scripts/generate-diagrams.js",
+    "pipeline": "npm run stage1:bundles && npm run stage2:posts && npm run stage3:diagrams",
+    "pipeline:diagrams-only": "npm run stage3:diagrams"
   },
   "dependencies": {
-    "yaml": "2.8.3",
-    "fs-extra": "11.3.4"
+    "@anthropic-ai/sdk": "^0.88.0",
+    "fs-extra": "11.3.4",
+    "playwright": "^1.59.1",
+    "yaml": "2.8.3"
   }
 }
