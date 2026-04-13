@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Per-YAML Accuracy Pass
 status: executing
-last_updated: "2026-04-13T18:16:42.617Z"
+last_updated: "2026-04-13T18:25:21.187Z"
 last_activity: 2026-04-13
 progress:
   total_phases: 10
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
-  percent: 33
+  completed_plans: 2
+  percent: 67
 ---
 
 # State: LinkedIn Automation Portfolio
@@ -28,17 +28,17 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 ## Current Position
 
 Phase: 04 (pipeline-enhancement) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 **Milestone:** v1.1 Per-YAML Accuracy Pass
 **Phase:** 4 - Pipeline Enhancement
-**Plan:** 04-01 (completed)
+**Plan:** 04-02 (completed)
 **Status:** Executing Phase 04
-**Last activity:** 2026-04-13
+**Last activity:** 2026-04-14
 
 **Progress:**
 
-[███░░░░░░░] 33%
-Phase 4/13 (Pipeline Enhancement) - 1 of 3 plans complete
+[███████░░░] 67%
+Phase 4/13 (Pipeline Enhancement) - 2 of 3 plans complete
 
 ```
 
@@ -58,8 +58,9 @@ Phase 4/13 (Pipeline Enhancement) - 1 of 3 plans complete
 
 - Started: 2026-04-13
 - Phases: 10 (4-13)
-- Plans: 0
-- Tasks: 0
+- Plans: 2
+- Tasks: 4
+- Duration: 10 minutes
 
 ## Accumulated Context
 
@@ -75,7 +76,9 @@ Phase 4/13 (Pipeline Enhancement) - 1 of 3 plans complete
 | New bundles for missed processes | 2026-04-13 | Deep reads surface showcase-worthy flows v1.0 missed |
 | One phase per YAML (8 phases) | 2026-04-13 | CONT-03 requires manual verification checkpoint per YAML |
 | Setup + per-YAML + finalize structure | 2026-04-13 | Phase 4 tools, Phases 5-12 YAML processing, Phase 13 portfolio update |
-| Phase 04 P01 | 5 | 2 tasks | 4 files |
+| Phase 04 P01 | 5 | 2 tasks | 4 files | Add --yaml filter to pipeline scripts |
+| Phase 04 P02 | 5 | 2 tasks | 3 files | Externalize bundle definitions to JSON with type field |
+| Bundle definitions JSON | 2026-04-14 | Enables per-YAML editing without code changes |
 
 ### YAML Deep Read Progress
 
@@ -111,9 +114,9 @@ Hallucinated steps: lead scoring, budget analysis, next-available-rep assignment
 
 ## Session Continuity
 
-**What just happened**: Completed 04-01-PLAN.md (Add --yaml Filter to Pipeline Scripts). Added optional --yaml <filename> flag to all pipeline scripts (parse-yaml, analyze-processes, generate-bundles) for per-file YAML processing. Fixed blocking issue with incorrect projectRoot path calculation. Full pipeline chain now supports single-file mode while remaining backward compatible.
+**What just happened**: Completed 04-02-PLAN.md (Externalize Bundle Definitions). Extracted all 12 bundle definitions from bundle-curator.js to data/bundle-definitions.json with new type and verifiedSteps fields. Refactored bundle-curator.js as loader/validator with schema validation. Zero regression - produces identical 12-bundle output with new type field added. Enables audit phases 5-12 to edit bundle definitions without modifying code.
 
-**What's next**: Continue Phase 04 pipeline enhancement with plan 04-02
+**What's next**: Continue Phase 04 pipeline enhancement with plan 04-03 (final plan in phase)
 
 ---
 *This file is the memory of the project. Update at phase boundaries and when context shifts.*
