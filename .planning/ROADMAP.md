@@ -12,7 +12,7 @@ This roadmap transforms 8 Prismatic YAML export files into a portfolio of Linked
 ## Phases
 
 - [x] **Phase 1: Process Mapping** - Extract and organize logical processes from YAML files (completed 2026-04-12)
-- [ ] **Phase 2: Content & Diagram Pipeline** - Generate posts and platform-themed flowcharts
+- [x] **Phase 2: Content & Diagram Pipeline** - Generate posts and platform-themed flowcharts (completed 2026-04-13)
 - [ ] **Phase 3: Organization & Index** - Structure output folder and create navigation
 
 ## Phase Details
@@ -58,9 +58,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Install dependencies, create bundle curator, generate bundles.json
-- [ ] 02-02-PLAN.md — Create HTML diagram template and Playwright renderer library
-- [ ] 02-03-PLAN.md — Generate all posts via Claude API and all diagrams via Playwright, verify quality
+- [x] 02-01-PLAN.md — Install dependencies, create bundle curator, generate bundles.json
+- [x] 02-02-PLAN.md — Create HTML diagram template and Playwright renderer library
+- [x] 02-03-PLAN.md — Generate all posts via Claude API and all diagrams via Mermaid/Playwright, verify quality
 
 **UI hint**: yes
 
@@ -85,7 +85,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Process Mapping | 2/2 | Complete   | 2026-04-12 |
-| 2. Content & Diagram Pipeline | 0/3 | Planned | - |
+| 2. Content & Diagram Pipeline | 3/3 | Complete | 2026-04-13 |
 | 3. Organization & Index | 0/0 | Not started | - |
 
 ## Notes
@@ -106,4 +106,4 @@ Plans:
 - 3 phases deliver complete portfolio
 
 ---
-*Last updated: 2026-04-13 after Phase 2 planning*
+*Last updated: 2026-04-13 after Phase 2 completion*

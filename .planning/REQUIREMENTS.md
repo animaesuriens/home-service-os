@@ -10,11 +10,11 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Process Mapping
 
 - [x] **PMAP-01**: System parses all 8 Prismatic YAML export files and extracts flow definitions with steps
-- [ ] **PMAP-02**: System traces cross-file webhook connections to identify how integrations link together
-- [ ] **PMAP-03**: System groups sub-flows into logical parent processes (one process per post)
+- [x] **PMAP-02**: System traces cross-file webhook connections to identify how integrations link together
+- [x] **PMAP-03**: System groups sub-flows into logical parent processes (one process per post)
 - [x] **PMAP-04**: System filters out infrastructure/setup flows (register, webhook management, instance deploy)
-- [ ] **PMAP-05**: System orders processes following the customer journey (lead → estimate → sale → job → invoice)
-- [ ] **PMAP-06**: System produces an internal process map document for reference during content generation
+- [x] **PMAP-05**: System orders processes following the customer journey (lead → estimate → sale → job → invoice)
+- [x] **PMAP-06**: System produces an internal process map document for reference during content generation
 
 ### Content Generation
 
@@ -81,11 +81,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | PMAP-01 | Phase 1 | Complete |
-| PMAP-02 | Phase 1 | Pending |
-| PMAP-03 | Phase 1 | Pending |
+| PMAP-02 | Phase 1 | Complete |
+| PMAP-03 | Phase 1 | Complete |
 | PMAP-04 | Phase 1 | Complete |
-| PMAP-05 | Phase 1 | Pending |
-| PMAP-06 | Phase 1 | Pending |
+| PMAP-05 | Phase 1 | Complete |
+| PMAP-06 | Phase 1 | Complete |
 | CONT-01 | Phase 2 | Pending |
 | CONT-02 | Phase 2 | Pending |
 | CONT-03 | Phase 2 | Pending |
