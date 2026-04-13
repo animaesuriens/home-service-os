@@ -11,22 +11,58 @@ const { groupIntoProcesses } = require('../lib/process-grouper');
 const { tagAndOrder } = require('../lib/journey-tagger');
 const { genericizeTools, genericizeText } = require('../lib/tool-genericizer');
 
+function parseArgs() {
+  const args = process.argv.slice(2);
+  let yamlFilter = null;
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--yaml' && args[i + 1]) yamlFilter = args[i + 1];
+    if (args[i] === '--help' || args[i] === '-h') {
+      console.log('Usage: node analyze-processes.js [--yaml <filename>]');
+      console.log('');
+      console.log('Options:');
+      console.log('  --yaml <filename>   Analyze only flows from one YAML file');
+      console.log('  --help, -h          Show this help message');
+      console.log('');
+      console.log('Examples:');
+      console.log('  node analyze-processes.js                                           # All flows');
+      console.log('  node analyze-processes.js --yaml boolean-marketing-integration-export.yml  # One YAML');
+      process.exit(0);
+    }
+  }
+  return { yamlFilter };
+}
+
 async function analyzeProcesses() {
   console.log('Starting process analysis pipeline...\n');
+
+  // Parse args first
+  const { yamlFilter } = parseArgs();
 
   // Step 1: Load parsed flows data
   const parsedDataPath = path.join(__dirname, '../data/parsed-flows.json');
   const parsedData = await fs.readJson(parsedDataPath);
-  console.log(`Loaded ${parsedData.businessFlows.length} business flows from ${parsedData.sourceFiles.length} files`);
+
+  // Filter flows and config vars if --yaml flag provided
+  let businessFlows = parsedData.businessFlows;
+  let configVarsByFile = parsedData.configVarsByFile;
+
+  if (yamlFilter) {
+    console.log(`Filtering to flows from: ${yamlFilter}`);
+    businessFlows = parsedData.businessFlows.filter(flow => flow.fileName === yamlFilter);
+    configVarsByFile = { [yamlFilter]: parsedData.configVarsByFile[yamlFilter] || [] };
+    console.log(`Loaded ${businessFlows.length} business flows from filtered file`);
+  } else {
+    console.log(`Loaded ${parsedData.businessFlows.length} business flows from ${parsedData.sourceFiles.length} files`);
+  }
 
   // Step 2: Trace webhook connections
   console.log('Tracing cross-file webhook connections...');
-  const connections = traceConnections(parsedData.businessFlows, parsedData.configVarsByFile);
+  const connections = traceConnections(businessFlows, configVarsByFile);
   console.log(`Found ${connections.length} cross-file connections`);
 
   // Step 3: Group into logical processes
   console.log('Grouping flows into logical processes...');
-  const processes = groupIntoProcesses(parsedData.businessFlows, connections);
+  const processes = groupIntoProcesses(businessFlows, connections);
   console.log(`Identified ${processes.length} logical processes`);
 
   // Step 4: Tag with journey stages and order
