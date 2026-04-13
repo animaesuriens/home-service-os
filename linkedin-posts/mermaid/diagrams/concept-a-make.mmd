@@ -1,0 +1,14 @@
+---
+title: Lead Capture — Make
+---
+flowchart TD
+    A(("Customer Submits\nWeb Form")):::trigger --> B["Extract Contact Info\n& Project Details"]
+    B --> C["Standardize Data\nFrom Any Source"]
+    C --> D["Create or Update\nHubSpot Contact"]
+    D --> E{"Score Lead\nBy Project & Budget"}
+    E -->|High Value| F["Send Personalized\nWelcome Email"]
+    E -->|All Leads| G["Notify Sales Team\nWith Lead Brief"]
+    F --> H
+    G --> H["Auto-Assign to\nNext Available Rep"]
+
+    classDef trigger fill:#9b3dae,stroke:#fff,stroke-width:3px,color:#fff
