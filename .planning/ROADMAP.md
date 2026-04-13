@@ -37,7 +37,7 @@
 **Requirements**: AUDIT-01 (partial - tooling only)
 **Plans:** 3 plans
 Plans:
-- [ ] 04-01-PLAN.md -- Per-YAML filtering (--yaml flag on pipeline scripts)
+- [x] 04-01-PLAN.md -- Per-YAML filtering (--yaml flag on pipeline scripts)
 - [ ] 04-02-PLAN.md -- Bundle externalization (BUNDLE_DEFINITIONS to JSON, type + verifiedSteps fields)
 - [ ] 04-03-PLAN.md -- Audit tooling (flow mapping, hallucination detection, JSON + Markdown reports)
 **Success Criteria** (what must be TRUE):
