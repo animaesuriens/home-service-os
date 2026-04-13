@@ -85,7 +85,7 @@ async function main() {
   console.log('\nBundle Summary:');
   console.log('=' .repeat(80));
   filteredBundles.forEach((b, i) => {
-    console.log(`  ${i + 1}. ${b.title} (${b.idealizedSteps.length} steps, ${b.layout} layout, ${b.processIds.length} processes)`);
+    console.log(`  ${i + 1}. ${b.title} (${b.idealizedSteps.length} steps, ${b.type}, ${b.layout} layout, ${b.processIds.length} processes)`);
   });
   console.log('=' .repeat(80));
 

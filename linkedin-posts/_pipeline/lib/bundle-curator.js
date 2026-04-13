@@ -8,251 +8,36 @@
  * Per D-21: 8-10 steps maximum per bundle (key happy path only).
  */
 
+const fs = require('fs-extra');
+const path = require('path');
+
 /**
- * Curated bundle definitions.
- * Each bundle maps to constituent process IDs from processes.json,
- * with idealized steps, pain/solution narrative, and layout designation.
+ * Load bundle definitions from external JSON data file.
+ *
+ * @returns {Array} Array of bundle definition objects
+ * @throws {Error} If bundle definitions are malformed or missing required fields
  */
-const BUNDLE_DEFINITIONS = [
-  {
-    id: 'lead-capture-qualification',
-    title: 'Lead Capture & Qualification',
-    journeyStage: 'Lead Capture',
-    journeySlug: 'lead-capture',
-    processIds: ['P-23', 'P-25', 'P-24', 'P-34'],
-    idealizedSteps: [
-      { label: 'Web form submitted by potential customer', actor: 'Customer' },
-      { label: 'Extract contact info and project details', actor: 'System' },
-      { label: 'Standardize lead data from any marketing source', actor: 'System' },
-      { label: 'Create or update contact in HubSpot', actor: 'CRM' },
-      { label: 'Score lead based on project type and budget', actor: 'CRM' },
-      { label: 'Send personalized welcome email', actor: 'System' },
-      { label: 'Notify sales team with lead summary', actor: 'System' },
-      { label: 'Assign to next available sales rep', actor: 'CRM' }
-    ],
-    pain: 'Sales reps manually copying form submissions into the CRM, missing hot leads during evenings and weekends, inconsistent follow-up timing costing deals',
-    solution: 'Every lead is captured instantly from any marketing channel, scored automatically, welcomed within 60 seconds, and routed to the right salesperson — even at 2am on a Sunday',
-    layout: 'swimlane'
-  },
-  {
-    id: 'appointment-booking-scheduling',
-    title: 'Appointment Booking & Scheduling',
-    journeyStage: 'Appointment Booking',
-    journeySlug: 'appointment-booking',
-    processIds: ['P-27', 'P-31', 'P-28'],
-    idealizedSteps: [
-      { label: 'Customer selects available time slot online', actor: 'Customer' },
-      { label: 'Generate personalized booking link for contact', actor: 'System' },
-      { label: 'Confirm appointment and sync to team calendar', actor: 'Calendar' },
-      { label: 'Send confirmation email with appointment details', actor: 'System' },
-      { label: 'Create preparation checklist for estimator', actor: 'System' },
-      { label: 'Send reminder 24 hours before appointment', actor: 'System' },
-      { label: 'Handle cancellation or reschedule requests automatically', actor: 'Calendar' },
-      { label: 'Update CRM with appointment status', actor: 'CRM' }
-    ],
-    pain: 'Phone tag with customers trying to schedule estimates, double-booked calendars, no-shows because reminders were forgotten, and hours lost to manual calendar management',
-    solution: 'Customers book their own appointments from a personalized link, get automatic confirmations and reminders, and the whole team stays in sync without a single phone call',
-    layout: 'swimlane'
-  },
-  {
-    id: 'estimate-to-deal-pipeline',
-    title: 'Estimate-to-Deal Pipeline',
-    journeyStage: 'Estimating',
-    journeySlug: 'estimate-to-deal',
-    processIds: ['P-35', 'P-39', 'P-46', 'P-45'],
-    idealizedSteps: [
-      { label: 'Create estimate in estimating tool after site visit', actor: 'Estimator' },
-      { label: 'Sync estimate details to HubSpot deal', actor: 'System' },
-      { label: 'Apply standardized deal naming convention', actor: 'System' },
-      { label: 'Update deal stage and pipeline position', actor: 'CRM' },
-      { label: 'Link project photos from site visit', actor: 'System' },
-      { label: 'Calculate profit margins and flag outliers', actor: 'System' },
-      { label: 'Notify sales manager of high-value estimates', actor: 'CRM' },
-      { label: 'Send estimate to customer for review', actor: 'System' }
-    ],
-    pain: 'Estimates sitting in one tool while deals live in another, sales managers manually copying numbers between systems, inconsistent deal naming making pipeline reports useless',
-    solution: 'The moment an estimate is created, every system updates automatically — the CRM deal is created, named consistently, and the sales team sees real-time pipeline value without touching a spreadsheet',
-    layout: 'swimlane'
-  },
-  {
-    id: 'change-order-management',
-    title: 'Change Order Management',
-    journeyStage: 'Sales/Proposal',
-    journeySlug: 'change-orders',
-    processIds: ['P-40', 'P-36', 'P-59'],
-    idealizedSteps: [
-      { label: 'Customer requests scope change on existing project', actor: 'Customer' },
-      { label: 'Create change order record linked to original deal', actor: 'System' },
-      { label: 'Calculate revised pricing and timeline impact', actor: 'System' },
-      { label: 'Apply change order label and categorization', actor: 'System' },
-      { label: 'Update deal value in CRM with new total', actor: 'CRM' },
-      { label: 'Send revised estimate to customer for approval', actor: 'System' },
-      { label: 'Update project timeline and crew schedule', actor: 'System' },
-      { label: 'Notify production team of scope changes', actor: 'System' }
-    ],
-    pain: 'Change orders scribbled on paper, forgotten price adjustments that eat into margins, crew showing up without knowing the scope changed, and deals stuck showing the wrong value for weeks',
-    solution: 'Every change order flows through automatically — pricing updates, the CRM reflects the real deal value, and the production team knows about scope changes before they arrive on site',
-    layout: 'vertical'
-  },
-  {
-    id: 'contract-lifecycle',
-    title: 'Contract Lifecycle',
-    journeyStage: 'Contract Management',
-    journeySlug: 'contract-lifecycle',
-    processIds: ['P-60', 'P-61', 'P-62'],
-    idealizedSteps: [
-      { label: 'Generate contract from approved estimate', actor: 'System' },
-      { label: 'Send contract to customer for e-signature', actor: 'System' },
-      { label: 'Track contract status and send reminders', actor: 'System' },
-      { label: 'Customer signs contract electronically', actor: 'Customer' },
-      { label: 'Update deal stage to "Contract Signed" in CRM', actor: 'CRM' },
-      { label: 'Create project addendums if scope includes extras', actor: 'System' },
-      { label: 'Trigger job setup workflow automatically', actor: 'System' },
-      { label: 'Notify operations team that new job is confirmed', actor: 'System' }
-    ],
-    pain: 'Contracts emailed as PDFs, customers printing and scanning to sign, nobody knowing when a contract was actually signed until someone checks email, and jobs delayed waiting for paperwork',
-    solution: 'Contracts go out with one click, customers sign on their phone, and the moment ink hits the digital page the entire back office starts spinning up the job — zero waiting, zero chasing',
-    layout: 'swimlane'
-  },
-  {
-    id: 'deal-to-job-processing',
-    title: 'Deal-to-Job Processing',
-    journeyStage: 'Job Setup',
-    journeySlug: 'deal-to-job',
-    processIds: ['P-58', 'P-48', 'P-66', 'P-65', 'P-63'],
-    idealizedSteps: [
-      { label: 'Deal marked as won in CRM', actor: 'Sales' },
-      { label: 'Register deal owner and assign project manager', actor: 'System' },
-      { label: 'Sync company and contact records across systems', actor: 'System' },
-      { label: 'Create job record in project management', actor: 'System' },
-      { label: 'Map HubSpot fields to project file structure', actor: 'System' },
-      { label: 'Generate job folder with all customer documents', actor: 'System' },
-      { label: 'Create initial production schedule', actor: 'System' },
-      { label: 'Notify crew leads of upcoming job', actor: 'System' }
-    ],
-    pain: 'Won deals sitting in the CRM while the ops team manually creates job records, copy-pasting customer info between three different systems, and new jobs falling through the cracks during busy season',
-    solution: 'The moment a deal is won, every downstream system is populated automatically — job records, customer files, production schedules, and crew notifications happen without anyone lifting a finger',
-    layout: 'vertical'
-  },
-  {
-    id: 'production-crew-tracking',
-    title: 'Production & Crew Tracking',
-    journeyStage: 'Production Tracking',
-    journeySlug: 'production-tracking',
-    processIds: ['P-49', 'P-50', 'P-51', 'P-52'],
-    idealizedSteps: [
-      { label: 'Update daily production schedule from field data', actor: 'Field Crew' },
-      { label: 'Log time entries and crew hours for each job', actor: 'Field Crew' },
-      { label: 'Sync time tracking data to central database', actor: 'System' },
-      { label: 'Calculate daily production metrics per crew', actor: 'System' },
-      { label: 'Update project completion percentage', actor: 'System' },
-      { label: 'Flag jobs running behind schedule', actor: 'System' },
-      { label: 'Generate daily production summary for office', actor: 'Office' },
-      { label: 'Alert project manager of schedule variances', actor: 'Office' }
-    ],
-    pain: 'Office staff calling crews for updates, production data trapped in text messages and phone calls, no idea which jobs are on track until someone drives to the site, and weekly reports that are already outdated',
-    solution: 'Field crews log production data once, and the entire office sees real-time progress — schedule variances trigger alerts automatically, and daily summaries write themselves',
-    layout: 'swimlane'
-  },
-  {
-    id: 'time-tracking-sync-engine',
-    title: 'Time Tracking Sync Engine',
-    journeyStage: 'Time Tracking',
-    journeySlug: 'time-tracking',
-    processIds: ['P-68', 'P-71', 'P-69', 'P-73', 'P-74', 'P-70'],
-    idealizedSteps: [
-      { label: 'Employees clock in and out via time tracking app', actor: 'Employee' },
-      { label: 'Sync job codes and locations to time system', actor: 'System' },
-      { label: 'Match time entries to active projects and jobs', actor: 'System' },
-      { label: 'Sync new and modified time logs to central database', actor: 'System' },
-      { label: 'Handle deleted or corrected time entries', actor: 'System' },
-      { label: 'Sync employee profiles and permissions', actor: 'System' },
-      { label: 'Deactivate job codes for completed projects', actor: 'System' },
-      { label: 'Generate payroll-ready time summaries', actor: 'System' }
-    ],
-    pain: 'Time entries in one app, job codes in another, payroll staff spending hours reconciling who worked where, deleted entries causing phantom hours, and new employees waiting days to be set up in the time system',
-    solution: 'Every clock-in, correction, and deletion flows between systems in real-time — job codes stay current, employee profiles sync automatically, and payroll gets clean data without manual reconciliation',
-    layout: 'vertical'
-  },
-  {
-    id: 'invoice-lifecycle',
-    title: 'Invoice Lifecycle',
-    journeyStage: 'Invoicing',
-    journeySlug: 'invoice-lifecycle',
-    processIds: ['P-04', 'P-20', 'P-11', 'P-18', 'P-05', 'P-06', 'P-41'],
-    idealizedSteps: [
-      { label: 'Detect unbilled line items ready for invoicing', actor: 'System' },
-      { label: 'Create invoice in accounting software from project data', actor: 'System' },
-      { label: 'Sync invoice details back to project database', actor: 'System' },
-      { label: 'Send invoice to customer via email', actor: 'System' },
-      { label: 'Track payment status and sync updates', actor: 'Accounting' },
-      { label: 'Handle invoice modifications and corrections', actor: 'Accounting' },
-      { label: 'Process void requests and update all systems', actor: 'Accounting' },
-      { label: 'Generate work order URLs for customer reference', actor: 'System' }
-    ],
-    pain: 'Unbilled work slipping through the cracks, invoices created in one system but invisible in another, customers getting outdated versions, and voided invoices still showing up in project dashboards',
-    solution: 'Unbilled items are detected automatically, invoices flow between accounting and project management in real-time, and every modification syncs everywhere — nothing falls through the cracks',
-    layout: 'swimlane'
-  },
-  {
-    id: 'expense-management-pipeline',
-    title: 'Expense Management Pipeline',
-    journeyStage: 'Expense Management',
-    journeySlug: 'expense-management',
-    processIds: ['P-07', 'P-21', 'P-03', 'P-01', 'P-02', 'P-10'],
-    idealizedSteps: [
-      { label: 'Import bills and expenses from accounting software', actor: 'System' },
-      { label: 'Match expenses to jobs and projects', actor: 'System' },
-      { label: 'Sync customer records between accounting and database', actor: 'System' },
-      { label: 'Link parent companies to job records', actor: 'System' },
-      { label: 'Link sub-customers to individual projects', actor: 'System' },
-      { label: 'Save expense attachments and receipts to database', actor: 'System' },
-      { label: 'Categorize transactions by type and department', actor: 'System' },
-      { label: 'Generate expense reports by job and time period', actor: 'System' }
-    ],
-    pain: 'Receipts in email, bills in accounting software, project costs in a spreadsheet — nobody can answer "how much did we spend on that job?" without an hour of digging through three different systems',
-    solution: 'Every bill, receipt, and transaction is automatically matched to its job, categorized, and stored in one place — real-time job costing without the treasure hunt',
-    layout: 'vertical'
-  },
-  {
-    id: 'reporting-dashboard-sync',
-    title: 'Reporting Dashboard Sync',
-    journeyStage: 'Reporting',
-    journeySlug: 'reporting-sync',
-    processIds: ['P-75', 'P-76'],
-    idealizedSteps: [
-      { label: 'Pull latest deal and revenue data from CRM', actor: 'System' },
-      { label: 'Aggregate metrics across all active pipelines', actor: 'System' },
-      { label: 'Calculate win rates, deal velocity, and revenue trends', actor: 'System' },
-      { label: 'Sync updated metrics to reporting spreadsheet', actor: 'System' },
-      { label: 'Refresh dashboard visualizations automatically', actor: 'System' },
-      { label: 'Flag significant changes or anomalies', actor: 'System' }
-    ],
-    pain: 'Sales managers manually pulling reports from the CRM every Monday, numbers that are already a week old by the time anyone sees them, and no early warning when pipeline health drops',
-    solution: 'Dashboards refresh every two minutes with live CRM data — win rates, revenue trends, and pipeline health are always current, and anomalies trigger alerts before they become problems',
-    layout: 'vertical'
-  },
-  {
-    id: 'communication-hub',
-    title: 'Communication Hub',
-    journeyStage: 'Uncategorized',
-    journeySlug: 'communication-hub',
-    processIds: ['P-67', 'P-53', 'P-55', 'P-47', 'P-56'],
-    idealizedSteps: [
-      { label: 'System event triggers outbound communication', actor: 'System' },
-      { label: 'Select communication channel based on event type', actor: 'System' },
-      { label: 'Send email notification with formatted details', actor: 'Email' },
-      { label: 'Send SMS alert for time-sensitive updates', actor: 'SMS' },
-      { label: 'Log all sent messages to CRM activity timeline', actor: 'CRM' },
-      { label: 'Update estimate calendar with schedule changes', actor: 'Calendar' },
-      { label: 'Route error notifications to technical team', actor: 'System' },
-      { label: 'Track delivery status and flag failures', actor: 'System' }
-    ],
-    pain: 'Important updates buried in someone\'s inbox, text messages sent manually that get forgotten during busy days, error notifications that nobody sees, and no record of what was communicated to whom',
-    solution: 'Every system event automatically triggers the right communication on the right channel — emails, texts, calendar updates, and error alerts all fire without human intervention, with full audit trails in the CRM',
-    layout: 'swimlane'
+function loadBundleDefinitions() {
+  const definitionsPath = path.join(__dirname, '..', 'data', 'bundle-definitions.json');
+  const data = fs.readJsonSync(definitionsPath);
+
+  if (!Array.isArray(data.definitions)) {
+    throw new Error('Invalid bundle-definitions.json: definitions must be an array');
   }
-];
+
+  // Validate each definition has required fields
+  const requiredFields = ['id', 'title', 'journeyStage', 'journeySlug', 'processIds', 'idealizedSteps', 'pain', 'solution', 'layout', 'type'];
+
+  data.definitions.forEach(def => {
+    requiredFields.forEach(field => {
+      if (!(field in def)) {
+        throw new Error(`Invalid bundle definition "${def.id || 'unknown'}": missing field "${field}"`);
+      }
+    });
+  });
+
+  return data.definitions;
+}
 
 /**
  * Curate bundles from processes.json data.
@@ -263,6 +48,9 @@ const BUNDLE_DEFINITIONS = [
 function curateBundles(processes) {
   const processMap = new Map();
   processes.forEach(p => processMap.set(p.id, p));
+
+  // Load bundle definitions from external JSON
+  const BUNDLE_DEFINITIONS = loadBundleDefinitions();
 
   return BUNDLE_DEFINITIONS.map(def => {
     // Gather constituent processes (filter to those that actually exist)
@@ -292,6 +80,11 @@ function curateBundles(processes) {
       }
     });
 
+    // Use verifiedSteps if populated, otherwise use idealizedSteps
+    const steps = (def.verifiedSteps && Array.isArray(def.verifiedSteps) && def.verifiedSteps.length > 0)
+      ? def.verifiedSteps
+      : def.idealizedSteps;
+
     return {
       id: def.id,
       title: def.title,
@@ -299,16 +92,18 @@ function curateBundles(processes) {
       journeySlug: def.journeySlug,
       processIds: def.processIds.filter(id => processMap.has(id)),
       constituentProcesses,
-      idealizedSteps: def.idealizedSteps,
+      idealizedSteps: steps,
       pain: def.pain,
       solution: def.solution,
       inefficiencies: inefficiencies.length > 0 ? inefficiencies : ['Manual processes with no automation'],
       layout: def.layout,
+      type: def.type,
       sourceFileCount: sourceFiles.size
     };
   });
 }
 
 module.exports = {
-  curateBundles
+  curateBundles,
+  loadBundleDefinitions
 };
