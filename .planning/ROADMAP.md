@@ -65,7 +65,7 @@ Plans:
 **UI hint**: yes
 
 ### Phase 3: Organization & Index
-**Goal**: All artifacts are properly organized in linkedin-posts/ folder with navigation
+**Goal**: Reorganize linkedin-posts/ into clean portfolio structure with README navigation
 
 **Depends on**: Phase 2
 
@@ -78,7 +78,11 @@ Plans:
 4. A README or index file lists all posts in customer journey order with descriptions
 5. Folder structure is navigable and self-documenting
 
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Reorganize folder structure: move pipeline to _pipeline/, number post folders, rename files with slugs
+- [ ] 03-02-PLAN.md — Generate README.md with journey-ordered post table and inline n8n previews
 
 ## Progress
 
@@ -86,7 +90,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Process Mapping | 2/2 | Complete   | 2026-04-12 |
 | 2. Content & Diagram Pipeline | 3/3 | Complete | 2026-04-13 |
-| 3. Organization & Index | 0/0 | Not started | - |
+| 3. Organization & Index | 0/2 | Not started | - |
 
 ## Notes
 
@@ -106,4 +110,4 @@ Plans:
 - 3 phases deliver complete portfolio
 
 ---
-*Last updated: 2026-04-13 after Phase 2 completion*
+*Last updated: 2026-04-13 after Phase 3 planning*
