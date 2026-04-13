@@ -8,6 +8,7 @@
     "parse": "node scripts/parse-yaml.js",
     "analyze": "node scripts/analyze-processes.js",
     "generate-map": "node scripts/generate-map.js",
+    "audit": "node scripts/audit-yaml.js",
     "stage1:bundles": "node scripts/generate-bundles.js",
     "stage2:posts": "node scripts/generate-posts.js",
     "stage3:diagrams": "node scripts/generate-diagrams.js",

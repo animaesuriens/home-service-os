@@ -1,0 +1,456 @@
+{
+  "yamlFile": "boolean-marketing-integration-export.yml",
+  "auditedAt": "2026-04-13T18:30:39.710Z",
+  "summary": {
+    "totalFlows": 18,
+    "businessFlows": 18,
+    "infrastructureFlows": 0,
+    "processesMatched": 12,
+    "bundlesCovered": 2,
+    "bundlesTotal": 12,
+    "unmappedFlows": 9,
+    "accuracyScore": 6
+  },
+  "flowMapping": [
+    {
+      "flowName": "03 Marketing Vendor / Channel Lead Data Mapping",
+      "flowNumber": "03",
+      "isSubFlow": false,
+      "stepCount": 9,
+      "processId": "P-01",
+      "processName": "Marketing Vendor / Channel Lead Data Mapping",
+      "bundleId": "expense-management-pipeline",
+      "bundleTitle": "Expense Management Pipeline",
+      "status": "mapped"
+    },
+    {
+      "flowName": "03.1 Customer-Selected Project Type -> Project Type Conversion",
+      "flowNumber": "03.1",
+      "isSubFlow": true,
+      "stepCount": 2,
+      "processId": null,
+      "processName": null,
+      "bundleId": null,
+      "bundleTitle": null,
+      "status": "unmapped"
+    },
+    {
+      "flowName": "03.2 Customer-Selected Marketing Source -> Multi-Source Conversion",
+      "flowNumber": "03.2",
+      "isSubFlow": true,
+      "stepCount": 2,
+      "processId": null,
+      "processName": null,
+      "bundleId": null,
+      "bundleTitle": null,
+      "status": "unmapped"
+    },
+    {
+      "flowName": "03.3 Update/Create HubSpot Contact",
+      "flowNumber": "03.3",
+      "isSubFlow": true,
+      "stepCount": 8,
+      "processId": null,
+      "processName": null,
+      "bundleId": null,
+      "bundleTitle": null,
+      "status": "unmapped"
+    },
+    {
+      "flowName": "03.4 Update/Create HubSpot Deal",
+      "flowNumber": "03.4",
+      "isSubFlow": true,
+      "stepCount": 2,
+      "processId": null,
+      "processName": null,
+      "bundleId": null,
+      "bundleTitle": null,
+      "status": "unmapped"
+    },
+    {
+      "flowName": "04 MQL to SQL Initiator Webhook",
+      "flowNumber": "04",
+      "isSubFlow": false,
+      "stepCount": 5,
+      "processId": "P-02",
+      "processName": "MQL to SQL Initiator Webhook",
+      "bundleId": "expense-management-pipeline",
+      "bundleTitle": "Expense Management Pipeline",
+      "status": "mapped"
+    },
+    {
+      "flowName": "05 MQL HubSpot Webform Submission",
+      "flowNumber": "05",
+      "isSubFlow": false,
+      "stepCount": 4,
+      "processId": "P-03",
+      "processName": "MQL HubSpot Webform Submission",
+      "bundleId": "expense-management-pipeline",
+      "bundleTitle": "Expense Management Pipeline",
+      "status": "mapped"
+    },
+    {
+      "flowName": "06 Lead Follow Up flow",
+      "flowNumber": "06",
+      "isSubFlow": false,
+      "stepCount": 3,
+      "processId": "P-04",
+      "processName": "Lead Follow Up flow",
+      "bundleId": "invoice-lifecycle",
+      "bundleTitle": "Invoice Lifecycle",
+      "status": "mapped"
+    },
+    {
+      "flowName": "07 New Appointment",
+      "flowNumber": "07",
+      "isSubFlow": false,
+      "stepCount": 14,
+      "processId": "P-05",
+      "processName": "New Appointment",
+      "bundleId": "invoice-lifecycle",
+      "bundleTitle": "Invoice Lifecycle",
+      "status": "mapped"
+    },
+    {
+      "flowName": "07.1 Sub Flow - Check Incoming Open Deal",
+      "flowNumber": "07.1",
+      "isSubFlow": true,
+      "stepCount": 2,
+      "processId": null,
+      "processName": null,
+      "bundleId": null,
+      "bundleTitle": null,
+      "status": "unmapped"
+    },
+    {
+      "flowName": "08 Appointment Cancelled",
+      "flowNumber": "08",
+      "isSubFlow": false,
+      "stepCount": 4,
+      "processId": "P-06",
+      "processName": "Appointment Cancelled",
+      "bundleId": "invoice-lifecycle",
+      "bundleTitle": "Invoice Lifecycle",
+      "status": "mapped"
+    },
+    {
+      "flowName": "10 Appointment Reschedule",
+      "flowNumber": "10",
+      "isSubFlow": false,
+      "stepCount": 2,
+      "processId": "P-07",
+      "processName": "Appointment Reschedule",
+      "bundleId": "expense-management-pipeline",
+      "bundleTitle": "Expense Management Pipeline",
+      "status": "mapped"
+    },
+    {
+      "flowName": "11 Estimate Date Converter",
+      "flowNumber": "11",
+      "isSubFlow": false,
+      "stepCount": 2,
+      "processId": "P-08",
+      "processName": "Estimate Date Converter",
+      "bundleId": null,
+      "bundleTitle": null,
+      "status": "unmapped"
+    },
+    {
+      "flowName": "12 Contact Level Booking Link",
+      "flowNumber": "12",
+      "isSubFlow": false,
+      "stepCount": 2,
+      "processId": "P-09",
+      "processName": "Contact Level Booking Link",
+      "bundleId": null,
+      "bundleTitle": null,
+      "status": "unmapped"
+    },
+    {
+      "flowName": "12.1 Generate YCBM Customer Facing Pre-filled Link",
+      "flowNumber": "12.1",
+      "isSubFlow": true,
+      "stepCount": 2,
+      "processId": null,
+      "processName": null,
+      "bundleId": null,
+      "bundleTitle": null,
+      "status": "unmapped"
+    },
+    {
+      "flowName": "13 Get Latest Open Deal",
+      "flowNumber": "13",
+      "isSubFlow": false,
+      "stepCount": 2,
+      "processId": "P-10",
+      "processName": "Get Latest Open Deal",
+      "bundleId": "expense-management-pipeline",
+      "bundleTitle": "Expense Management Pipeline",
+      "status": "mapped"
+    },
+    {
+      "flowName": "14 Auto Reply Business Hours",
+      "flowNumber": "14",
+      "isSubFlow": false,
+      "stepCount": 2,
+      "processId": "P-11",
+      "processName": "Auto Reply Business Hours",
+      "bundleId": "invoice-lifecycle",
+      "bundleTitle": "Invoice Lifecycle",
+      "status": "mapped"
+    },
+    {
+      "flowName": "15 - Message Transpiler",
+      "flowNumber": "15",
+      "isSubFlow": false,
+      "stepCount": 5,
+      "processId": "P-12",
+      "processName": "- Message Transpiler",
+      "bundleId": null,
+      "bundleTitle": null,
+      "status": "unmapped"
+    }
+  ],
+  "hallucinations": [
+    {
+      "bundleId": "invoice-lifecycle",
+      "bundleTitle": "Invoice Lifecycle",
+      "idealizedStepCount": 8,
+      "analysis": [
+        {
+          "stepLabel": "Detect unbilled line items ready for invoicing",
+          "actor": "System",
+          "evidence": "partial",
+          "matchedFlowActions": [],
+          "notes": "Partial match - related components found but action differs"
+        },
+        {
+          "stepLabel": "Create invoice in accounting software from project data",
+          "actor": "System",
+          "evidence": "not-found",
+          "matchedFlowActions": [],
+          "notes": "No evidence for: create, invoice"
+        },
+        {
+          "stepLabel": "Sync invoice details back to project database",
+          "actor": "System",
+          "evidence": "found",
+          "matchedFlowActions": [
+            "YCBM HS Contact Sync"
+          ],
+          "notes": "Found 1 matching step(s)"
+        },
+        {
+          "stepLabel": "Send invoice to customer via email",
+          "actor": "System",
+          "evidence": "not-found",
+          "matchedFlowActions": [],
+          "notes": "No evidence for: send, invoice, customer"
+        },
+        {
+          "stepLabel": "Track payment status and sync updates",
+          "actor": "Accounting",
+          "evidence": "not-found",
+          "matchedFlowActions": [],
+          "notes": "No evidence for: track, payment, status"
+        },
+        {
+          "stepLabel": "Handle invoice modifications and corrections",
+          "actor": "Accounting",
+          "evidence": "not-found",
+          "matchedFlowActions": [],
+          "notes": "No evidence for: handle, invoice, modifications"
+        },
+        {
+          "stepLabel": "Process void requests and update all systems",
+          "actor": "Accounting",
+          "evidence": "not-found",
+          "matchedFlowActions": [],
+          "notes": "No evidence for: process, void, requests"
+        },
+        {
+          "stepLabel": "Generate work order URLs for customer reference",
+          "actor": "System",
+          "evidence": "not-found",
+          "matchedFlowActions": [],
+          "notes": "No evidence for: generate, customer"
+        }
+      ],
+      "stepsFound": 1,
+      "stepsNotFound": 6,
+      "stepsPartial": 1,
+      "stepAccuracy": 13
+    },
+    {
+      "bundleId": "expense-management-pipeline",
+      "bundleTitle": "Expense Management Pipeline",
+      "idealizedStepCount": 8,
+      "analysis": [
+        {
+          "stepLabel": "Import bills and expenses from accounting software",
+          "actor": "System",
+          "evidence": "not-found",
+          "matchedFlowActions": [],
+          "notes": "No evidence for: import, bills, expenses"
+        },
+        {
+          "stepLabel": "Match expenses to jobs and projects",
+          "actor": "System",
+          "evidence": "not-found",
+          "matchedFlowActions": [],
+          "notes": "No evidence for: match, expenses, jobs"
+        },
+        {
+          "stepLabel": "Sync customer records between accounting and database",
+          "actor": "System",
+          "evidence": "not-found",
+          "matchedFlowActions": [],
+          "notes": "No evidence for: sync, customer"
+        },
+        {
+          "stepLabel": "Link parent companies to job records",
+          "actor": "System",
+          "evidence": "not-found",
+          "matchedFlowActions": [],
+          "notes": "No evidence for: link, parent, companies"
+        },
+        {
+          "stepLabel": "Link sub-customers to individual projects",
+          "actor": "System",
+          "evidence": "not-found",
+          "matchedFlowActions": [],
+          "notes": "No evidence for: link, sub-customers, individual"
+        },
+        {
+          "stepLabel": "Save expense attachments and receipts to database",
+          "actor": "System",
+          "evidence": "not-found",
+          "matchedFlowActions": [],
+          "notes": "No evidence for: save, expense, attachments"
+        },
+        {
+          "stepLabel": "Categorize transactions by type and department",
+          "actor": "System",
+          "evidence": "not-found",
+          "matchedFlowActions": [],
+          "notes": "No evidence for: categorize, transactions, type"
+        },
+        {
+          "stepLabel": "Generate expense reports by job and time period",
+          "actor": "System",
+          "evidence": "partial",
+          "matchedFlowActions": [],
+          "notes": "Partial match - related components found but action differs"
+        }
+      ],
+      "stepsFound": 0,
+      "stepsNotFound": 7,
+      "stepsPartial": 1,
+      "stepAccuracy": 0
+    }
+  ],
+  "missedProcesses": [
+    {
+      "flowName": "03.1 Customer-Selected Project Type -> Project Type Conversion",
+      "flowNumber": "03.1",
+      "stepCount": 2,
+      "description": "",
+      "keyActions": [
+        "cross-flow",
+        "branch"
+      ],
+      "showcasePotential": "medium"
+    },
+    {
+      "flowName": "03.2 Customer-Selected Marketing Source -> Multi-Source Conversion",
+      "flowNumber": "03.2",
+      "stepCount": 2,
+      "description": "",
+      "keyActions": [
+        "cross-flow",
+        "branch"
+      ],
+      "showcasePotential": "medium"
+    },
+    {
+      "flowName": "03.3 Update/Create HubSpot Contact",
+      "flowNumber": "03.3",
+      "stepCount": 8,
+      "description": "Pass on HubSpot contact payload to process creation or update, then return the final HS contact details.",
+      "keyActions": [
+        "cross-flow",
+        "code",
+        "hubspot",
+        "branch"
+      ],
+      "showcasePotential": "high"
+    },
+    {
+      "flowName": "03.4 Update/Create HubSpot Deal",
+      "flowNumber": "03.4",
+      "stepCount": 2,
+      "description": "Pass on HubSpot deal payload to process creation or update, then return the final HS deal details.",
+      "keyActions": [
+        "cross-flow",
+        "branch"
+      ],
+      "showcasePotential": "medium"
+    },
+    {
+      "flowName": "07.1 Sub Flow - Check Incoming Open Deal",
+      "flowNumber": "07.1",
+      "stepCount": 2,
+      "description": "",
+      "keyActions": [
+        "cross-flow",
+        "code"
+      ],
+      "showcasePotential": "medium"
+    },
+    {
+      "flowName": "11 Estimate Date Converter",
+      "flowNumber": "11",
+      "stepCount": 2,
+      "description": "",
+      "keyActions": [
+        "cross-flow",
+        "code"
+      ],
+      "showcasePotential": "medium"
+    },
+    {
+      "flowName": "12 Contact Level Booking Link",
+      "flowNumber": "12",
+      "stepCount": 2,
+      "description": "",
+      "keyActions": [
+        "branch"
+      ],
+      "showcasePotential": "low"
+    },
+    {
+      "flowName": "12.1 Generate YCBM Customer Facing Pre-filled Link",
+      "flowNumber": "12.1",
+      "stepCount": 2,
+      "description": "",
+      "keyActions": [
+        "cross-flow",
+        "branch"
+      ],
+      "showcasePotential": "medium"
+    },
+    {
+      "flowName": "15 - Message Transpiler",
+      "flowNumber": "15",
+      "stepCount": 5,
+      "description": "",
+      "keyActions": [
+        "cross-flow",
+        "code",
+        "http",
+        "branch"
+      ],
+      "showcasePotential": "high"
+    }
+  ]
+}
