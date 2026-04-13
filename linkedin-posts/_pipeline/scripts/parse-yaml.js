@@ -3,17 +3,44 @@ const path = require('path');
 const { loadAllYamlFiles, extractConfigVars } = require('../lib/yaml-loader');
 const { extractFlows } = require('../lib/flow-extractor');
 
+function parseArgs() {
+  const args = process.argv.slice(2);
+  let yamlFilter = null;
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--yaml' && args[i + 1]) yamlFilter = args[i + 1];
+    if (args[i] === '--help' || args[i] === '-h') {
+      console.log('Usage: node parse-yaml.js [--yaml <filename>]');
+      console.log('');
+      console.log('Options:');
+      console.log('  --yaml <filename>   Process only one YAML file');
+      console.log('  --help, -h          Show this help message');
+      console.log('');
+      console.log('Examples:');
+      console.log('  node parse-yaml.js                                           # All 8 YAMLs');
+      console.log('  node parse-yaml.js --yaml boolean-marketing-integration-export.yml  # One YAML');
+      process.exit(0);
+    }
+  }
+  return { yamlFilter };
+}
+
 async function main() {
   console.log('Starting YAML parsing...\n');
 
-  // Project root is two levels up from scripts/
-  const projectRoot = path.resolve(__dirname, '..', '..');
+  // Parse args first
+  const { yamlFilter } = parseArgs();
+
+  // Project root is three levels up from scripts/ (linkedin-posts/_pipeline/scripts -> linkedin-posts/_pipeline -> linkedin-posts -> project root)
+  const projectRoot = path.resolve(__dirname, '..', '..', '..');
 
   try {
-    // Load all YAML files
+    // Load all YAML files (or filter to one)
     console.log('Loading YAML files...');
-    const yamlData = await loadAllYamlFiles(projectRoot);
-    console.log(`✓ Loaded ${Object.keys(yamlData).length} YAML files\n`);
+    if (yamlFilter) {
+      console.log(`Processing single YAML: ${yamlFilter}`);
+    }
+    const yamlData = await loadAllYamlFiles(projectRoot, yamlFilter);
+    console.log(`✓ Loaded ${Object.keys(yamlData).length} YAML file${Object.keys(yamlData).length === 1 ? '' : 's'}\n`);
 
     // Extract flows and config vars from each file
     const allFlows = [];

@@ -3,12 +3,11 @@ const path = require('path');
 const yaml = require('yaml');
 
 /**
- * Load and parse all 8 Prismatic YAML export files
- * @param {string} projectRoot - Absolute path to project root containing YAML files
- * @returns {Promise<Object>} Object keyed by filename with parsed YAML content
+ * Get the list of all known YAML files
+ * @returns {Array<string>} Array of YAML filenames
  */
-async function loadAllYamlFiles(projectRoot) {
-  const yamlFiles = [
+function getYamlFileList() {
+  return [
     'boolean-accounting-system-export.yml',
     'boolean-marketing-integration-export.yml',
     'boolean-sales-integration-export.yml',
@@ -18,10 +17,29 @@ async function loadAllYamlFiles(projectRoot) {
     'quick-books-time-tracking-system-export.yml',
     'sales-and-marketing-reporting-export.yml'
   ];
+}
+
+/**
+ * Load and parse all 8 Prismatic YAML export files (or filter to one)
+ * @param {string} projectRoot - Absolute path to project root containing YAML files
+ * @param {string|null} yamlFilter - Optional filename to filter to a single YAML
+ * @returns {Promise<Object>} Object keyed by filename with parsed YAML content
+ */
+async function loadAllYamlFiles(projectRoot, yamlFilter = null) {
+  const yamlFiles = getYamlFileList();
+
+  // Filter to single file if requested
+  let filesToLoad = yamlFiles;
+  if (yamlFilter) {
+    if (!yamlFiles.includes(yamlFilter)) {
+      throw new Error(`Unknown YAML file: ${yamlFilter}. Valid files: ${yamlFiles.join(', ')}`);
+    }
+    filesToLoad = [yamlFilter];
+  }
 
   const loaded = {};
 
-  for (const fileName of yamlFiles) {
+  for (const fileName of filesToLoad) {
     const filePath = path.join(projectRoot, fileName);
 
     try {
@@ -62,5 +80,6 @@ function extractConfigVars(parsedYaml) {
 
 module.exports = {
   loadAllYamlFiles,
-  extractConfigVars
+  extractConfigVars,
+  getYamlFileList
 };
