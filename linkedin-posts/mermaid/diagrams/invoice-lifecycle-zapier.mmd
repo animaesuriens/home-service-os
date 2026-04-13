@@ -1,0 +1,16 @@
+---
+title: Invoice Lifecycle — Zapier
+---
+flowchart TD
+    T["Detect unbilled line items\nready for invoicing"]:::trigger
+    A1["Create invoice in\naccounting software from\nproject data"]
+    A2["Sync invoice details back\nto project database"]
+    A3["Send invoice to\ncustomer via email"]
+    A4["Track payment status\nand sync updates"]
+    A5["Handle invoice\nmodifications and\ncorrections"]
+    A6["Process void requests and\nupdate all systems"]
+    A7["Generate work order URLs\nfor customer reference"]
+
+    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7
+
+    classDef trigger fill:#FF4A00,stroke:#cc3b00,stroke-width:3px,color:#fff

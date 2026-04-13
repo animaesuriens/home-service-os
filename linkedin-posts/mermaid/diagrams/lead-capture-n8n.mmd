@@ -1,0 +1,23 @@
+---
+title: Lead Capture & Qualification — n8n
+---
+flowchart TD
+    A["Web form submitted by\npotential customer"]:::trigger
+    B["Extract contact info\nand project details"]
+    C["Standardize lead data from\nany marketing source"]
+    D["Create or update\ncontact in HubSpot"]
+    E{"Score Lead\nBy Project & Budget"}
+    F["Send personalized\nwelcome email"]
+    G["Notify sales team\nwith lead summary"]
+    H["Assign to next\navailable sales rep"]
+
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E -->|High Value| F
+    E -->|All Leads| G
+    F --> H
+    G --> H
+
+    classDef trigger fill:#2E7D32,stroke:#4CAF50,stroke-width:3px,color:#fff

@@ -1,0 +1,16 @@
+---
+title: Expense Management Pipeline — Zapier
+---
+flowchart TD
+    T["Import bills and expenses\nfrom accounting software"]:::trigger
+    A1["Match expenses to\njobs and projects"]
+    A2["Sync customer records\nbetween accounting and\ndatabase"]
+    A3["Link parent companies to\njob records"]
+    A4["Link sub-customers to\nindividual projects"]
+    A5["Save expense attachments\nand receipts to database"]
+    A6["Categorize transactions by\ntype and department"]
+    A7["Generate expense reports\nby job and time period"]
+
+    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7
+
+    classDef trigger fill:#FF4A00,stroke:#cc3b00,stroke-width:3px,color:#fff

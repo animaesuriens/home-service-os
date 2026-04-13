@@ -1,0 +1,23 @@
+---
+title: Change Order Management — Make
+---
+flowchart TD
+    A(("Customer requests scope\nchange on existing project")):::trigger
+    B["Create change order record\nlinked to original deal"]
+    C["Calculate revised pricing\nand timeline impact"]
+    D{"Change Order\nType?"}
+    E["Update deal value in\nCRM with new total"]
+    F["Send revised estimate to\ncustomer for approval"]
+    G["Update project timeline\nand crew schedule"]
+    H["Notify production team of\nscope changes"]
+
+    A --> B
+    B --> C
+    C --> D
+    D -->|Premium| E
+    D -->|Standard| F
+    E --> G
+    F --> G
+    G --> H
+
+    classDef trigger fill:#9b3dae,stroke:#fff,stroke-width:3px,color:#fff

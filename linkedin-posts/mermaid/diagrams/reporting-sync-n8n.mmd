@@ -1,0 +1,19 @@
+---
+title: Reporting Dashboard Sync — n8n
+---
+flowchart TD
+    A["Pull latest deal and\nrevenue data from CRM"]:::trigger
+    B["Aggregate metrics across\nall active pipelines"]
+    C{"Data Changed\nSince Last Sync?"}
+    D["Sync updated metrics to\nreporting spreadsheet"]
+    E["Refresh dashboard\nvisualizations\nautomatically"]
+    F["Flag significant\nchanges or anomalies"]
+
+    A --> B
+    B --> C
+    C -->|Changed| D
+    C -->|Stable| E
+    D --> F
+    E --> F
+
+    classDef trigger fill:#2E7D32,stroke:#4CAF50,stroke-width:3px,color:#fff

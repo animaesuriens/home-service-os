@@ -1,0 +1,23 @@
+---
+title: Invoice Lifecycle — n8n
+---
+flowchart TD
+    A["Detect unbilled line items\nready for invoicing"]:::trigger
+    B["Create invoice in\naccounting software from\nproject data"]
+    C["Sync invoice details back\nto project database"]
+    D["Send invoice to\ncustomer via email"]
+    E{"Track Payment Status\n& Sync Updates"}
+    F["Handle invoice\nmodifications and\ncorrections"]
+    G["Process void requests and\nupdate all systems"]
+    H["Generate work order URLs\nfor customer reference"]
+
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E -->|Paid| F
+    E -->|Overdue| G
+    F --> H
+    G --> H
+
+    classDef trigger fill:#2E7D32,stroke:#4CAF50,stroke-width:3px,color:#fff

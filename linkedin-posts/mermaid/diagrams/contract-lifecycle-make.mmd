@@ -1,0 +1,23 @@
+---
+title: Contract Lifecycle — Make
+---
+flowchart TD
+    A(("Generate contract from\napproved estimate")):::trigger
+    B["Send contract to customer\nfor e-signature"]
+    C["Track contract status and\nsend reminders"]
+    D{"Customer\nResponse?"}
+    E["Update deal stage to\n'Contract Signed' in CRM"]
+    F["Create project addendums\nif scope includes extras"]
+    G["Trigger job setup workflow\nautomatically"]
+    H["Notify operations team\nthat new job is confirmed"]
+
+    A --> B
+    B --> C
+    C --> D
+    D -->|Signed| E
+    D -->|Unsigned| F
+    E --> G
+    F --> G
+    G --> H
+
+    classDef trigger fill:#9b3dae,stroke:#fff,stroke-width:3px,color:#fff

@@ -1,0 +1,16 @@
+---
+title: Appointment Booking & Scheduling — Zapier
+---
+flowchart TD
+    T["Customer selects available\ntime slot online"]:::trigger
+    A1["Generate personalized\nbooking link for contact"]
+    A2["Confirm appointment and\nsync to team calendar"]
+    A3["Send confirmation email\nwith appointment details"]
+    A4["Create preparation\nchecklist for estimator"]
+    A5["Send reminder 24 hours\nbefore appointment"]
+    A6["Handle cancellation or\nreschedule requests\nautomatically"]
+    A7["Update CRM with\nappointment status"]
+
+    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7
+
+    classDef trigger fill:#FF4A00,stroke:#cc3b00,stroke-width:3px,color:#fff

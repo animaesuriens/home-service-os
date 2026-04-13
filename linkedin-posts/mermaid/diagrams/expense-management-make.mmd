@@ -1,0 +1,23 @@
+---
+title: Expense Management Pipeline — Make
+---
+flowchart TD
+    A(("Import bills and expenses\nfrom accounting software")):::trigger
+    B["Match expenses to\njobs and projects"]
+    C["Sync customer records\nbetween accounting and\ndatabase"]
+    D{"Customer Record\nExists?"}
+    E["Link sub-customers to\nindividual projects"]
+    F["Save expense attachments\nand receipts to database"]
+    G["Categorize transactions by\ntype and department"]
+    H["Generate expense reports\nby job and time period"]
+
+    A --> B
+    B --> C
+    C --> D
+    D -->|Matched| E
+    D -->|New| F
+    E --> G
+    F --> G
+    G --> H
+
+    classDef trigger fill:#9b3dae,stroke:#fff,stroke-width:3px,color:#fff

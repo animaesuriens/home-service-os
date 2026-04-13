@@ -1,0 +1,16 @@
+---
+title: Change Order Management — Zapier
+---
+flowchart TD
+    T["Customer requests scope\nchange on existing project"]:::trigger
+    A1["Create change order record\nlinked to original deal"]
+    A2["Calculate revised pricing\nand timeline impact"]
+    A3["Apply change order label\nand categorization"]
+    A4["Update deal value in\nCRM with new total"]
+    A5["Send revised estimate to\ncustomer for approval"]
+    A6["Update project timeline\nand crew schedule"]
+    A7["Notify production team of\nscope changes"]
+
+    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7
+
+    classDef trigger fill:#FF4A00,stroke:#cc3b00,stroke-width:3px,color:#fff

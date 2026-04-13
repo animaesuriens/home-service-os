@@ -1,0 +1,23 @@
+---
+title: Communication Hub — n8n
+---
+flowchart TD
+    A["System event triggers\noutbound communication"]:::trigger
+    B{"Select Channel\nBased on Event Type"}
+    C["Send email notification\nwith formatted details"]
+    D["Send SMS alert for\ntime-sensitive updates"]
+    E["Log all sent messages to\nCRM activity timeline"]
+    F["Update estimate calendar\nwith schedule changes"]
+    G["Route error notifications\nto technical team"]
+    H["Track delivery status and\nflag failures"]
+
+    A --> B
+    B -->|Email| C
+    B -->|SMS| D
+    C --> E
+    D --> E
+    E --> F
+    F --> G
+    G --> H
+
+    classDef trigger fill:#2E7D32,stroke:#4CAF50,stroke-width:3px,color:#fff

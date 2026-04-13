@@ -1,0 +1,16 @@
+---
+title: Time Tracking Sync Engine — Zapier
+---
+flowchart TD
+    T["Employees clock in and out\nvia time tracking app"]:::trigger
+    A1["Sync job codes and\nlocations to time system"]
+    A2["Match time entries to\nactive projects and jobs"]
+    A3["Sync new and modified time\nlogs to central database"]
+    A4["Handle deleted or\ncorrected time entries"]
+    A5["Sync employee profiles and\npermissions"]
+    A6["Deactivate job codes for\ncompleted projects"]
+    A7["Generate payroll-ready\ntime summaries"]
+
+    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7
+
+    classDef trigger fill:#FF4A00,stroke:#cc3b00,stroke-width:3px,color:#fff

@@ -1,0 +1,16 @@
+---
+title: Communication Hub — Zapier
+---
+flowchart TD
+    T["System event triggers\noutbound communication"]:::trigger
+    A1["Select communication\nchannel based on event\ntype"]
+    A2["Send email notification\nwith formatted details"]
+    A3["Send SMS alert for\ntime-sensitive updates"]
+    A4["Log all sent messages to\nCRM activity timeline"]
+    A5["Update estimate calendar\nwith schedule changes"]
+    A6["Route error notifications\nto technical team"]
+    A7["Track delivery status and\nflag failures"]
+
+    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7
+
+    classDef trigger fill:#FF4A00,stroke:#cc3b00,stroke-width:3px,color:#fff

@@ -1,0 +1,14 @@
+---
+title: Reporting Dashboard Sync — Zapier
+---
+flowchart TD
+    T["Pull latest deal and\nrevenue data from CRM"]:::trigger
+    A1["Aggregate metrics across\nall active pipelines"]
+    A2["Calculate win rates, deal\nvelocity, and revenue\ntrends"]
+    A3["Sync updated metrics to\nreporting spreadsheet"]
+    A4["Refresh dashboard\nvisualizations\nautomatically"]
+    A5["Flag significant\nchanges or anomalies"]
+
+    T --> A1 --> A2 --> A3 --> A4 --> A5
+
+    classDef trigger fill:#FF4A00,stroke:#cc3b00,stroke-width:3px,color:#fff

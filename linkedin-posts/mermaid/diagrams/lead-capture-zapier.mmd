@@ -1,0 +1,16 @@
+---
+title: Lead Capture & Qualification — Zapier
+---
+flowchart TD
+    T["Web form submitted by\npotential customer"]:::trigger
+    A1["Extract contact info\nand project details"]
+    A2["Standardize lead data from\nany marketing source"]
+    A3["Create or update\ncontact in HubSpot"]
+    A4["Score lead based on\nproject type and budget"]
+    A5["Send personalized\nwelcome email"]
+    A6["Notify sales team\nwith lead summary"]
+    A7["Assign to next\navailable sales rep"]
+
+    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7
+
+    classDef trigger fill:#FF4A00,stroke:#cc3b00,stroke-width:3px,color:#fff

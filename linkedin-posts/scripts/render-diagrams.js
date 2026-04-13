@@ -247,37 +247,26 @@ async function renderAllDiagrams(bundles, outputDir) {
 }
 
 // ---------------------------------------------------------------------------
-// CLI: render lead-capture sample when run directly
+// CLI: render all bundles when run directly
 // ---------------------------------------------------------------------------
 if (require.main === module) {
   (async () => {
     const bundlesPath = path.join(__dirname, '..', 'data', 'bundles.json');
     const bundles = JSON.parse(await fs.readFile(bundlesPath, 'utf-8')).bundles;
-    const bundle = bundles[0]; // lead-capture
 
-    console.log('Rendering diagrams for: ' + bundle.title + '\n');
+    console.log('Rendering diagrams for ' + bundles.length + ' bundles x 3 platforms\n');
 
-    const browser = await chromium.launch({ headless: true });
-    const platformKeys = ['make', 'zapier', 'n8n'];
+    const results = await renderAllDiagrams(bundles, POSTS_DIR);
 
-    try {
-      for (const key of platformKeys) {
-        // Use concept-a files for now (will be renamed per bundle later)
-        const mmdPath = path.join(MERMAID_DIR, 'diagrams', 'concept-a-' + key + '.mmd');
-        if (!await fs.pathExists(mmdPath)) { console.log('SKIP: ' + mmdPath); continue; }
+    const successes = results.filter(function(r) { return !r.error; });
+    const failures = results.filter(function(r) { return r.error; });
 
-        const mermaidDef = await fs.readFile(mmdPath, 'utf-8');
-        const outputPath = path.join(POSTS_DIR, bundle.journeySlug, key + '.png');
-
-        await renderDiagram(mermaidDef, bundle.title, key, outputPath, { browser });
-        const size = (await fs.stat(outputPath)).size;
-        console.log('Generated: ' + outputPath + ' (' + Math.round(size / 1024) + ' KB)');
-      }
-    } finally {
-      await browser.close();
+    console.log('\n--- Summary ---');
+    console.log('Generated: ' + successes.length + ' diagrams');
+    if (failures.length > 0) {
+      console.log('Failed: ' + failures.length);
+      failures.forEach(function(f) { console.log('  ' + f.bundleId + '/' + f.platform + ': ' + f.error); });
     }
-
-    console.log('\nDone!');
   })().catch(err => { console.error(err); process.exit(1); });
 }
 

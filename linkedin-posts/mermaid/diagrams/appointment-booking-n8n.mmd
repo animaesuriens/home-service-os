@@ -1,0 +1,23 @@
+---
+title: Appointment Booking & Scheduling — n8n
+---
+flowchart TD
+    A["Customer selects available\ntime slot online"]:::trigger
+    B["Generate personalized\nbooking link for contact"]
+    C["Confirm appointment and\nsync to team calendar"]
+    D["Send confirmation email\nwith appointment details"]
+    E{"Create Prep Checklist\nfor Estimator"}
+    F["Send reminder 24 hours\nbefore appointment"]
+    G["Handle cancellation or\nreschedule requests\nautomatically"]
+    H["Update CRM with\nappointment status"]
+
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E -->|Confirmed| F
+    E -->|Cancelled| G
+    F --> H
+    G --> H
+
+    classDef trigger fill:#2E7D32,stroke:#4CAF50,stroke-width:3px,color:#fff

@@ -1,0 +1,23 @@
+---
+title: Time Tracking Sync Engine — Make
+---
+flowchart TD
+    A(("Employees clock in and out\nvia time tracking app")):::trigger
+    B["Sync job codes and\nlocations to time system"]
+    C["Match time entries to\nactive projects and jobs"]
+    D{"Time Log\nStatus?"}
+    E["Handle deleted or\ncorrected time entries"]
+    F["Sync employee profiles and\npermissions"]
+    G["Deactivate job codes for\ncompleted projects"]
+    H["Generate payroll-ready\ntime summaries"]
+
+    A --> B
+    B --> C
+    C --> D
+    D -->|Modified| E
+    D -->|Deleted| F
+    E --> G
+    F --> G
+    G --> H
+
+    classDef trigger fill:#9b3dae,stroke:#fff,stroke-width:3px,color:#fff

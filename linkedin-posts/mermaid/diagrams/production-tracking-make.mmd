@@ -1,0 +1,23 @@
+---
+title: Production & Crew Tracking — Make
+---
+flowchart TD
+    A(("Update daily production\nschedule from field data")):::trigger
+    B["Log time entries and crew\nhours for each job"]
+    C["Sync time tracking data to\ncentral database"]
+    D["Calculate daily production\nmetrics per crew"]
+    E{"Update Project\nCompletion %"}
+    F["Flag jobs running\nbehind schedule"]
+    G["Generate daily production\nsummary for office"]
+    H["Alert project manager of\nschedule variances"]
+
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E -->|On Track| F
+    E -->|Behind| G
+    F --> H
+    G --> H
+
+    classDef trigger fill:#9b3dae,stroke:#fff,stroke-width:3px,color:#fff
