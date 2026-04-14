@@ -5,7 +5,10 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
+    "split": "node scripts/split-yaml.js",
+    "split:verify": "node scripts/split-yaml.js --verify",
     "parse": "node scripts/parse-yaml.js",
+    "parse:monolithic": "node scripts/parse-yaml.js --source monolithic",
     "analyze": "node scripts/analyze-processes.js",
     "generate-map": "node scripts/generate-map.js",
     "audit": "node scripts/audit-yaml.js",

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-12T15:53:42.071Z",
+  "generatedAt": "2026-04-14T07:58:29.662Z",
   "totalProcesses": 76,
   "journeyStages": {
     "Lead Capture": 3,
@@ -12,9 +12,9 @@
     "Production Tracking": 4,
     "Time Tracking": 7,
     "Invoicing": 8,
-    "Expense Management": 7,
+    "Expense Management": 6,
     "Reporting": 2,
-    "Uncategorized": 24
+    "Uncategorized": 25
   },
   "crossFileConnections": [
     {
@@ -28,7 +28,7 @@
   ],
   "processes": [
     {
-      "id": "P-26",
+      "id": "P-boo-06",
       "name": "Lead Follow Up flow",
       "journeyStage": "Lead Capture",
       "sourceFiles": [
@@ -78,7 +78,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-23",
+      "id": "P-boo-03",
       "name": "Marketing Vendor / Channel Lead Data Mapping",
       "journeyStage": "Lead Capture",
       "sourceFiles": [
@@ -310,7 +310,7 @@
       ]
     },
     {
-      "id": "P-25",
+      "id": "P-boo-05",
       "name": "MQL HubSpot Webform Submission",
       "journeyStage": "Lead Capture",
       "sourceFiles": [
@@ -367,7 +367,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-24",
+      "id": "P-boo-04",
       "name": "MQL to SQL Initiator Webhook",
       "journeyStage": "Lead Qualification",
       "sourceFiles": [
@@ -431,7 +431,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-29",
+      "id": "P-boo-10",
       "name": "Appointment Reschedule",
       "journeyStage": "Appointment Booking",
       "sourceFiles": [
@@ -471,7 +471,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-31",
+      "id": "P-boo-12",
       "name": "Contact Level Booking Link",
       "journeyStage": "Appointment Booking",
       "sourceFiles": [
@@ -536,7 +536,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-27",
+      "id": "P-boo-07",
       "name": "New Appointment",
       "journeyStage": "Appointment Booking",
       "sourceFiles": [
@@ -693,64 +693,156 @@
       ]
     },
     {
-      "id": "P-08",
-      "name": "accounting software Bills",
+      "id": "P-boo-09",
+      "name": "accounting software Bills - Subflow",
       "journeyStage": "Appointment Booking",
       "sourceFiles": [
         "boolean-accounting-system-export.yml"
       ],
       "parentFlow": {
         "fileName": "boolean-accounting-system-export.yml",
-        "flowName": "09.1 Quickbooks Bills",
+        "flowName": "09.1 Quickbooks Bills - Subflow",
         "flowNumber": "09",
         "description": "",
-        "stepCount": 6,
+        "stepCount": 9,
         "steps": [
           {
-            "name": "Runs Every Day",
-            "actionKey": "schedule",
-            "componentKey": "schedule-triggers",
+            "name": "Trigger",
+            "actionKey": "crossFlow",
+            "componentKey": "cross-flow",
             "isTrigger": true,
             "hasWebhookCall": false
           },
           {
-            "name": "Flow is enabled in Wizard?",
+            "name": "Find Customer Ref",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Customer Ref exists?",
             "actionKey": "branchOnExpression",
             "componentKey": "branch",
             "isTrigger": false,
             "hasWebhookCall": false
           },
           {
-            "name": "Calculated Date",
-            "actionKey": "adjustDateTime",
-            "componentKey": "datetime",
+            "name": "Is an Item?",
+            "actionKey": "branchOnExpression",
+            "componentKey": "branch",
             "isTrigger": false,
             "hasWebhookCall": false
           },
           {
-            "name": "Format Date/Time",
-            "actionKey": "formatDateTime",
-            "componentKey": "datetime",
+            "name": "Expense Payload",
+            "actionKey": "runCode",
+            "componentKey": "code",
             "isTrigger": false,
             "hasWebhookCall": false
           },
           {
-            "name": "Start Index",
-            "actionKey": "saveExecutionValue",
-            "componentKey": "persist-data",
+            "name": "Upsert Expense Record",
+            "actionKey": "rawRequest",
+            "componentKey": "airtable",
             "isTrigger": false,
             "hasWebhookCall": false
           },
           {
-            "name": "Loop N Times",
-            "actionKey": "loopNTimes",
-            "componentKey": "loop",
+            "name": "Crossflow Payload",
+            "actionKey": "runCode",
+            "componentKey": "code",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Save Attachments",
+            "actionKey": "invokeFlow",
+            "componentKey": "cross-flow",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Stop Execution (Success)",
+            "actionKey": "stopExecution",
+            "componentKey": "stop-execution",
             "isTrigger": false,
             "hasWebhookCall": false
           }
         ]
       },
       "subFlows": [
+        {
+          "fileName": "boolean-accounting-system-export.yml",
+          "flowName": "09.1 Quickbooks Bills - Subflow",
+          "flowNumber": "09.1",
+          "stepCount": 9,
+          "steps": [
+            {
+              "name": "Trigger",
+              "actionKey": "crossFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Find Customer Ref",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Customer Ref exists?",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Is an Item?",
+              "actionKey": "branchOnExpression",
+              "componentKey": "branch",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Expense Payload",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Upsert Expense Record",
+              "actionKey": "rawRequest",
+              "componentKey": "airtable",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Crossflow Payload",
+              "actionKey": "runCode",
+              "componentKey": "code",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Save Attachments",
+              "actionKey": "invokeFlow",
+              "componentKey": "cross-flow",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Stop Execution (Success)",
+              "actionKey": "stopExecution",
+              "componentKey": "stop-execution",
+              "isTrigger": false,
+              "hasWebhookCall": false
+            }
+          ]
+        },
         {
           "fileName": "boolean-accounting-system-export.yml",
           "flowName": "09.1 Quickbooks Bills",
@@ -803,15 +895,22 @@
         },
         {
           "fileName": "boolean-accounting-system-export.yml",
-          "flowName": "09.1 Quickbooks Bills - Subflow",
-          "flowNumber": "09.1",
-          "stepCount": 9,
+          "flowName": "09.2 Quickbooks VendorCredits - Subflow",
+          "flowNumber": "09.2",
+          "stepCount": 10,
           "steps": [
             {
               "name": "Trigger",
               "actionKey": "crossFlow",
               "componentKey": "cross-flow",
               "isTrigger": true,
+              "hasWebhookCall": false
+            },
+            {
+              "name": "Get Expense Record",
+              "actionKey": "listRecords",
+              "componentKey": "airtable",
+              "isTrigger": false,
               "hasWebhookCall": false
             },
             {
@@ -924,8 +1023,8 @@
         },
         {
           "fileName": "boolean-accounting-system-export.yml",
-          "flowName": "09.2 Quickbooks VendorCredits - Subflow",
-          "flowNumber": "09.2",
+          "flowName": "09.3 Quickbooks Expenses/Purchases - Subflow",
+          "flowNumber": "09.3",
           "stepCount": 10,
           "steps": [
             {
@@ -1049,116 +1148,39 @@
               "hasWebhookCall": false
             }
           ]
-        },
-        {
-          "fileName": "boolean-accounting-system-export.yml",
-          "flowName": "09.3 Quickbooks Expenses/Purchases - Subflow",
-          "flowNumber": "09.3",
-          "stepCount": 10,
-          "steps": [
-            {
-              "name": "Trigger",
-              "actionKey": "crossFlow",
-              "componentKey": "cross-flow",
-              "isTrigger": true,
-              "hasWebhookCall": false
-            },
-            {
-              "name": "Get Expense Record",
-              "actionKey": "listRecords",
-              "componentKey": "airtable",
-              "isTrigger": false,
-              "hasWebhookCall": false
-            },
-            {
-              "name": "Find Customer Ref",
-              "actionKey": "runCode",
-              "componentKey": "code",
-              "isTrigger": false,
-              "hasWebhookCall": false
-            },
-            {
-              "name": "Customer Ref exists?",
-              "actionKey": "branchOnExpression",
-              "componentKey": "branch",
-              "isTrigger": false,
-              "hasWebhookCall": false
-            },
-            {
-              "name": "Is an Item?",
-              "actionKey": "branchOnExpression",
-              "componentKey": "branch",
-              "isTrigger": false,
-              "hasWebhookCall": false
-            },
-            {
-              "name": "Expense Payload",
-              "actionKey": "runCode",
-              "componentKey": "code",
-              "isTrigger": false,
-              "hasWebhookCall": false
-            },
-            {
-              "name": "Upsert Expense Record",
-              "actionKey": "rawRequest",
-              "componentKey": "airtable",
-              "isTrigger": false,
-              "hasWebhookCall": false
-            },
-            {
-              "name": "Crossflow Payload",
-              "actionKey": "runCode",
-              "componentKey": "code",
-              "isTrigger": false,
-              "hasWebhookCall": false
-            },
-            {
-              "name": "Save Attachments",
-              "actionKey": "invokeFlow",
-              "componentKey": "cross-flow",
-              "isTrigger": false,
-              "hasWebhookCall": false
-            },
-            {
-              "name": "Stop Execution (Success)",
-              "actionKey": "stopExecution",
-              "componentKey": "stop-execution",
-              "isTrigger": false,
-              "hasWebhookCall": false
-            }
-          ]
         }
       ],
       "crossFileConnections": [],
-      "totalStepCount": 53,
+      "totalStepCount": 56,
       "apps": [
+        "Airtable",
+        "Stop Execution",
         "Schedule Triggers",
         "Datetime",
-        "Persist Data",
-        "Airtable",
-        "Stop Execution"
+        "Persist Data"
       ],
-      "description": "accounting software Bills: Flow is enabled in Wizard?, Calculated Date, Format Date/Time, ...",
+      "description": "accounting software Bills - Subflow: Find Customer Ref, Customer Ref exists?, Is an Item?, ...",
       "keySteps": [
+        "Upsert Expense Record",
+        "Save Attachments",
+        "Stop Execution (Success)",
+        "Upsert Expense Record",
+        "Save Attachments",
+        "Stop Execution (Success)",
         "Runs Every Day",
         "Calculated Date",
         "Format Date/Time",
-        "Start Index",
-        "Loop N Times",
-        "Runs Every Day",
-        "Calculated Date",
-        "Format Date/Time",
-        "Start Index",
-        "Loop N Times"
+        "Start Index"
       ],
       "inefficiencies": [
         "Complex flow could be simplified (15+ steps)",
         "Custom code could be replaced with native actions",
-        "Repetitive datetime API calls could be batched (8 calls)"
+        "Repetitive airtable API calls could be batched (6 calls)",
+        "Repetitive datetime API calls could be batched (6 calls)"
       ]
     },
     {
-      "id": "P-35",
+      "id": "P-boo-01",
       "name": "estimating tool > HubSpot | Process Quote - Estimate > Deal Sync",
       "journeyStage": "Estimating",
       "sourceFiles": [
@@ -1256,7 +1278,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-44",
+      "id": "P-boo-14",
       "name": "Cancelled Deal Sync",
       "journeyStage": "Sales/Proposal",
       "sourceFiles": [
@@ -1294,7 +1316,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-40",
+      "id": "P-boo-11",
       "name": "Change Order Label Processor",
       "journeyStage": "Sales/Proposal",
       "sourceFiles": [
@@ -1350,7 +1372,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-64",
+      "id": "P-job-13",
       "name": "Change Order Label Processor",
       "journeyStage": "Sales/Proposal",
       "sourceFiles": [
@@ -1406,7 +1428,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-36",
+      "id": "P-boo-03",
       "name": "Change Order Process",
       "journeyStage": "Sales/Proposal",
       "sourceFiles": [
@@ -1604,7 +1626,7 @@
       ]
     },
     {
-      "id": "P-37",
+      "id": "P-boo-02",
       "name": "Create Any Missing estimating tool, HubSpot Deal & photo storage",
       "journeyStage": "Sales/Proposal",
       "sourceFiles": [
@@ -1642,7 +1664,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-39",
+      "id": "P-boo-10",
       "name": "Deal Naming System Trigger",
       "journeyStage": "Sales/Proposal",
       "sourceFiles": [
@@ -1707,7 +1729,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-32",
+      "id": "P-boo-13",
       "name": "Get Latest Open Deal",
       "journeyStage": "Sales/Proposal",
       "sourceFiles": [
@@ -1745,7 +1767,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-59",
+      "id": "P-job-04",
       "name": "Process Change Order",
       "journeyStage": "Sales/Proposal",
       "sourceFiles": [
@@ -1823,7 +1845,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-58",
+      "id": "P-job-03",
       "name": "Process Deal",
       "journeyStage": "Sales/Proposal",
       "sourceFiles": [
@@ -1888,7 +1910,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-48",
+      "id": "P-boo-92",
       "name": "Register HS Deal Owner",
       "journeyStage": "Sales/Proposal",
       "sourceFiles": [
@@ -1947,7 +1969,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-46",
+      "id": "P-boo-90",
       "name": "Set/Update HS Deal Name & photo storage Project Name",
       "journeyStage": "Sales/Proposal",
       "sourceFiles": [
@@ -1987,7 +2009,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-60",
+      "id": "P-job-05",
       "name": "Contract Sent",
       "journeyStage": "Contract Management",
       "sourceFiles": [
@@ -2037,7 +2059,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-61",
+      "id": "P-job-06",
       "name": "Contract Signed",
       "journeyStage": "Contract Management",
       "sourceFiles": [
@@ -2096,7 +2118,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-09",
+      "id": "P-boo-10",
       "name": "Subcontractor Bill Payment",
       "journeyStage": "Contract Management",
       "sourceFiles": [
@@ -2153,7 +2175,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-62",
+      "id": "P-job-07",
       "name": "Create Addendums",
       "journeyStage": "Job Setup",
       "sourceFiles": [
@@ -2267,7 +2289,7 @@
       ]
     },
     {
-      "id": "P-51",
+      "id": "P-dai-xx",
       "name": "Process Timelog",
       "journeyStage": "Production Tracking",
       "sourceFiles": [
@@ -2305,7 +2327,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-52",
+      "id": "P-dai-03",
       "name": "Sync QBT",
       "journeyStage": "Production Tracking",
       "sourceFiles": [
@@ -2357,7 +2379,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-50",
+      "id": "P-dai-02",
       "name": "Update DPD",
       "journeyStage": "Production Tracking",
       "sourceFiles": [
@@ -2407,7 +2429,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-49",
+      "id": "P-dai-01",
       "name": "Update DPD Schedule",
       "journeyStage": "Production Tracking",
       "sourceFiles": [
@@ -2458,7 +2480,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-72",
+      "id": "P-qui-06",
       "name": "Inactive Jobcode Sync",
       "journeyStage": "Time Tracking",
       "sourceFiles": [
@@ -2498,7 +2520,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-71",
+      "id": "P-qui-05",
       "name": "Initial Timelogs Sync",
       "journeyStage": "Time Tracking",
       "sourceFiles": [
@@ -2600,7 +2622,7 @@
       ]
     },
     {
-      "id": "P-69",
+      "id": "P-qui-02",
       "name": "Job Codes Sync",
       "journeyStage": "Time Tracking",
       "sourceFiles": [
@@ -2663,7 +2685,7 @@
       ]
     },
     {
-      "id": "P-73",
+      "id": "P-qui-07",
       "name": "Jobcodes Location Sync",
       "journeyStage": "Time Tracking",
       "sourceFiles": [
@@ -2726,7 +2748,7 @@
       ]
     },
     {
-      "id": "P-74",
+      "id": "P-qui-08",
       "name": "Sync Delete Timelogs",
       "journeyStage": "Time Tracking",
       "sourceFiles": [
@@ -2807,7 +2829,7 @@
       ]
     },
     {
-      "id": "P-68",
+      "id": "P-qui-01",
       "name": "Time Tracking System",
       "journeyStage": "Time Tracking",
       "sourceFiles": [
@@ -2902,7 +2924,7 @@
       ]
     },
     {
-      "id": "P-70",
+      "id": "P-qui-04",
       "name": "User Sync",
       "journeyStage": "Time Tracking",
       "sourceFiles": [
@@ -2958,7 +2980,7 @@
       ]
     },
     {
-      "id": "P-19",
+      "id": "P-boo-21",
       "name": "[Manual Sync] Sync All Invoices and Transactions",
       "journeyStage": "Invoicing",
       "sourceFiles": [
@@ -3031,7 +3053,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-41",
+      "id": "P-boo-xx",
       "name": "[Ongoing] 11 Invoice and Work Order URL",
       "journeyStage": "Invoicing",
       "sourceFiles": [
@@ -3137,7 +3159,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-04",
+      "id": "P-boo-05",
       "name": "Create Invoice in AT from Unbilled Line Items",
       "journeyStage": "Invoicing",
       "sourceFiles": [
@@ -3313,7 +3335,7 @@
       ]
     },
     {
-      "id": "P-11",
+      "id": "P-boo-13",
       "name": "Import Invoices from accounting software",
       "journeyStage": "Invoicing",
       "sourceFiles": [
@@ -3402,7 +3424,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-05",
+      "id": "P-boo-06",
       "name": "Send or ReSend Invoice",
       "journeyStage": "Invoicing",
       "sourceFiles": [
@@ -3461,7 +3483,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-18",
+      "id": "P-boo-20",
       "name": "Sync Modified Invoices and Transactions",
       "journeyStage": "Invoicing",
       "sourceFiles": [
@@ -3658,7 +3680,7 @@
       ]
     },
     {
-      "id": "P-20",
+      "id": "P-boo-22",
       "name": "Update Invoice in accounting software",
       "journeyStage": "Invoicing",
       "sourceFiles": [
@@ -3786,7 +3808,7 @@
       ]
     },
     {
-      "id": "P-06",
+      "id": "P-boo-07",
       "name": "Void Invoice",
       "journeyStage": "Invoicing",
       "sourceFiles": [
@@ -3868,7 +3890,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-07",
+      "id": "P-boo-08",
       "name": "Initial Sync QB Bills",
       "journeyStage": "Expense Management",
       "sourceFiles": [
@@ -4047,7 +4069,7 @@
       ]
     },
     {
-      "id": "P-21",
+      "id": "P-boo-30",
       "name": "Save Expense's Attachments in Airtable",
       "journeyStage": "Expense Management",
       "sourceFiles": [
@@ -4153,45 +4175,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-22",
-      "name": "Sync Payment",
-      "journeyStage": "Expense Management",
-      "sourceFiles": [
-        "boolean-accounting-system-export.yml"
-      ],
-      "parentFlow": {
-        "fileName": "boolean-accounting-system-export.yml",
-        "flowName": "Sync Payment",
-        "flowNumber": null,
-        "description": "",
-        "stepCount": 2,
-        "steps": [
-          {
-            "name": "Trigger",
-            "actionKey": "crossFlow",
-            "componentKey": "cross-flow",
-            "isTrigger": true,
-            "hasWebhookCall": false
-          },
-          {
-            "name": "Check Operation",
-            "actionKey": "branchOnExpression",
-            "componentKey": "branch",
-            "isTrigger": false,
-            "hasWebhookCall": false
-          }
-        ]
-      },
-      "subFlows": [],
-      "crossFileConnections": [],
-      "totalStepCount": 2,
-      "apps": [],
-      "description": "Sync Payment: Check Operation",
-      "keySteps": [],
-      "inefficiencies": []
-    },
-    {
-      "id": "P-03",
+      "id": "P-boo-04",
       "name": "Sync accounting software Customer",
       "journeyStage": "Expense Management",
       "sourceFiles": [
@@ -4248,7 +4232,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-16",
+      "id": "P-boo-18",
       "name": "Sync Vendors accounting software -> AT",
       "journeyStage": "Expense Management",
       "sourceFiles": [
@@ -4299,7 +4283,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-01",
+      "id": "P-boo-02",
       "name": "Upsert accounting software Parent Customer Linked to Jobs",
       "journeyStage": "Expense Management",
       "sourceFiles": [
@@ -4372,7 +4356,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-02",
+      "id": "P-boo-03",
       "name": "Upsert accounting software Sub Customer Linked to Projects",
       "journeyStage": "Expense Management",
       "sourceFiles": [
@@ -4445,7 +4429,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-75",
+      "id": "P-sal-01",
       "name": "On deploy",
       "journeyStage": "Reporting",
       "sourceFiles": [
@@ -4526,7 +4510,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-76",
+      "id": "P-sal-02",
       "name": "Sync every 2 minutes",
       "journeyStage": "Reporting",
       "sourceFiles": [
@@ -4662,7 +4646,7 @@
       ]
     },
     {
-      "id": "P-34",
+      "id": "P-boo-15",
       "name": "- Message Transpiler",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -4726,7 +4710,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-28",
+      "id": "P-boo-08",
       "name": "Appointment Cancelled",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -4783,7 +4767,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-33",
+      "id": "P-boo-14",
       "name": "Auto Reply Business Hours",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -4821,7 +4805,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-66",
+      "id": "P-job-09",
       "name": "Company Sync",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -4863,7 +4847,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-65",
+      "id": "P-job-08",
       "name": "Contact Sync",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -4905,7 +4889,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-54",
+      "id": "P-gma-02",
       "name": "Create Available Event Calendar",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -4948,7 +4932,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-42",
+      "id": "P-boo-12",
       "name": "Customer-Selected Project Type -> Project Type Conversion",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -4986,7 +4970,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-67",
+      "id": "P-job-10",
       "name": "Error Notification Sender",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5043,7 +5027,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-30",
+      "id": "P-boo-11",
       "name": "Estimate Date Converter",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5081,7 +5065,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-14",
+      "id": "P-boo-15",
       "name": "Fetch customers from accounting software",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5139,7 +5123,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-13",
+      "id": "P-boo-16",
       "name": "Fetch Departments",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5191,7 +5175,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-17",
+      "id": "P-boo-19",
       "name": "Fetch Tax Codes",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5239,7 +5223,58 @@
       "inefficiencies": []
     },
     {
-      "id": "P-53",
+      "id": "P-boo-xx",
+      "name": "Get Other QB Objects",
+      "journeyStage": "Uncategorized",
+      "sourceFiles": [
+        "boolean-accounting-system-export.yml"
+      ],
+      "parentFlow": {
+        "fileName": "boolean-accounting-system-export.yml",
+        "flowName": "Get Other QB Objects",
+        "flowNumber": null,
+        "description": "",
+        "stepCount": 3,
+        "steps": [
+          {
+            "name": "New Flow Trigger",
+            "actionKey": "webhook",
+            "componentKey": "webhook-triggers",
+            "isTrigger": true,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Get Company Info",
+            "actionKey": "getCompanyInfo",
+            "componentKey": "quickbooks",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          },
+          {
+            "name": "Payment Method",
+            "actionKey": "rawRequest",
+            "componentKey": "quickbooks",
+            "isTrigger": false,
+            "hasWebhookCall": false
+          }
+        ]
+      },
+      "subFlows": [],
+      "crossFileConnections": [],
+      "totalStepCount": 3,
+      "apps": [
+        "Webhook Triggers",
+        "accounting software"
+      ],
+      "description": "Get Other QB Objects: Get Company Info, Payment Method",
+      "keySteps": [
+        "Get Company Info",
+        "Payment Method"
+      ],
+      "inefficiencies": []
+    },
+    {
+      "id": "P-gma-01",
       "name": "your email Sender",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5305,7 +5340,7 @@
       ]
     },
     {
-      "id": "P-12",
+      "id": "P-boo-14",
       "name": "Grab Items/Classes from QB",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5402,7 +5437,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-63",
+      "id": "P-job-12",
       "name": "Hubspot mapper to file field",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5466,7 +5501,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-47",
+      "id": "P-boo-91",
       "name": "Hubspot SMS Sent Logger",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5537,7 +5572,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-15",
+      "id": "P-boo-17",
       "name": "Manual Update accounting software Customer Status",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5587,7 +5622,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-45",
+      "id": "P-boo-15",
       "name": "estimating tool All Data Sync to HubSpot",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5766,7 +5801,7 @@
       ]
     },
     {
-      "id": "P-38",
+      "id": "P-boo-09",
       "name": "estimating tool Default Identifier",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5898,7 +5933,7 @@
       ]
     },
     {
-      "id": "P-10",
+      "id": "P-boo-11",
       "name": "accounting software Transactions",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5988,7 +6023,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-55",
+      "id": "P-gma-03",
       "name": "RC Text Sender",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -6035,7 +6070,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-57",
+      "id": "P-job-02",
       "name": "Register HS Users",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -6117,7 +6152,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-43",
+      "id": "P-boo-13",
       "name": "TNT Contact Flow",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -6157,7 +6192,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-56",
+      "id": "P-gma-05",
       "name": "Update Estimate Calendar",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
