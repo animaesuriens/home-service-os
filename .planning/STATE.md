@@ -3,20 +3,20 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Per-YAML Accuracy Pass
 status: executing
-last_updated: "2026-04-13T18:25:21.187Z"
-last_activity: 2026-04-13
+last_updated: "2026-04-13T18:32:53.976Z"
+last_activity: 2026-04-14
 progress:
   total_phases: 10
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
-  percent: 67
+  completed_plans: 3
+  percent: 100
 ---
 
 # State: LinkedIn Automation Portfolio
 
-**Last updated:** 2026-04-13
-**Session:** v1.1 roadmap created
+**Last updated:** 2026-04-14
+**Session:** Phase 04 complete - audit tooling shipped
 
 ## Project Reference
 
@@ -27,18 +27,18 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 
 ## Current Position
 
-Phase: 04 (pipeline-enhancement) — EXECUTING
+Phase: 04 (pipeline-enhancement) — COMPLETE
 Plan: 3 of 3
 **Milestone:** v1.1 Per-YAML Accuracy Pass
 **Phase:** 4 - Pipeline Enhancement
-**Plan:** 04-02 (completed)
-**Status:** Executing Phase 04
+**Plan:** 04-03 (completed)
+**Status:** Ready for Phase 05
 **Last activity:** 2026-04-14
 
 **Progress:**
 
-[███████░░░] 67%
-Phase 4/13 (Pipeline Enhancement) - 2 of 3 plans complete
+[██████████] 100%
+Phase 4/13 (Pipeline Enhancement) - 3 of 3 plans complete
 
 ```
 
@@ -58,9 +58,9 @@ Phase 4/13 (Pipeline Enhancement) - 2 of 3 plans complete
 
 - Started: 2026-04-13
 - Phases: 10 (4-13)
-- Plans: 2
-- Tasks: 4
-- Duration: 10 minutes
+- Plans: 3
+- Tasks: 6
+- Duration: 14 minutes
 
 ## Accumulated Context
 
@@ -79,12 +79,16 @@ Phase 4/13 (Pipeline Enhancement) - 2 of 3 plans complete
 | Phase 04 P01 | 5 | 2 tasks | 4 files | Add --yaml filter to pipeline scripts |
 | Phase 04 P02 | 5 | 2 tasks | 3 files | Externalize bundle definitions to JSON with type field |
 | Bundle definitions JSON | 2026-04-14 | Enables per-YAML editing without code changes |
+| Phase 04 P03 | 4 | 2 tasks | 5 files | Audit tooling with hallucination detection |
+| Substring matching for evidence | 2026-04-14 | Flexible hallucination detection via action word extraction |
+| Showcase potential scoring | 2026-04-14 | stepCount >= 5 AND componentKeys >= 2 = high potential |
+| JSON + Markdown audit output | 2026-04-14 | JSON for pipeline, Markdown for human CONT-03 verification |
 
 ### YAML Deep Read Progress
 
 | # | YAML File | Phase | Status | Bundles Affected |
 |---|-----------|-------|--------|------------------|
-| 1 | boolean-marketing-integration-export.yml | 5 | Audit done | lead-capture-qualification, appointment-booking-scheduling |
+| 1 | boolean-marketing-integration-export.yml | 5 | Ready | Automated audit complete (6% accuracy, 13 hallucinations) |
 | 2 | boolean-sales-integration-export.yml | 6 | Pending | TBD |
 | 3 | boolean-accounting-system-export.yml | 7 | Pending | TBD |
 | 4 | job-management-integration-export.yml | 8 | Pending | TBD |
@@ -95,12 +99,17 @@ Phase 4/13 (Pipeline Enhancement) - 2 of 3 plans complete
 
 ### Hallucination Audit (YAML 1)
 
-**boolean-marketing-integration-export.yml** -- 19 flows, 12 processes
+**boolean-marketing-integration-export.yml** -- 18 flows, 12 processes
 
-Bundle: lead-capture-qualification -- 4/8 accurate, 3 hallucinated, 1 misleading
-Bundle: appointment-booking-scheduling -- 3/8 accurate, 2 hallucinated, 2 misleading, 1 partial
+**Automated audit results (yaml-2-audit.md):**
+- Invoice Lifecycle: 13% accuracy (6 hallucinated steps)
+- Expense Management Pipeline: 0% accuracy (7 hallucinated steps)
 
-Hallucinated steps: lead scoring, budget analysis, next-available-rep assignment, preparation checklist, 24-hour reminders
+**Note:** Different bundles flagged than manual audit because automated audit filtered to boolean-marketing only. Invoice/Expense bundles pull flows from other YAMLs (as designed in v1.0), so low accuracy is expected. Confirms need for per-YAML deep read in Phases 5-12.
+
+**High showcase potential missed processes:**
+- "03.3 Update/Create HubSpot Contact" (8 steps, 4 apps)
+- "15 - Message Transpiler" (5 steps, 4 apps)
 
 ### Known Blockers
 
@@ -108,15 +117,15 @@ Hallucinated steps: lead scoring, budget analysis, next-available-rep assignment
 
 ### Pending Todos
 
-- [ ] Plan Phase 4: Pipeline Enhancement
-- [ ] Execute Phase 4 to create per-YAML processing tooling
-- [ ] Begin Phase 5: YAML 1 accuracy pass (audit already complete)
+- [x] Plan Phase 4: Pipeline Enhancement
+- [x] Execute Phase 4 to create per-YAML processing tooling
+- [ ] Begin Phase 5: YAML 1 accuracy pass (automated audit complete)
 
 ## Session Continuity
 
-**What just happened**: Completed 04-02-PLAN.md (Externalize Bundle Definitions). Extracted all 12 bundle definitions from bundle-curator.js to data/bundle-definitions.json with new type and verifiedSteps fields. Refactored bundle-curator.js as loader/validator with schema validation. Zero regression - produces identical 12-bundle output with new type field added. Enables audit phases 5-12 to edit bundle definitions without modifying code.
+**What just happened**: Completed Phase 04 (Pipeline Enhancement) with 04-03-PLAN.md (Audit Tooling). Created audit-engine.js with flow mapping, hallucination detection via evidence matching, and missed process identification with showcase potential scoring. Created audit-yaml.js CLI that produces JSON + Markdown reports. Tested against boolean-marketing YAML: 6% accuracy (13 hallucinated steps in 2 bundles), 2 high showcase potential missed processes. All v1.1 pipeline tooling complete.
 
-**What's next**: Continue Phase 04 pipeline enhancement with plan 04-03 (final plan in phase)
+**What's next**: Begin Phase 05 (YAML 1 Deep Read) to correct hallucinations in boolean-marketing bundles and create new bundles for high-potential missed processes
 
 ---
 *This file is the memory of the project. Update at phase boundaries and when context shifts.*

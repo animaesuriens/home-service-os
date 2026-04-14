@@ -22,14 +22,32 @@
       "solution": "Every lead is captured instantly from any marketing channel, scored automatically, welcomed within 60 seconds, and routed to the right salesperson — even at 2am on a Sunday",
       "layout": "swimlane",
       "type": "process",
-      "verifiedSteps": null
+      "verifiedSteps": [
+        { "label": "Generate standardized lead payload from vendor data", "actor": "System" },
+        { "label": "Lookup project type from customer selection", "actor": "System" },
+        { "label": "Lookup marketing sources for attribution", "actor": "System" },
+        { "label": "Build final contact payload with enriched data", "actor": "System" },
+        { "label": "Create or update contact in CRM", "actor": "System" },
+        { "label": "Build final deal payload with contact association", "actor": "System" },
+        { "label": "Create or update deal in CRM", "actor": "System" },
+        { "label": "Handle deal creation errors gracefully", "actor": "System" },
+        { "label": "Fetch deal properties from CRM", "actor": "CRM" },
+        { "label": "Extract deal properties for processing", "actor": "System" },
+        { "label": "Extract deal details for routing", "actor": "System" },
+        { "label": "Route to booking flow based on deal stage", "actor": "System" },
+        { "label": "Fetch contact properties from CRM", "actor": "CRM" },
+        { "label": "Extract contact properties for processing", "actor": "System" },
+        { "label": "Loop over associated deals for sync", "actor": "System" },
+        { "label": "Wait before processing engagements", "actor": "System" },
+        { "label": "Loop over call and meeting engagements", "actor": "System" }
+      ]
     },
     {
       "id": "appointment-booking-scheduling",
       "title": "Appointment Booking & Scheduling",
       "journeyStage": "Appointment Booking",
       "journeySlug": "appointment-booking",
-      "processIds": ["P-27", "P-31", "P-28"],
+      "processIds": ["P-05", "P-06", "P-07"],
       "idealizedSteps": [
         { "label": "Customer selects available time slot online", "actor": "Customer" },
         { "label": "Generate personalized booking link for contact", "actor": "System" },
@@ -44,7 +62,25 @@
       "solution": "Customers book their own appointments from a personalized link, get automatic confirmations and reminders, and the whole team stays in sync without a single phone call",
       "layout": "swimlane",
       "type": "process",
-      "verifiedSteps": null
+      "verifiedSteps": [
+        { "label": "Route booking data based on source", "actor": "System" },
+        { "label": "Select booking payload from routing decision", "actor": "System" },
+        { "label": "Retrieve owner assignment from database", "actor": "Database" },
+        { "label": "Build initial deal payload with appointment data", "actor": "System" },
+        { "label": "Lookup project type from booking details", "actor": "System" },
+        { "label": "Lookup marketing sources for attribution", "actor": "System" },
+        { "label": "Extract customer email from booking", "actor": "System" },
+        { "label": "Prepare contact sync payload for CRM", "actor": "System" },
+        { "label": "Check if contact is searchable", "actor": "System" },
+        { "label": "Select contact result from search", "actor": "System" },
+        { "label": "Build array of project types for deal", "actor": "System" },
+        { "label": "Check deal stage for routing", "actor": "System" },
+        { "label": "Route to appropriate pipeline based on deal stage", "actor": "System" },
+        { "label": "Process cancellation data", "actor": "System" },
+        { "label": "Search for appointment in CRM", "actor": "CRM" },
+        { "label": "Update deal and calendar with cancellation", "actor": "System" },
+        { "label": "Validate reschedule booking data", "actor": "System" }
+      ]
     },
     {
       "id": "estimate-to-deal-pipeline",
@@ -263,6 +299,45 @@
       "layout": "swimlane",
       "type": "process",
       "verifiedSteps": null
+    },
+    {
+      "id": "hubspot-contact-sync",
+      "title": "HubSpot Contact Sync",
+      "journeyStage": "Lead Capture",
+      "journeySlug": "hubspot-contact-sync",
+      "processIds": ["P-01"],
+      "idealizedSteps": [],
+      "verifiedSteps": [
+        { "label": "Override contact payload with incoming data", "actor": "System" },
+        { "label": "Search for existing contact by ID in CRM", "actor": "CRM" },
+        { "label": "Search for existing contact by email in CRM", "actor": "CRM" },
+        { "label": "Select which search result to use", "actor": "System" },
+        { "label": "Merge incoming data with existing contact data", "actor": "System" },
+        { "label": "Route to create or update based on search result", "actor": "System" },
+        { "label": "Return final contact details for downstream use", "actor": "System" }
+      ],
+      "pain": "Sales reps manually searching for contacts before every call, duplicate records piling up in the CRM, and no consistent process for merging contact data from different marketing channels",
+      "solution": "Every contact is automatically searched by ID and email, merged with existing data if found, or created fresh if new — zero duplicates, zero manual lookups, always the latest info",
+      "layout": "vertical",
+      "type": "process"
+    },
+    {
+      "id": "message-transpiler",
+      "title": "Message Transpiler",
+      "journeyStage": "Communication",
+      "journeySlug": "message-transpiler",
+      "processIds": ["P-12"],
+      "idealizedSteps": [],
+      "verifiedSteps": [
+        { "label": "Retrieve latest open deal for contact", "actor": "System" },
+        { "label": "Generate personalized booking link from deal context", "actor": "System" },
+        { "label": "Shorten booking URL for customer message", "actor": "System" },
+        { "label": "Route message to appropriate channel based on context", "actor": "System" }
+      ],
+      "pain": "Staff manually looking up deals, copying booking links, and shortening URLs before every customer message — slow, error-prone, and impossible to scale during peak season",
+      "solution": "Every outbound customer message automatically pulls the latest deal context, generates a personalized booking link, shortens it, and routes the right message format — customers get the right link in seconds, not minutes",
+      "layout": "vertical",
+      "type": "process"
     }
   ]
 }

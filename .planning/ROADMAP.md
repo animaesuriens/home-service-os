@@ -39,7 +39,7 @@
 Plans:
 - [x] 04-01-PLAN.md -- Per-YAML filtering (--yaml flag on pipeline scripts)
 - [x] 04-02-PLAN.md -- Bundle externalization (BUNDLE_DEFINITIONS to JSON, type + verifiedSteps fields)
-- [ ] 04-03-PLAN.md -- Audit tooling (flow mapping, hallucination detection, JSON + Markdown reports)
+- [x] 04-03-PLAN.md -- Audit tooling (flow mapping, hallucination detection, JSON + Markdown reports)
 **Success Criteria** (what must be TRUE):
   1. Pipeline accepts --yaml flag to process single file
   2. Pipeline logs flow-by-flow tracing for audit trails
