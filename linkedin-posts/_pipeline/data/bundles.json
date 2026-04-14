@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-14T08:00:12.978Z",
+  "generatedAt": "2026-04-14T08:57:35.473Z",
   "totalBundles": 14,
   "bundles": [
     {
@@ -17,7 +17,80 @@
         "Upsert accounting software Sub Customer Linked to Projects",
         "Create Invoice in AT from Unbilled Line Items"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Lead Data"
+        },
+        {
+          "label": "Sleep"
+        },
+        {
+          "label": "Loop Over Engagements"
+        },
+        {
+          "label": "Generate Payload"
+        },
+        {
+          "label": "Lookup Project"
+        },
+        {
+          "label": "Lookup Sources"
+        },
+        {
+          "label": "Final Contact Payload"
+        },
+        {
+          "label": "Get Contact"
+        },
+        {
+          "label": "Final Deal Payload"
+        },
+        {
+          "label": "Get Deal"
+        },
+        {
+          "label": "Override payload"
+        },
+        {
+          "label": "CRM: Search Contact by id"
+        },
+        {
+          "label": "CRM: Search Contact by email"
+        },
+        {
+          "label": "Select Executed Step Result"
+        },
+        {
+          "label": "Merged Payload"
+        },
+        {
+          "label": "CRM: Get Contact Properties"
+        },
+        {
+          "label": "List Contact Properties"
+        },
+        {
+          "label": "Loop Over Deals"
+        },
+        {
+          "label": "Deal Error Handler"
+        },
+        {
+          "label": "Project Type Branch"
+        },
+        {
+          "label": "Marketing Source Branch"
+        },
+        {
+          "label": "Contact Branch"
+        },
+        {
+          "label": "HS Contact Final Output"
+        },
+        {
+          "label": "Check properties exist"
+        }
+      ],
       "diagramConfig": {
         "decisionIdx": 4,
         "decisionLabel": "Contact Exists\\nin CRM?",
@@ -51,7 +124,104 @@
         "Void Invoice",
         "estimating tool Default Identifier"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Booking Event"
+        },
+        {
+          "label": "Get Owner"
+        },
+        {
+          "label": "Initial Deal Payload"
+        },
+        {
+          "label": "Lookup Project Type"
+        },
+        {
+          "label": "Lookup Sources"
+        },
+        {
+          "label": "Extract Email"
+        },
+        {
+          "label": "YCBM HS Contact Sync"
+        },
+        {
+          "label": "Array of Project Types"
+        },
+        {
+          "label": "Check dealStage"
+        },
+        {
+          "label": "Check Deal Stage"
+        },
+        {
+          "label": "Find Customer Ref"
+        },
+        {
+          "label": "Expense Payload"
+        },
+        {
+          "label": "Upsert Expense Record"
+        },
+        {
+          "label": "Crossflow Payload"
+        },
+        {
+          "label": "Save Attachments"
+        },
+        {
+          "label": "Stop Execution (Success)"
+        },
+        {
+          "label": "Calculated Date"
+        },
+        {
+          "label": "Format Date/Time"
+        },
+        {
+          "label": "Start Index"
+        },
+        {
+          "label": "Loop N Times"
+        },
+        {
+          "label": "Get Expense Record"
+        },
+        {
+          "label": "Set Start Position"
+        },
+        {
+          "label": "Is YCBM ID exist?"
+        },
+        {
+          "label": "Branch on Expression"
+        },
+        {
+          "label": "Branch on Expression 3"
+        },
+        {
+          "label": "Override Payload"
+        },
+        {
+          "label": "If Searchable Branch"
+        },
+        {
+          "label": "Output Contact"
+        },
+        {
+          "label": "dealStage marketing pipeline?"
+        },
+        {
+          "label": "Customer Ref exists?"
+        },
+        {
+          "label": "Is an Item?"
+        },
+        {
+          "label": "Flow is enabled in Wizard?"
+        }
+      ],
       "diagramConfig": {
         "decisionIdx": 4,
         "decisionLabel": "Booking\\nSource?",
@@ -78,7 +248,38 @@
       "constituentProcesses": [
         "estimating tool > HubSpot | Process Quote - Estimate > Deal Sync"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Event"
+        },
+        {
+          "label": "Estimate Date To Sync"
+        },
+        {
+          "label": "Time X Minutes Ago"
+        },
+        {
+          "label": "Time X Minutes Ago to Epoch"
+        },
+        {
+          "label": "List Quotes"
+        },
+        {
+          "label": "Loop Over Quotes"
+        },
+        {
+          "label": "Branch on Expression"
+        },
+        {
+          "label": "Process Data (Step 7)"
+        },
+        {
+          "label": "Process Data (Step 8)"
+        },
+        {
+          "label": "Process Data (Step 9)"
+        }
+      ],
       "diagramConfig": {
         "decisionIdx": 4,
         "decisionLabel": "Link Project Photos\\nFrom Site Visit",
@@ -125,7 +326,140 @@
         "Register HS Deal Owner",
         "Set/Update HS Deal Name & photo storage Project Name"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Event"
+        },
+        {
+          "label": "Get Deal Payload"
+        },
+        {
+          "label": "CRM: Get Deals with same job record id"
+        },
+        {
+          "label": "CO count"
+        },
+        {
+          "label": "Split Sources"
+        },
+        {
+          "label": "Source IDs Count"
+        },
+        {
+          "label": "CRM: Get Deal Properties"
+        },
+        {
+          "label": "List Deal Properties Label"
+        },
+        {
+          "label": "List Deal Properties Object"
+        },
+        {
+          "label": "CRM: Get Deal"
+        },
+        {
+          "label": "CRM: Get Contact Association"
+        },
+        {
+          "label": "CRM: Get Company Association"
+        },
+        {
+          "label": "Sales Rate"
+        },
+        {
+          "label": "Loop Over Deals Amount"
+        },
+        {
+          "label": "Loop Over Deals Hours"
+        },
+        {
+          "label": "Loop Over Deals Labor"
+        },
+        {
+          "label": "Loop Over Deals Discount"
+        },
+        {
+          "label": "Loop Over Deals Materials"
+        },
+        {
+          "label": "Sum Deal Amounts"
+        },
+        {
+          "label": "Sum Deal Hours"
+        },
+        {
+          "label": "Sum Deal Labor"
+        },
+        {
+          "label": "Sum Deal Materials"
+        },
+        {
+          "label": "Sum Deal Discount"
+        },
+        {
+          "label": "CO Hours and Amount"
+        },
+        {
+          "label": "Adjust Date/Time"
+        },
+        {
+          "label": "Time 2 Minutes Ago to Epoch"
+        },
+        {
+          "label": "Get Deals"
+        },
+        {
+          "label": "Loop Over HS Deals"
+        },
+        {
+          "label": "Get Fields"
+        },
+        {
+          "label": "Mappable Fields"
+        },
+        {
+          "label": "Get Job"
+        },
+        {
+          "label": "Project"
+        },
+        {
+          "label": "Loop Over Projects"
+        },
+        {
+          "label": "Code Block"
+        },
+        {
+          "label": "CRM: Get Companies Properties"
+        },
+        {
+          "label": "Loop Over Deals"
+        },
+        {
+          "label": "CRM: Get Owner"
+        },
+        {
+          "label": "List People"
+        },
+        {
+          "label": "Upsert Deal Owners"
+        },
+        {
+          "label": "Branch on Expression"
+        },
+        {
+          "label": "Difference Branch"
+        },
+        {
+          "label": "Contact Detail Branch"
+        },
+        {
+          "label": "Check if Project Exist"
+        },
+        {
+          "label": "HS Deal ID Exists"
+        }
+      ],
       "diagramConfig": {
         "decisionIdx": 3,
         "decisionLabel": "Change Order\\nType?",
@@ -156,7 +490,38 @@
         "Contract Signed",
         "Subcontractor Bill Payment"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Contract Event"
+        },
+        {
+          "label": "CO Records"
+        },
+        {
+          "label": "Loop Over Addendums"
+        },
+        {
+          "label": "Format Date"
+        },
+        {
+          "label": "Get Addendum Record"
+        },
+        {
+          "label": "List Expenses"
+        },
+        {
+          "label": "Loop Over Expenses"
+        },
+        {
+          "label": "Branch on Expression"
+        },
+        {
+          "label": "Expenses sync enabled?"
+        },
+        {
+          "label": "Process Data (Step 9)"
+        }
+      ],
       "diagramConfig": {
         "decisionIdx": 3,
         "decisionLabel": "Customer\\nResponse?",
@@ -183,7 +548,38 @@
       "constituentProcesses": [
         "Create Addendums"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Event"
+        },
+        {
+          "label": "Parse Json Form"
+        },
+        {
+          "label": "Get filter"
+        },
+        {
+          "label": "List Addendums"
+        },
+        {
+          "label": "Loop Over COs"
+        },
+        {
+          "label": "Stop Execution"
+        },
+        {
+          "label": "Mock List"
+        },
+        {
+          "label": "Sleep"
+        },
+        {
+          "label": "Check if CO has Job assigned"
+        },
+        {
+          "label": "Process Data (Step 9)"
+        }
+      ],
       "diagramConfig": {
         "decisionIdx": 3,
         "decisionLabel": "Customer Record\\nStatus?",
@@ -216,7 +612,38 @@
         "Update DPD",
         "Update DPD Schedule"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Production Update"
+        },
+        {
+          "label": "Stop Execution"
+        },
+        {
+          "label": "List Records"
+        },
+        {
+          "label": "List Time Logs"
+        },
+        {
+          "label": "Loop Time Logs"
+        },
+        {
+          "label": "List Projects"
+        },
+        {
+          "label": "Loop Projects"
+        },
+        {
+          "label": "Project exists?"
+        },
+        {
+          "label": "Process Data (Step 8)"
+        },
+        {
+          "label": "Process Data (Step 9)"
+        }
+      ],
       "diagramConfig": {
         "decisionIdx": 4,
         "decisionLabel": "Update Project\\nCompletion %",
@@ -255,7 +682,77 @@
         "Time Tracking System",
         "User Sync"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Time Entry"
+        },
+        {
+          "label": "Update Inactive Jobcodes"
+        },
+        {
+          "label": "Default Days"
+        },
+        {
+          "label": "Adjust Date/Time"
+        },
+        {
+          "label": "Format to ISO Date"
+        },
+        {
+          "label": "Retrieve All Time Sheets"
+        },
+        {
+          "label": "Retrieve All Users"
+        },
+        {
+          "label": "Retrieve All Active JobCodes"
+        },
+        {
+          "label": "Retrieve All Projects"
+        },
+        {
+          "label": "Retrieve All People"
+        },
+        {
+          "label": "Bulk Update Timelogs"
+        },
+        {
+          "label": "Retrieve Eligible Projects"
+        },
+        {
+          "label": "Retrieve All Active Jobcodes"
+        },
+        {
+          "label": "Jobcodes Bulk Update"
+        },
+        {
+          "label": "Update Jobcodes"
+        },
+        {
+          "label": "Retrieve Locations"
+        },
+        {
+          "label": "Upsert Location"
+        },
+        {
+          "label": "Update Location Address"
+        },
+        {
+          "label": "Retrieve All Deleted Time Sheets"
+        },
+        {
+          "label": "Retrieve All Time Logs"
+        },
+        {
+          "label": "Delete Timelogs"
+        },
+        {
+          "label": "Delete Non-Work Time Logs"
+        },
+        {
+          "label": "Bulk Update Users"
+        }
+      ],
       "diagramConfig": {
         "decisionIdx": 3,
         "decisionLabel": "Time Log\\nStatus?",
@@ -296,7 +793,176 @@
         "Update Invoice in accounting software",
         "Void Invoice"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Event"
+        },
+        {
+          "label": "Get Cursor"
+        },
+        {
+          "label": "List Project Types"
+        },
+        {
+          "label": "Map Project Types"
+        },
+        {
+          "label": "Fetch QBO Invoices"
+        },
+        {
+          "label": "Get Accepted Quotes"
+        },
+        {
+          "label": "Loop Over Items"
+        },
+        {
+          "label": "Stop Execution 2"
+        },
+        {
+          "label": "Estimate Date To Sync"
+        },
+        {
+          "label": "Time 2 Minutes Ago"
+        },
+        {
+          "label": "Time 2 Minutes Ago to Epoch"
+        },
+        {
+          "label": "Code Block"
+        },
+        {
+          "label": "List Quotes"
+        },
+        {
+          "label": "Loop Over Quotes"
+        },
+        {
+          "label": "Get Job"
+        },
+        {
+          "label": "Get Preferences"
+        },
+        {
+          "label": "Get Invoice"
+        },
+        {
+          "label": "Get Customer By Id"
+        },
+        {
+          "label": "(Job) Customer Payload"
+        },
+        {
+          "label": "Update Parent Customer"
+        },
+        {
+          "label": "List Invoices Linked to Job"
+        },
+        {
+          "label": "Invoice Lines IDs string"
+        },
+        {
+          "label": "Get Invoice Lines"
+        },
+        {
+          "label": "Create Lines Array"
+        },
+        {
+          "label": "Fill Custom Fields"
+        },
+        {
+          "label": "Create Invoice Payload"
+        },
+        {
+          "label": "Create Invoice"
+        },
+        {
+          "label": "Initial Status"
+        },
+        {
+          "label": "Get All Invoices"
+        },
+        {
+          "label": "Filter Voided Invoices"
+        },
+        {
+          "label": "Send Invoice"
+        },
+        {
+          "label": "Find Associated Job"
+        },
+        {
+          "label": "Bill to String"
+        },
+        {
+          "label": "Invoice Payload"
+        },
+        {
+          "label": "Upsert Invoice"
+        },
+        {
+          "label": "Process Invoice Line Items"
+        },
+        {
+          "label": "Crossflow Payload"
+        },
+        {
+          "label": "Process Payments"
+        },
+        {
+          "label": "PDF Subflow Payload"
+        },
+        {
+          "label": "Save Invoice PDF"
+        },
+        {
+          "label": "Filter Transactions"
+        },
+        {
+          "label": "Get All Payment Methods"
+        },
+        {
+          "label": "Loop Over Payments"
+        },
+        {
+          "label": "Get Invoice By Id"
+        },
+        {
+          "label": "Update Invoice Payload"
+        },
+        {
+          "label": "Update Invoice"
+        },
+        {
+          "label": "Update Doc Number Payload"
+        },
+        {
+          "label": "Update Doc Number"
+        },
+        {
+          "label": "Void Invoice"
+        },
+        {
+          "label": "Records to be processed?"
+        },
+        {
+          "label": "Job Found?"
+        },
+        {
+          "label": "Invoice created successfully?"
+        },
+        {
+          "label": "Got any invocies from QBO?"
+        },
+        {
+          "label": "Status Branch"
+        },
+        {
+          "label": "Branch on Expression"
+        },
+        {
+          "label": "Update Successful?"
+        }
+      ],
       "diagramConfig": {
         "decisionIdx": 4,
         "decisionLabel": "Track Payment Status\\n& Sync Updates",
@@ -334,7 +1000,113 @@
         "Upsert accounting software Parent Customer Linked to Jobs",
         "Upsert accounting software Sub Customer Linked to Projects"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Expense Data"
+        },
+        {
+          "label": "Current Time"
+        },
+        {
+          "label": "Stopwatch Time"
+        },
+        {
+          "label": "Start Position Value"
+        },
+        {
+          "label": "Set Start Position"
+        },
+        {
+          "label": "Calculated Date"
+        },
+        {
+          "label": "Format Date/Time"
+        },
+        {
+          "label": "Loop N Times"
+        },
+        {
+          "label": "Get Progress"
+        },
+        {
+          "label": "Stop Execution 2"
+        },
+        {
+          "label": "Find Customer Ref"
+        },
+        {
+          "label": "Expense Payload"
+        },
+        {
+          "label": "Upsert Expense Record"
+        },
+        {
+          "label": "Stop Execution (Success)"
+        },
+        {
+          "label": "Download Attachables URL"
+        },
+        {
+          "label": "Get Attachables"
+        },
+        {
+          "label": "Loop Over Attachables"
+        },
+        {
+          "label": "Get Attachables URLs"
+        },
+        {
+          "label": "Attachables Payload"
+        },
+        {
+          "label": "Update Record"
+        },
+        {
+          "label": "Sleep"
+        },
+        {
+          "label": "Update Parent Customer"
+        },
+        {
+          "label": "Execution - Save Value"
+        },
+        {
+          "label": "List Jobs"
+        },
+        {
+          "label": "Loop Over Jobs"
+        },
+        {
+          "label": "List Projects"
+        },
+        {
+          "label": "Loop Over Projects"
+        },
+        {
+          "label": "Expenses Sync enabled?"
+        },
+        {
+          "label": "Customer Ref exists?"
+        },
+        {
+          "label": "Is an Item?"
+        },
+        {
+          "label": "Attachables fetched?"
+        },
+        {
+          "label": "Is this a Job or Project?"
+        },
+        {
+          "label": "Customer Payload"
+        },
+        {
+          "label": "QBO Parent Customer ID Exists?"
+        },
+        {
+          "label": "QBO Sub Customer ID Exists?"
+        }
+      ],
       "diagramConfig": {
         "decisionIdx": 3,
         "decisionLabel": "Customer Record\\nExists?",
@@ -363,7 +1135,41 @@
         "On deploy",
         "Sync every 2 minutes"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Event"
+        },
+        {
+          "label": "Get Config Variables"
+        },
+        {
+          "label": "Loop Over Items"
+        },
+        {
+          "label": "Stop Execution"
+        },
+        {
+          "label": "Adjust Date/Time"
+        },
+        {
+          "label": "Time 2 Minutes Ago to Epoch"
+        },
+        {
+          "label": "Generate get deal payload"
+        },
+        {
+          "label": "Process Delete Sync"
+        },
+        {
+          "label": "Upsert"
+        },
+        {
+          "label": "Stop Execution 2"
+        },
+        {
+          "label": "Branch on Expression"
+        }
+      ],
       "diagramConfig": {
         "decisionIdx": 2,
         "decisionLabel": "Data Changed\\nSince Last Sync?",
@@ -438,7 +1244,50 @@
         "TNT Contact Flow",
         "Update Estimate Calendar"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Booking Event"
+        },
+        {
+          "label": "Find Customer Ref"
+        },
+        {
+          "label": "Expense Payload"
+        },
+        {
+          "label": "Upsert Expense Record"
+        },
+        {
+          "label": "Crossflow Payload"
+        },
+        {
+          "label": "Save Attachments"
+        },
+        {
+          "label": "Stop Execution (Success)"
+        },
+        {
+          "label": "Calculated Date"
+        },
+        {
+          "label": "Format Date/Time"
+        },
+        {
+          "label": "Start Index"
+        },
+        {
+          "label": "Loop N Times"
+        },
+        {
+          "label": "Branch on Expression"
+        },
+        {
+          "label": "Customer Ref exists?"
+        },
+        {
+          "label": "Is an Item?"
+        }
+      ],
       "diagramConfig": {
         "decisionIdx": 1,
         "decisionLabel": "Select Channel\\nBased on Event Type",
@@ -471,7 +1320,80 @@
         "Upsert accounting software Sub Customer Linked to Projects",
         "Create Invoice in AT from Unbilled Line Items"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Lead Data"
+        },
+        {
+          "label": "Sleep"
+        },
+        {
+          "label": "Loop Over Engagements"
+        },
+        {
+          "label": "Generate Payload"
+        },
+        {
+          "label": "Lookup Project"
+        },
+        {
+          "label": "Lookup Sources"
+        },
+        {
+          "label": "Final Contact Payload"
+        },
+        {
+          "label": "Get Contact"
+        },
+        {
+          "label": "Final Deal Payload"
+        },
+        {
+          "label": "Get Deal"
+        },
+        {
+          "label": "Override payload"
+        },
+        {
+          "label": "CRM: Search Contact by id"
+        },
+        {
+          "label": "CRM: Search Contact by email"
+        },
+        {
+          "label": "Select Executed Step Result"
+        },
+        {
+          "label": "Merged Payload"
+        },
+        {
+          "label": "CRM: Get Contact Properties"
+        },
+        {
+          "label": "List Contact Properties"
+        },
+        {
+          "label": "Loop Over Deals"
+        },
+        {
+          "label": "Deal Error Handler"
+        },
+        {
+          "label": "Project Type Branch"
+        },
+        {
+          "label": "Marketing Source Branch"
+        },
+        {
+          "label": "Contact Branch"
+        },
+        {
+          "label": "HS Contact Final Output"
+        },
+        {
+          "label": "Check properties exist"
+        }
+      ],
       "diagramConfig": {
         "decisionIdx": 3,
         "decisionLabel": "Contact Already\\nExists?",
@@ -499,7 +1421,77 @@
       "constituentProcesses": [
         "estimating tool All Data Sync to HubSpot"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Event"
+        },
+        {
+          "label": "Get latest open deal"
+        },
+        {
+          "label": "Get YCBM Link"
+        },
+        {
+          "label": "Get Short Link"
+        },
+        {
+          "label": "Build Query"
+        },
+        {
+          "label": "Start Index"
+        },
+        {
+          "label": "Loop N Times"
+        },
+        {
+          "label": "Get All Owners"
+        },
+        {
+          "label": "Get Project Types"
+        },
+        {
+          "label": "Get All Companies"
+        },
+        {
+          "label": "Get All PS Quotes"
+        },
+        {
+          "label": "Get All PS Contacts"
+        },
+        {
+          "label": "HS Payload Contact"
+        },
+        {
+          "label": "Bulk upsert contact"
+        },
+        {
+          "label": "Get All HS Contacts"
+        },
+        {
+          "label": "Get all HS Deals"
+        },
+        {
+          "label": "PS Quote x HS Deal Sync"
+        },
+        {
+          "label": "Stop Execution"
+        },
+        {
+          "label": "Photo Management Sync X HubSpot Deal"
+        },
+        {
+          "label": "CRM: List Deals"
+        },
+        {
+          "label": "CRM: List Contacts"
+        },
+        {
+          "label": "Bulk Contact Association"
+        },
+        {
+          "label": "Branch on Expression"
+        }
+      ],
       "diagramConfig": {
         "decisionIdx": 3,
         "decisionLabel": "Message\\nType?",

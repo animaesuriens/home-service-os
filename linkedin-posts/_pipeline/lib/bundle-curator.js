@@ -80,9 +80,8 @@ function curateBundles(processes) {
       }
     });
 
-    // Steps will be derived from actual process data in Phase 15
-    // For now, pass through empty array
-    const steps = [];
+    // Steps derived from actual process data via derive-steps.js
+    const steps = def.idealizedSteps || [];
 
     return {
       id: def.id,
