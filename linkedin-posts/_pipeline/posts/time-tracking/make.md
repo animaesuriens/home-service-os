@@ -1,27 +1,27 @@
-Your payroll person just spent 6 hours reconciling time entries between your time tracking app and accounting software — again. Sound familiar?
+Your time tracking app shows 47 hours for Jake this week, but your job costing system says 32. Your payroll person just spent 3 hours trying to figure out why.
 
-**BEFORE:** Your crew clocks in through one app, but job codes live in another system. Every week, someone has to manually match up who worked where, fix deleted entries that still show phantom hours, and wait days to get new hires set up in both systems. Your payroll staff is drowning in spreadsheets, and you're never quite sure the numbers are right.
+BEFORE: You're running a time tracking app for clock-ins and a separate system for job codes and payroll. Every week, your office manager plays detective — matching time entries between systems, hunting down deleted punches that still show up somewhere, and manually adding new hires who can clock in but don't exist in payroll yet. Meanwhile, job codes go stale when projects end, creating a mess of outdated options your crew keeps selecting.
 
-**AFTER:** Every clock-in, time correction, and deletion flows between your systems in real-time. Job codes stay current across platforms, employee profiles sync automatically, and payroll gets clean, accurate data without anyone touching a spreadsheet. Your team focuses on actual work instead of data entry.
+AFTER: Every time entry flows seamlessly between your systems in real-time. When someone clocks in, out, or makes a correction, both platforms update instantly. New employees appear in both systems automatically. Job codes stay current as projects open and close. Your payroll person gets clean, reconciled data without touching a spreadsheet.
 
-**Here's how Make transforms your time tracking chaos into a smooth operation:**
+Here's how Make handles this sync behind the scenes:
 
-When someone clocks in or makes a time entry correction, Make immediately captures that data and starts the sync process. First, it updates any inactive job codes to keep your project lists current — no more confusion about which jobs are still active.
+When your time tracking app receives any entry — whether it's a new punch, correction, or deletion — Make immediately springs into action. It starts by updating any inactive job codes and standardizing the date and time formats so everything speaks the same language.
 
-The system automatically handles date and time formatting, converting everything to the standard format your accounting software expects. Then Make retrieves all your time sheets, users, active job codes, projects, and team member profiles to ensure everything stays aligned.
+Then it pulls fresh data from both systems: all current timesheets, user profiles, active job codes, and project details. This gives Make a complete picture of what should exist where.
 
-Here's where it gets powerful: Make performs bulk updates across all your time logs, keeping everything synchronized without creating duplicate entries or missing data. It also manages your job codes in real-time, updating project statuses and ensuring new jobs immediately appear in your time tracking app.
+For new or updated entries, Make performs bulk updates to your time logs, making sure every punch lands in the right place with the right job code attached. It also handles the job code maintenance automatically — retrieving eligible projects and updating the available codes so your crew only sees current options.
 
-The automation handles location data too — retrieving and updating job site information so your crew always sees the right addresses when they clock in. When someone deletes a time entry (maybe they clocked in at the wrong job), Make catches that deletion and removes it from all connected systems, preventing those phantom hours from messing up payroll.
+Location data flows through too. Make pulls location information and updates addresses across systems, so job site details stay consistent everywhere.
 
-Make also manages your team members, performing bulk updates to user profiles so new hires automatically appear in both systems with the right permissions and job access. No more waiting days for IT setup or manual data entry.
+But here's the clever part: Make also watches for deletions. When someone removes a time entry from one system, it retrieves all deleted timesheets and removes the corresponding entries from your other platforms. No more phantom hours showing up in payroll.
 
-The real magic happens with the continuous sync cycle. Make constantly monitors for changes — new time entries, project updates, employee changes, or deletions — and immediately propagates those changes across all your systems. Your time tracking app talks to your accounting software talks to your payroll system, all without human intervention.
+Finally, it handles user management by bulk updating employee profiles across systems. New hires get set up everywhere automatically, and changes to existing employees sync instantly.
 
-Instead of your payroll person spending hours each week reconciling data and hunting down discrepancies, they get clean, accurate information that's already organized and ready for processing. Your crew gets faster access to new jobs, and you get reliable time tracking data for better project management and accurate billing.
+The whole process runs continuously in the background. Your crew clocks in and out normally, your project managers update job codes as needed, and everything stays perfectly synchronized. No more Friday afternoon reconciliation sessions or mysterious time discrepancies.
 
-The best part? This entire sync engine runs in the background while your team focuses on serving customers instead of managing data entry. Make handles all the technical complexity of keeping multiple systems aligned, so you don't have to.
+Your payroll person goes from data detective to strategic contributor, and you get accurate job costing without the administrative overhead.
 
-What's your biggest time tracking headache right now — phantom hours, slow employee setup, or manual payroll reconciliation? And if you're tired of your team spending more time on data entry than actual work, let's chat about getting your systems talking to each other properly.
+What's your biggest time tracking headache right now — the weekly reconciliation or keeping job codes current? And if you're tired of playing time entry detective every week, let's chat about setting up a sync that actually works.
 
 #Automation #TimeTracking #Make

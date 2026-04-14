@@ -1,37 +1,29 @@
-Your invoices are living in three different systems and none of them are talking to each other. Sound familiar?
+Your accounting software shows $12K in unbilled work, but your project dashboard says everything's invoiced. Meanwhile, you just sent a customer an invoice that was voided last week.
 
-**BEFORE: The Invoice Chaos**
+**BEFORE:** You're juggling invoices across multiple systems like a circus performer on a unicycle. Unbilled work sits in your accounting software while your project management tool thinks everything's been invoiced. Customers get confused when they receive outdated invoice versions, and voided invoices keep showing up in project dashboards like ghosts that won't disappear.
 
-You finish a job, create an invoice in your accounting software, then manually update your project management system. Two hours later, you realize the customer got the wrong version because you forgot to sync the changes. Meanwhile, that voided invoice from last week is still showing up in your project dashboard, confusing everyone about what's actually been paid.
+**AFTER:** Your invoice data flows seamlessly between systems in real-time. Unbilled items get detected automatically, every invoice modification syncs everywhere instantly, and voided invoices vanish from all dashboards simultaneously. Nothing falls through the cracks, and your customers always get the current version.
 
-**AFTER: The Seamless Reality**
+**THE BRIDGE:** Here's how Make transforms this chaos into clockwork precision.
 
-Every invoice modification flows automatically between your accounting software and project management system in real-time. Unbilled work gets caught before it slips through the cracks. When you void an invoice, it disappears everywhere instantly. Your team always sees the current status, and customers never get outdated versions.
+The automation starts by monitoring your accounting software for any invoice activity. When something changes, it pulls your current project types and maps them properly, then fetches all recent invoices from your accounting system while simultaneously grabbing accepted quotes from your project management tool.
 
-**THE BRIDGE: How Make Orchestrates This**
+Here's where it gets smart — Make loops through each item and runs a time-based check to determine what needs syncing. It looks at items from the last two minutes, converts timestamps to the right format, then cross-references this data with your quote system to find any gaps.
 
-Here's how the automation actually works behind the scenes. Make starts by monitoring your accounting software for any invoice changes — new invoices, modifications, payments, or voids. When something happens, it immediately grabs the current cursor position to track exactly where it left off.
+For each quote that needs attention, the system pulls the associated job details, grabs your company preferences, and retrieves the current invoice status. It builds a complete customer payload with all the right information, then updates your project management system with the latest customer data.
 
-The system then fetches your project types and maps them correctly so invoices land in the right categories. It pulls all recent invoices from your accounting software while simultaneously grabbing accepted quotes from your project management system.
+The real magic happens in the invoice processing. Make pulls all invoice line items, creates properly formatted arrays, fills in your custom fields automatically, then generates a complete invoice payload. If it's a new invoice, it creates one. If it already exists, it updates the existing record.
 
-Now comes the smart part. Make loops through each unbilled item, checking timestamps to ensure it only processes work from the last sync period. It uses a simple time calculation to avoid duplicate processing — looking at items from two minutes ago and converting that to the right format for comparison.
+But it doesn't stop there. The automation handles status changes intelligently — it processes payments, generates PDF versions, and manages the entire document lifecycle. When invoices get voided in your accounting software, Make immediately finds the associated job in your project system and updates the status everywhere.
 
-For each legitimate unbilled item, Make grabs the associated job details, customer information, and your billing preferences. It builds a complete invoice payload with all the custom fields your business needs, then creates the invoice in your accounting software.
+The system even handles complex scenarios like filtering out voided transactions, processing multiple payment methods, and updating document numbers across platforms. Every change triggers the right updates in the right places, keeping your data perfectly synchronized.
 
-But it doesn't stop there. The automation immediately syncs this new invoice back to your project management system, ensuring both platforms show identical information. It processes all the line items, handles any crossflow between systems, and even manages payment processing when customers pay.
+What used to require manual checking between systems, copying invoice details, and updating multiple dashboards now happens automatically in the background. Your team focuses on delivering great service while Make ensures your financial data stays accurate and current across every system you use.
 
-When invoices get modified or voided, Make catches those changes instantly. It updates both systems simultaneously, removes voided invoices from project dashboards, and keeps everything perfectly synchronized.
+The best part? This entire workflow runs continuously, catching changes as they happen rather than waiting for end-of-day reconciliation. Your project dashboards always show current invoice status, your accounting software stays in sync with job progress, and your customers never receive outdated information.
 
-The automation also handles the tricky stuff — like generating and saving PDF copies, processing partial payments, and updating document numbers across platforms. Your team sees real-time status updates without anyone manually entering data twice.
+No more wondering if that big job got invoiced. No more explaining to customers why they received a voided invoice. No more manual data entry between systems.
 
-**THE RESULT**
-
-Your invoicing becomes bulletproof. Nothing falls through the cracks because the system automatically detects unbilled work. Your project dashboards always reflect current invoice status. Customers receive accurate invoices every time because both systems stay in perfect sync.
-
-Sure, this particular workflow has about 50+ steps and could probably be streamlined. Some of those custom code blocks could be replaced with native Make actions. But even in its current form, it eliminates the manual chaos that costs you money and frustrates your team.
-
-The best part? Once it's running, you forget it exists. Invoices just flow seamlessly between systems while you focus on growing your business instead of chasing down billing discrepancies.
-
-What's the biggest invoicing headache in your business right now — unbilled work slipping through or keeping multiple systems synchronized? And if you're tired of playing invoice ping-pong between platforms, let's chat about setting up something similar for your company.
+What's the biggest invoice headache in your business — the syncing between systems or tracking what's actually been billed? And if you're tired of playing invoice detective between multiple platforms, let's chat about getting your systems talking to each other properly.
 
 #Automation #InvoiceAutomation #Make

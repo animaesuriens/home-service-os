@@ -1,25 +1,31 @@
-Your estimates are stuck in one system while your deals live in another, and you're manually copying numbers like it's 1995.
+Your estimates are trapped in one system while your CRM deals live in another — and your sales manager is losing their mind copying numbers between them all day long.
 
-BEFORE: You finish an estimate in your estimating tool, then switch to your CRM to manually create the deal. You're typing in customer names, copying dollar amounts, and trying to remember which naming convention you used last time. Meanwhile, your sales manager is asking for pipeline updates, but half the deals have names like "Smith Job" and the other half say "Kitchen Remodel - 123 Main St." Your reports are a mess, and you're spending 20 minutes per estimate just moving data around.
+I see this nightmare scenario constantly. You've got estimates sitting in your estimating tool, but your pipeline tracking happens in your CRM. So someone (usually your already-overwhelmed sales manager) has to manually create each CRM deal, copy over the estimate amount, and pray they didn't fat-finger the numbers or forget to update something.
 
-AFTER: The second you save an estimate, your CRM automatically creates a perfectly named deal with all the right details. Your pipeline reports actually make sense because every deal follows the same naming pattern. Your sales team sees real-time values without opening a single spreadsheet, and you're not playing data entry clerk between systems anymore.
+Meanwhile, your pipeline reports look like chaos because deal names are inconsistent — one day it's "Smith Kitchen Remodel," the next it's "Kitchen - Smith Residence," and somehow there's always that one deal just labeled "Big Job Tuesday."
 
-Here's how Make turns this chaos into clockwork:
+Here's what it looks like when Make handles this entire workflow automatically:
 
-The automation starts by listening for new estimates in your estimating tool. When one comes in, Make immediately checks the timestamp and compares it to a specific time window — this prevents old estimates from cluttering your pipeline when you first set things up.
+The moment your team creates an estimate in your estimating tool, Make springs into action. It doesn't wait around — it immediately pulls the fresh estimate data and gets to work.
 
-Next, it converts that timestamp into a format your systems can work with, then pulls a list of all quotes from that time period. This is where the magic happens — Make loops through each quote individually, so nothing gets missed even if you create multiple estimates at once.
+Make runs a time check to sync everything from the last few minutes, ensuring nothing slips through the cracks. It grabs all the recent quotes from your estimating tool and starts processing them one by one.
 
-For each quote, the automation makes a smart decision. It checks whether this estimate already exists as a deal in your CRM. If it does, Make updates the existing deal with any changes. If it's brand new, it creates a fresh deal record.
+Here's where it gets smart: Make runs each estimate through conditional logic to determine exactly how to handle it. New estimate? Create a fresh CRM deal. Updated estimate? Sync the changes to the existing deal.
 
-The real game-changer is how Make processes the data. It takes the messy information from your estimating tool — customer names, addresses, service types, dollar amounts — and standardizes everything. Your deals get consistent names like "Johnson, Mary - Kitchen Renovation - $12,500" instead of random variations that make your pipeline look like alphabet soup.
+The system processes all the estimate data — customer info, job details, dollar amounts — and formats everything consistently. No more random naming conventions or missing information.
 
-Then Make pushes all this clean data into your CRM, creating deals with the right stages, values, and contact associations. Your estimating tool and CRM finally speak the same language, and your sales process becomes predictable.
+Then Make pushes everything into your CRM as a properly formatted deal. Same naming structure every time. All the key details populated correctly. The estimate amount automatically becomes your deal value.
 
-The best part? This happens in seconds, not the 20 minutes you used to spend copying and pasting. Your estimates flow seamlessly into deals, your pipeline reports actually reflect reality, and your sales team can focus on closing instead of data entry.
+Your sales team opens their CRM dashboard and sees real-time pipeline updates. No manual entry. No copying and pasting. No wondering if the numbers are current or if someone forgot to update a deal.
 
-I've seen home service companies cut their estimate-to-deal time from hours to seconds with this setup. The automation handles the boring stuff so you can focus on what matters — growing your business.
+The best part? Your pipeline reports finally make sense. Every deal follows the same naming convention. Every estimate amount is accurately reflected. Your sales manager can actually trust the numbers they're looking at.
 
-What's the biggest time-waster in your current estimating process? And if you're ready to stop playing data entry between your systems, let's chat about setting this up for your company.
+This whole process happens in minutes, not hours. While your team is moving on to the next estimate, Make is ensuring your CRM stays perfectly in sync behind the scenes.
+
+I set this up for a home service company that was spending 2 hours every morning just syncing their estimates with their pipeline. Now their sales manager starts each day with accurate, up-to-date reports instead of a pile of manual data entry.
+
+The workflow runs automatically every few minutes, catching new estimates and updates without any human intervention. Your estimating tool and CRM finally speak the same language, and your sales process becomes predictable instead of chaotic.
+
+What's the biggest disconnect between your estimating and sales systems right now? And if you're ready to stop playing data entry ping-pong between your tools, let's talk about setting up this exact automation for your business.
 
 #Automation #Estimating #Make

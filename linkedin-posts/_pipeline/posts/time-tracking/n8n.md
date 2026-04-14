@@ -1,27 +1,25 @@
-Your payroll person just spent 6 hours reconciling time entries because someone deleted a punch, three job codes went inactive, and two new hires still can't clock in properly.
+Your time tracking app shows 47 hours for Jake this week, but your accounting software says 52 — and payroll is due tomorrow.
 
-**BEFORE:** Your team clocks in through one app, but job codes live in another system. Every week, your payroll staff burns hours cross-referencing who worked where, hunting down missing entries, and manually updating employee profiles. When someone deletes a time entry, it creates phantom hours that throw everything off. New employees wait days to get set up properly, losing billable time while you scramble to sync their info across platforms.
+**BEFORE:** You're juggling time entries in one app while job codes live in another system entirely. Your payroll staff burns hours every week trying to reconcile who actually worked where and for how long. Deleted entries create phantom hours that somehow still show up in reports. New hires sit around waiting days to get set up in the time system, costing you money from day one. It's a mess of manual data entry, conflicting numbers, and frustrated employees asking why their hours don't match their paychecks.
 
-**AFTER:** Every single time entry flows between your systems in real-time. Clock-ins, corrections, deletions — everything syncs automatically. Job codes stay current without manual updates. New employee profiles populate instantly across all platforms. Your payroll team gets clean, reconciled data every single time, no manual work required.
+**AFTER:** Every single clock-in, time correction, and deletion flows between your systems in real-time without anyone touching a spreadsheet. Job codes stay perfectly current across all platforms. New employee profiles sync automatically the moment they're added. Your payroll team gets clean, reconciled data that actually matches reality — no more detective work required.
 
-**THE BRIDGE:** Here's how n8n makes this seamless. When someone clocks in, the automation immediately receives that time entry and checks if any job codes need updating. It handles date formatting and timezone adjustments automatically, then pulls all current timesheets, users, and active job codes to ensure everything's in sync.
+**HERE'S HOW n8n MAKES THIS HAPPEN:**
 
-The system retrieves all your projects and people data, then bulk updates time logs across platforms. It's constantly checking for eligible projects and updating job codes in real-time, so your team always sees current options when they clock in.
+The automation starts by receiving time entries from your time tracking app, then immediately updates any inactive job codes to keep everything current. It handles date and time adjustments automatically, formatting everything to standard ISO dates so your systems can actually talk to each other.
 
-Location data flows through automatically too — when you add a new job site, n8n retrieves location info, creates the entry where needed, and updates addresses across systems. No more manually entering the same job site in three different places.
+The real magic happens in the data synchronization phase. n8n retrieves all time sheets, users, active job codes, projects, and people from both systems, then runs bulk updates to keep everything aligned. When someone logs time to a specific project, the automation pulls eligible projects and updates job codes across the board.
 
-Here's the game-changer: when someone deletes a time entry, n8n catches it immediately. It retrieves all deleted timesheets and removes the corresponding entries from your other systems, preventing those phantom hours that mess up payroll. It even handles non-work time logs separately, keeping everything organized.
+Location data flows seamlessly too — n8n retrieves all locations, upserts new ones as needed, and updates addresses when job sites change. No more manually adding new locations to three different systems.
 
-The automation bulk updates user profiles continuously, so when you hire someone new, their info propagates everywhere instantly. They can start clocking in on day one instead of waiting for IT to manually set them up in each system.
+The cleanup process is just as smooth. When someone deletes a time entry (maybe they clocked in by mistake), n8n retrieves all deleted time sheets, finds the corresponding time logs in your other system, and removes them automatically. It even handles non-work time logs separately so your billable hours stay accurate.
 
-Your payroll person goes from spending hours reconciling data to simply downloading clean reports. No more hunting for missing entries, no more phantom hours, no more manual job code updates. The data flows seamlessly between your time tracking app and accounting software, perfectly synchronized.
+The final step bulk updates all user information, ensuring employee profiles stay synchronized across every platform. New permissions, job titles, pay rates — everything flows through without manual intervention.
 
-The best part? This runs 24/7 in the background. Your team clocks in normally, but behind the scenes, n8n ensures every entry lands in the right place with the right job code and proper formatting. When payroll week arrives, everything's already reconciled and ready to process.
+Your time tracking app becomes the single source of truth, but every other system gets updated in real-time. No more double entry. No more reconciliation headaches. No more explaining to employees why their hours don't match what they logged.
 
-What used to take your payroll staff 6+ hours now happens automatically. That's time they can spend on actual business tasks instead of data entry and reconciliation. Plus, your field teams get accurate job codes every time they clock in, improving project tracking across the board.
+The best part? This entire workflow runs in the background while you focus on actually running your home service company. Your team clocks in and out like always, but behind the scenes, n8n is keeping every system perfectly synchronized.
 
-This automation turns time tracking from a weekly headache into a smooth, background process that just works.
-
-What's your biggest time tracking pain point right now — phantom hours, missing job codes, or something else entirely? And if you're tired of manual payroll reconciliation eating up your admin time, let's chat about setting up a sync engine that actually works.
+What's your biggest time tracking headache right now — the manual reconciliation or the delayed employee setup? And if you're tired of playing data detective every payroll cycle, let's chat about getting your systems talking to each other properly.
 
 #Automation #TimeTracking #n8n

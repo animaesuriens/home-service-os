@@ -87,7 +87,7 @@
         }
       ],
       "pain": "Sales reps manually copying form submissions into the CRM, missing hot leads during evenings and weekends, inconsistent follow-up timing costing deals",
-      "solution": "Every lead is captured instantly from any marketing channel, enriched with project details and CRM data, and routed to the right salesperson — even at 2am on a Sunday",
+      "solution": "Every lead is captured instantly from any marketing channel, enriched with project details and marketing source data, and synced to the CRM with deduplicated contacts and deals — even at 2am on a Sunday",
       "layout": "swimlane",
       "type": "process",
       "diagramConfig": {
@@ -206,8 +206,8 @@
           "label": "Flow is enabled in Wizard?"
         }
       ],
-      "pain": "Phone tag with customers trying to schedule estimates, double-booked calendars, no-shows because reminders were forgotten, and hours lost to manual calendar management",
-      "solution": "Customers book their own appointments from a personalized link, get automatic confirmations and reminders, and the whole team stays in sync without a single phone call",
+      "pain": "Phone tag with customers trying to schedule estimates, double-booked calendars, booking data stuck in one system while the CRM shows something different, and hours lost to manual data entry",
+      "solution": "Customers book their own appointments and every booking event automatically syncs deal stages, contact records, and expense tracking across systems — the whole team stays in sync without manual data entry",
       "layout": "swimlane",
       "type": "process",
       "diagramConfig": {
@@ -421,7 +421,7 @@
         }
       ],
       "pain": "Change orders scribbled on paper, forgotten price adjustments that eat into margins, crew showing up without knowing the scope changed, and deals stuck showing the wrong value for weeks",
-      "solution": "Every change order flows through automatically — pricing updates, the CRM reflects the real deal value, and the production team knows about scope changes before they arrive on site",
+      "solution": "Every change order flows through automatically — deal amounts, hours, labor, materials, and discounts are aggregated across all related deals, and the CRM reflects the real total value in real-time",
       "layout": "vertical",
       "type": "process",
       "diagramConfig": {
@@ -524,8 +524,8 @@
           "label": "Process Data (Step 9)"
         }
       ],
-      "pain": "Won deals sitting in the CRM while the ops team manually creates job records, copy-pasting customer info between three different systems, and new jobs falling through the cracks during busy season",
-      "solution": "The moment a deal is won, every downstream system is populated automatically — job records, customer files, production schedules, and crew notifications happen without anyone lifting a finger",
+      "pain": "Won deals sitting in the CRM while the ops team manually creates job records, copy-pasting customer info between systems, and change order addendums falling through the cracks during busy season",
+      "solution": "The moment a deal is won, the system parses the job data, pulls all linked addendums and change orders, validates assignments, and processes the conversion — no manual copy-paste between systems",
       "layout": "vertical",
       "type": "process",
       "diagramConfig": {
@@ -579,7 +579,7 @@
         }
       ],
       "pain": "Office staff calling crews for updates, production data trapped in text messages and phone calls, no idea which jobs are on track until someone drives to the site, and weekly reports that are already outdated",
-      "solution": "Field crews log production data once, and the entire office sees real-time progress — schedule variances trigger alerts automatically, and daily summaries write themselves",
+      "solution": "Time logs and project records are pulled automatically on a schedule, matched against active projects, and synced so the office sees current production data without chasing anyone for updates",
       "layout": "swimlane",
       "type": "process",
       "diagramConfig": {
@@ -1002,7 +1002,7 @@
         }
       ],
       "pain": "Receipts in email, bills in accounting software, project costs in a spreadsheet — nobody can answer \"how much did we spend on that job?\" without an hour of digging through three different systems",
-      "solution": "Every bill, receipt, and transaction is automatically matched to its job, categorized, and stored in one place — real-time job costing without the treasure hunt",
+      "solution": "Every bill and receipt is automatically matched to its job by looking up customer references and project records, with attachments downloaded and linked — real-time job costing without the treasure hunt",
       "layout": "vertical",
       "type": "process",
       "diagramConfig": {
@@ -1057,7 +1057,7 @@
         }
       ],
       "pain": "Sales managers manually pulling reports from the CRM every Monday, numbers that are already a week old by the time anyone sees them, and no early warning when pipeline health drops",
-      "solution": "Dashboards refresh every two minutes with live CRM data — win rates, revenue trends, and pipeline health are always current, and anomalies trigger alerts before they become problems",
+      "solution": "Dashboards refresh every two minutes with live CRM data — deal payloads are generated, deletions are synced, and records are upserted so pipeline numbers are always current without manual pulls",
       "layout": "vertical",
       "type": "process",
       "diagramConfig": {
@@ -1144,7 +1144,7 @@
         }
       ],
       "pain": "Important updates buried in someone's inbox, text messages sent manually that get forgotten during busy days, error notifications that nobody sees, and no record of what was communicated to whom",
-      "solution": "Every system event automatically triggers the right communication on the right channel — emails, texts, calendar updates, and error alerts all fire without human intervention, with full audit trails in the CRM",
+      "solution": "Every system event automatically triggers the right communication on the right channel — emails, calendar updates, and CRM contact syncs all fire without human intervention across every connected system",
       "layout": "swimlane",
       "type": "process",
       "diagramConfig": {
@@ -1340,5 +1340,5 @@
       }
     }
   ],
-  "lastDerived": "2026-04-14T12:25:25.139Z"
+  "lastDerived": "2026-04-14T12:37:27.069Z"
 }

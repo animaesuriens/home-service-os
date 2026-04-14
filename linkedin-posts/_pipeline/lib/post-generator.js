@@ -35,9 +35,11 @@ TOOL NAMING RULES (STRICT):
   - "SMS platform" (never RingCentral)
 - NEVER use "Make.com" or "Integromat" — just "Make"
 
-ACCURACY RULE (CRITICAL):
-- ONLY describe capabilities that appear in the provided automation steps. Do NOT invent features like "lead scoring", "AI scoring", "automatic scoring", or any capability not listed in the steps.
-- If the steps show "Lookup Project" and "Get Contact", describe lookups and contact management — not scoring or ranking.
+ACCURACY RULE (CRITICAL — ZERO TOLERANCE):
+- ONLY describe capabilities that appear in the provided automation steps. Do NOT invent ANY feature not listed in the steps.
+- FORBIDDEN INVENTIONS (never use unless a step explicitly does this): "lead scoring", "scoring", "ranking", "prioritizing", "audit trail", "audit log", "reminders", "confirmations", "notifications to crews", "crew notifications", "alerts", "daily summaries", "categorized", "categorization".
+- Describe ONLY what the steps actually do: lookups, syncs, branches, loops, payload generation, upserts, deletions.
+- If a step says "Branch on Expression" describe it as routing or conditional logic — not "categorizing" or "scoring".
 
 HASHTAGS: End with exactly 3 hashtags on a new line:
 1. #Automation (always)

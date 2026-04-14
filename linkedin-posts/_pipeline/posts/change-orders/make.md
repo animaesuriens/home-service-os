@@ -1,33 +1,23 @@
-Your crew just showed up to a job site only to find out the scope changed three days ago — but nobody told them because the change order is still sitting on your desk.
+Change orders turning into profit killers because nobody knows the real deal value anymore? Your CRM shows $15K while you're actually at $22K after three scope changes.
 
-**BEFORE:**
+**BEFORE:** Change orders get scribbled on napkins during site visits. You forget to update the deal amount for weeks. Your crew shows up expecting the original scope while the client's already approved two additions. Meanwhile, your pipeline reports are completely wrong because half your deals are showing outdated values. You're flying blind on actual project profitability.
 
-Change orders used to be chaos in my business. Handwritten notes scattered across job folders, pricing adjustments that somehow never made it into the system, and deals showing the wrong value for weeks. The worst part? Your production team would arrive on site completely blind to scope changes, leading to awkward conversations with customers and blown schedules.
+**AFTER:** Every change order automatically flows through your system. Deal amounts, hours, labor costs, materials, and discounts get aggregated across all related deals in real-time. Your CRM always shows the true total value, and your team knows exactly what they're walking into on every job.
 
-**AFTER:**
+**THE BRIDGE:** Here's how Make handles this behind the scenes. When a change order gets created, Make immediately pulls the deal details and finds all deals connected to the same job. It counts how many change orders exist and splits them by source to track where modifications are coming from.
 
-Now every change order flows through automatically. The moment a scope change happens, pricing updates across all systems, your CRM reflects the real deal value, and your production team knows about changes before they even leave the shop. No more surprises, no more missed revenue.
+The system then loops through each related deal, extracting amounts, hours, labor costs, materials, and discounts. Instead of you manually hunting through multiple deals to calculate totals, Make sums everything automatically — total project value, total hours, total labor costs, total materials, and total discounts applied.
 
-**THE BRIDGE:**
+But here's where it gets smart. Make doesn't just update numbers blindly. It pulls company and contact associations, checks deal ownership, and uses conditional logic to route updates differently based on project status. If it's a new project, the workflow branches one way. If it's an existing project with multiple change orders, it takes a different path.
 
-Here's how Make transforms this nightmare into a smooth operation:
+The system even handles the time-sensitive stuff. It adjusts timestamps, converts dates to the right format, and ensures all updates happen in the correct sequence. When your estimating tool or project management system sends deal updates, Make maps those fields to your CRM automatically.
 
-When a change order gets triggered in your system, Make immediately pulls the complete deal information from your CRM. It doesn't just grab one deal — it finds all related deals for that specific job, because let's face it, complex projects often have multiple moving pieces.
+The real magic happens in the aggregation loops. Make cycles through every deal tied to that job, pulls the current values, adds the new change order amounts, and updates your CRM with the consolidated totals. Your deal record now shows the real project value — original scope plus all approved changes.
 
-The automation then gets smart about counting and organizing. It tallies up how many change orders already exist for this project and splits different data sources to avoid double-counting. This is crucial because you need accurate totals, not inflated numbers that mess up your margins.
+Your sales team sees accurate pipeline numbers. Your project managers know the actual scope before they assign crews. Your accounting software gets the right revenue figures. And you stop losing money on "forgotten" change orders that never made it into your pricing.
 
-Next comes the heavy lifting — Make loops through every deal component. It calculates hours, labor costs, materials, discounts, and total amounts across all related deals. Think of it as having a super-powered calculator that never makes math errors and works 24/7.
+This whole process runs every time a change order gets submitted. No manual updates, no hunting through old emails, no surprise scope creep eating your margins. Just clean, automated deal management that keeps your numbers accurate and your projects profitable.
 
-But here's where it gets really clever: the system doesn't just crunch numbers in isolation. It pulls in company details, contact associations, and project information to create a complete picture. It even grabs your sales rates and applies them consistently across all calculations.
-
-The time-stamping piece is brilliant too. Make adjusts timestamps and creates reference points so you can track exactly when changes happened. This audit trail becomes invaluable when customers have questions or when you're reviewing project profitability later.
-
-Finally, the automation checks if projects already exist in your system and updates deal ownership information. It ensures the right people get notified and that nothing falls through the cracks.
-
-The result? Your estimating tool, project management system, and accounting software all stay in perfect sync. When your crew pulls up the job details on their phones, they see the current scope — not last week's version.
-
-Your margins stay protected because pricing changes flow through immediately. Your customers stay happy because your team shows up prepared. And you stay sane because change orders become a smooth part of your workflow instead of a daily headache.
-
-What's your biggest challenge with managing scope changes in your business? And if you're tired of change order chaos eating into your profits, let's chat about setting up something similar for your company.
+What's the biggest change order headache in your business — tracking the money or keeping your team informed about scope changes? And if you're tired of change orders turning into profit leaks, let's chat about setting up this exact workflow for your company.
 
 #Automation #ProjectManagement #Make
