@@ -26,7 +26,7 @@ function loadBundleDefinitions() {
   }
 
   // Validate each definition has required fields
-  const requiredFields = ['id', 'title', 'journeyStage', 'journeySlug', 'processIds', 'idealizedSteps', 'pain', 'solution', 'layout', 'type'];
+  const requiredFields = ['id', 'title', 'journeyStage', 'journeySlug', 'processIds', 'pain', 'solution', 'layout', 'type'];
 
   data.definitions.forEach(def => {
     requiredFields.forEach(field => {
@@ -80,10 +80,9 @@ function curateBundles(processes) {
       }
     });
 
-    // Use verifiedSteps if populated, otherwise use idealizedSteps
-    const steps = (def.verifiedSteps && Array.isArray(def.verifiedSteps) && def.verifiedSteps.length > 0)
-      ? def.verifiedSteps
-      : def.idealizedSteps;
+    // Steps will be derived from actual process data in Phase 15
+    // For now, pass through empty array
+    const steps = [];
 
     return {
       id: def.id,
@@ -93,6 +92,7 @@ function curateBundles(processes) {
       processIds: def.processIds.filter(id => processMap.has(id)),
       constituentProcesses,
       idealizedSteps: steps,
+      diagramConfig: def.diagramConfig || null,
       pain: def.pain,
       solution: def.solution,
       inefficiencies: inefficiencies.length > 0 ? inefficiencies : ['Manual processes with no automation'],

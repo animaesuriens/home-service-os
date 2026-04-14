@@ -44,88 +44,17 @@ function wrapLabel(label) {
   return wide.slice(0, 3).join('\\n');
 }
 
-// Per-bundle decision config: where the split makes narrative sense
-// Decision label must differ from step[decisionIdx-1] to avoid visual duplication
-const DECISION_CONFIG = {
-  'lead-capture': {
-    decisionIdx: 4,
-    decisionLabel: 'Contact Exists\\nin CRM?',
-    leftLabel: 'Update', rightLabel: 'Create'
-  },
-  'appointment-booking': {
-    decisionIdx: 4,
-    decisionLabel: 'Booking\\nSource?',
-    leftLabel: 'New Booking', rightLabel: 'Reschedule'
-  },
-  'estimate-to-deal': {
-    decisionIdx: 4,
-    decisionLabel: 'Link Project Photos\\nFrom Site Visit',
-    leftLabel: 'High Value', rightLabel: 'Standard'
-  },
-  'change-orders': {
-    decisionIdx: 3,
-    decisionLabel: 'Change Order\\nType?',
-    leftLabel: 'Premium', rightLabel: 'Standard'
-  },
-  'contract-lifecycle': {
-    decisionIdx: 3,
-    decisionLabel: 'Customer\\nResponse?',
-    leftLabel: 'Signed', rightLabel: 'Unsigned'
-  },
-  'deal-to-job': {
-    decisionIdx: 3,
-    decisionLabel: 'Customer Record\\nStatus?',
-    leftLabel: 'New', rightLabel: 'Existing'
-  },
-  'production-tracking': {
-    decisionIdx: 4,
-    decisionLabel: 'Update Project\\nCompletion %',
-    leftLabel: 'On Track', rightLabel: 'Behind'
-  },
-  'time-tracking': {
-    decisionIdx: 3,
-    decisionLabel: 'Time Log\\nStatus?',
-    leftLabel: 'Modified', rightLabel: 'Deleted'
-  },
-  'invoice-lifecycle': {
-    decisionIdx: 4,
-    decisionLabel: 'Track Payment Status\\n& Sync Updates',
-    leftLabel: 'Paid', rightLabel: 'Overdue'
-  },
-  'expense-management': {
-    decisionIdx: 3,
-    decisionLabel: 'Customer Record\\nExists?',
-    leftLabel: 'Matched', rightLabel: 'New'
-  },
-  'reporting-sync': {
-    decisionIdx: 2,
-    decisionLabel: 'Data Changed\\nSince Last Sync?',
-    leftLabel: 'Changed', rightLabel: 'Stable'
-  },
-  'communication-hub': {
-    decisionIdx: 1,
-    decisionLabel: 'Select Channel\\nBased on Event Type',
-    leftLabel: 'Email', rightLabel: 'SMS'
-  },
-  'hubspot-contact-sync': {
-    decisionIdx: 3,
-    decisionLabel: 'Contact Already\\nExists?',
-    leftLabel: 'Update',
-    rightLabel: 'Create'
-  },
-  'message-transpiler': {
-    decisionIdx: 3,
-    decisionLabel: 'Message\\nType?',
-    leftLabel: 'Booking',
-    rightLabel: 'Follow-up'
-  }
-};
-
 function buildBranchingDiagram(bundle, platform) {
   const steps = bundle.idealizedSteps;
   const title = bundle.title;
   const slug = bundle.journeySlug;
-  const config = DECISION_CONFIG[slug];
+  const config = bundle.diagramConfig;
+
+  if (!config) {
+    console.warn(`No diagramConfig for bundle ${slug}, skipping branching diagram`);
+    return null;
+  }
+
   const mid = config.decisionIdx;
 
   const isMake = platform === 'make';
@@ -258,6 +187,10 @@ async function main() {
 
     for (const [platform, gen] of Object.entries(generators)) {
       const mmd = gen(bundle);
+      if (mmd === null) {
+        console.log(`Skipped: ${slug}-${platform}.mmd (no diagramConfig)`);
+        continue;
+      }
       const outPath = path.join(MERMAID_DIR, `${slug}-${platform}.mmd`);
       await fs.writeFile(outPath, mmd, 'utf-8');
       count++;
