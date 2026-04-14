@@ -2,23 +2,30 @@
 title: Lead Capture & Qualification — Make
 ---
 flowchart TD
-    A(("Generate standardized lead\npayload from vendor data")):::trigger
-    B["Lookup project type from\ncustomer selection"]
-    C["Lookup marketing sources\nfor attribution"]
-    D["Build final contact\npayload with enriched data"]
+    A(("Receive Lead Data")):::trigger
+    B["Sleep"]
+    C["Loop Over\nEngagements"]
+    D["Generate Payload"]
     E{"Contact Exists\nin CRM?"}
-    F["Build final deal payload\nwith contact association"]
-    G["Create or update\ndeal in CRM"]
-    H["Handle deal creation\nerrors gracefully"]
-    I["Fetch deal\nproperties from CRM"]
-    J["Extract deal properties\nfor processing"]
-    K["Extract deal details\nfor routing"]
-    L["Route to booking flow\nbased on deal stage"]
-    M["Fetch contact\nproperties from CRM"]
-    N["Extract contact properties\nfor processing"]
-    O["Loop over associated\ndeals for sync"]
-    P["Wait before processing\nengagements"]
-    undefined["Loop over call and\nmeeting engagements"]
+    F["Lookup Sources"]
+    G["Final Contact\nPayload"]
+    H["Get Contact"]
+    I["Final Deal Payload"]
+    J["Get Deal"]
+    K["Override payload"]
+    L["CRM: Search Contact\nby id"]
+    M["CRM: Search Contact\nby email"]
+    N["Select Executed Step\nResult"]
+    O["Merged Payload"]
+    P["CRM: Get Contact\nProperties"]
+    undefined["List Contact\nProperties"]
+    undefined["Loop Over Deals"]
+    undefined["Deal Error Handler"]
+    undefined["Project Type Branch"]
+    undefined["Marketing Source\nBranch"]
+    undefined["Contact Branch"]
+    undefined["HS Contact Final\nOutput"]
+    undefined["Check properties\nexist"]
 
     A --> B
     B --> C
@@ -37,5 +44,12 @@ flowchart TD
     N --> O
     O --> P
     P --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
 
     classDef trigger fill:#9b3dae,stroke:#fff,stroke-width:3px,color:#fff

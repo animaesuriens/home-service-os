@@ -2,15 +2,21 @@
 title: Communication Hub — Zapier
 ---
 flowchart TD
-    T["System event triggers\noutbound communication"]:::trigger
-    A1["Select communication\nchannel based on event\ntype"]
-    A2["Send email notification\nwith formatted details"]
-    A3["Send SMS alert for\ntime-sensitive updates"]
-    A4["Log all sent messages to\nCRM activity timeline"]
-    A5["Update estimate calendar\nwith schedule changes"]
-    A6["Route error notifications\nto technical team"]
-    A7["Track delivery status and\nflag failures"]
+    T["Receive Booking\nEvent"]:::trigger
+    A1["Find Customer Ref"]
+    A2["Expense Payload"]
+    A3["Upsert Expense\nRecord"]
+    A4["Crossflow Payload"]
+    A5["Save Attachments"]
+    A6["Stop Execution\n(Success)"]
+    A7["Calculated Date"]
+    A8["Format Date/Time"]
+    A9["Start Index"]
+    A10["Loop N Times"]
+    A11["Branch on Expression"]
+    A12["Customer Ref exists?"]
+    A13["Is an Item?"]
 
-    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7
+    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7 --> A8 --> A9 --> A10 --> A11 --> A12 --> A13
 
     classDef trigger fill:#FF4A00,stroke:#cc3b00,stroke-width:3px,color:#fff

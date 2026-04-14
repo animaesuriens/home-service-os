@@ -2,14 +2,16 @@
 title: Contract Lifecycle — n8n
 ---
 flowchart TD
-    A["Generate contract from\napproved estimate"]:::trigger
-    B["Send contract to customer\nfor e-signature"]
-    C["Track contract status and\nsend reminders"]
+    A["Receive Contract\nEvent"]:::trigger
+    B["CO Records"]
+    C["Loop Over Addendums"]
     D{"Customer\nResponse?"}
-    E["Update deal stage to\n'Contract Signed' in CRM"]
-    F["Create project addendums\nif scope includes extras"]
-    G["Trigger job setup workflow\nautomatically"]
-    H["Notify operations team\nthat new job is confirmed"]
+    E["Get Addendum Record"]
+    F["List Expenses"]
+    G["Loop Over Expenses"]
+    H["Branch on Expression"]
+    I["Expenses sync\nenabled?"]
+    J["Process Data (Step\n9)"]
 
     A --> B
     B --> C
@@ -19,5 +21,7 @@ flowchart TD
     E --> G
     F --> G
     G --> H
+    H --> I
+    I --> J
 
     classDef trigger fill:#2E7D32,stroke:#4CAF50,stroke-width:3px,color:#fff

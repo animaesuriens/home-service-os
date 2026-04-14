@@ -2,15 +2,17 @@
 title: Production & Crew Tracking — Zapier
 ---
 flowchart TD
-    T["Update daily production\nschedule from field data"]:::trigger
-    A1["Log time entries and crew\nhours for each job"]
-    A2["Sync time tracking data to\ncentral database"]
-    A3["Calculate daily production\nmetrics per crew"]
-    A4["Update project completion\npercentage"]
-    A5["Flag jobs running\nbehind schedule"]
-    A6["Generate daily production\nsummary for office"]
-    A7["Alert project manager of\nschedule variances"]
+    T["Receive Production\nUpdate"]:::trigger
+    A1["Stop Execution"]
+    A2["List Records"]
+    A3["List Time Logs"]
+    A4["Loop Time Logs"]
+    A5["List Projects"]
+    A6["Loop Projects"]
+    A7["Project exists?"]
+    A8["Process Data (Step\n8)"]
+    A9["Process Data (Step\n9)"]
 
-    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7
+    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7 --> A8 --> A9
 
     classDef trigger fill:#FF4A00,stroke:#cc3b00,stroke-width:3px,color:#fff

@@ -2,24 +2,39 @@
 title: Appointment Booking & Scheduling — Zapier
 ---
 flowchart TD
-    T["Route booking data\nbased on source"]:::trigger
-    A1["Select booking payload\nfrom routing decision"]
-    A2["Retrieve owner assignment\nfrom database"]
-    A3["Build initial deal payload\nwith appointment data"]
-    A4["Lookup project type\nfrom booking details"]
-    A5["Lookup marketing sources\nfor attribution"]
-    A6["Extract customer\nemail from booking"]
-    A7["Prepare contact sync\npayload for CRM"]
-    A8["Check if contact is\nsearchable"]
-    A9["Select contact\nresult from search"]
-    A10["Build array of project\ntypes for deal"]
-    A11["Check deal stage for\nrouting"]
-    A12["Route to appropriate\npipeline based on deal\nstage"]
-    A13["Process cancellation\ndata"]
-    A14["Search for\nappointment in CRM"]
-    A15["Update deal and calendar\nwith cancellation"]
-    A16["Validate reschedule\nbooking data"]
+    T["Receive Booking\nEvent"]:::trigger
+    A1["Get Owner"]
+    A2["Initial Deal Payload"]
+    A3["Lookup Project Type"]
+    A4["Lookup Sources"]
+    A5["Extract Email"]
+    A6["YCBM HS Contact Sync"]
+    A7["Array of Project\nTypes"]
+    A8["Check dealStage"]
+    A9["Check Deal Stage"]
+    A10["Find Customer Ref"]
+    A11["Expense Payload"]
+    A12["Upsert Expense\nRecord"]
+    A13["Crossflow Payload"]
+    A14["Save Attachments"]
+    A15["Stop Execution\n(Success)"]
+    A16["Calculated Date"]
+    A17["Format Date/Time"]
+    A18["Start Index"]
+    A19["Loop N Times"]
+    A20["Get Expense Record"]
+    A21["Set Start Position"]
+    A22["Is YCBM ID exist?"]
+    A23["Branch on Expression"]
+    A24["Branch on Expression\n3"]
+    A25["Override Payload"]
+    A26["If Searchable Branch"]
+    A27["Output Contact"]
+    A28["dealStage marketing\npipeline?"]
+    A29["Customer Ref exists?"]
+    A30["Is an Item?"]
+    A31["Flow is enabled in\nWizard?"]
 
-    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7 --> A8 --> A9 --> A10 --> A11 --> A12 --> A13 --> A14 --> A15 --> A16
+    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7 --> A8 --> A9 --> A10 --> A11 --> A12 --> A13 --> A14 --> A15 --> A16 --> A17 --> A18 --> A19 --> A20 --> A21 --> A22 --> A23 --> A24 --> A25 --> A26 --> A27 --> A28 --> A29 --> A30 --> A31
 
     classDef trigger fill:#FF4A00,stroke:#cc3b00,stroke-width:3px,color:#fff

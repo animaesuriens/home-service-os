@@ -2,14 +2,16 @@
 title: Production & Crew Tracking — n8n
 ---
 flowchart TD
-    A["Update daily production\nschedule from field data"]:::trigger
-    B["Log time entries and crew\nhours for each job"]
-    C["Sync time tracking data to\ncentral database"]
-    D["Calculate daily production\nmetrics per crew"]
+    A["Receive Production\nUpdate"]:::trigger
+    B["Stop Execution"]
+    C["List Records"]
+    D["List Time Logs"]
     E{"Update Project\nCompletion %"}
-    F["Flag jobs running\nbehind schedule"]
-    G["Generate daily production\nsummary for office"]
-    H["Alert project manager of\nschedule variances"]
+    F["List Projects"]
+    G["Loop Projects"]
+    H["Project exists?"]
+    I["Process Data (Step\n8)"]
+    J["Process Data (Step\n9)"]
 
     A --> B
     B --> C
@@ -19,5 +21,7 @@ flowchart TD
     E -->|Behind| G
     F --> H
     G --> H
+    H --> I
+    I --> J
 
     classDef trigger fill:#2E7D32,stroke:#4CAF50,stroke-width:3px,color:#fff

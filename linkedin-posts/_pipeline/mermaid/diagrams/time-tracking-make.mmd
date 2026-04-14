@@ -2,14 +2,29 @@
 title: Time Tracking Sync Engine — Make
 ---
 flowchart TD
-    A(("Employees clock in and out\nvia time tracking app")):::trigger
-    B["Sync job codes and\nlocations to time system"]
-    C["Match time entries to\nactive projects and jobs"]
+    A(("Receive Time Entry")):::trigger
+    B["Update Inactive\nJobcodes"]
+    C["Default Days"]
     D{"Time Log\nStatus?"}
-    E["Handle deleted or\ncorrected time entries"]
-    F["Sync employee profiles and\npermissions"]
-    G["Deactivate job codes for\ncompleted projects"]
-    H["Generate payroll-ready\ntime summaries"]
+    E["Format to ISO Date"]
+    F["Retrieve All Time\nSheets"]
+    G["Retrieve All Users"]
+    H["Retrieve All Active\nJobCodes"]
+    I["Retrieve All\nProjects"]
+    J["Retrieve All People"]
+    K["Bulk Update Timelogs"]
+    L["Retrieve Eligible\nProjects"]
+    M["Retrieve All Active\nJobcodes"]
+    N["Jobcodes Bulk Update"]
+    O["Update Jobcodes"]
+    P["Retrieve Locations"]
+    undefined["Upsert Location"]
+    undefined["Update Location\nAddress"]
+    undefined["Retrieve All Deleted\nTime Sheets"]
+    undefined["Retrieve All Time\nLogs"]
+    undefined["Delete Timelogs"]
+    undefined["Delete Non-Work Time\nLogs"]
+    undefined["Bulk Update Users"]
 
     A --> B
     B --> C
@@ -19,5 +34,20 @@ flowchart TD
     E --> G
     F --> G
     G --> H
+    H --> I
+    I --> J
+    J --> K
+    K --> L
+    L --> M
+    M --> N
+    N --> O
+    O --> P
+    P --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
 
     classDef trigger fill:#9b3dae,stroke:#fff,stroke-width:3px,color:#fff

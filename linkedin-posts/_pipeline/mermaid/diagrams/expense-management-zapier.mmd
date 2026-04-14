@@ -2,15 +2,42 @@
 title: Expense Management Pipeline — Zapier
 ---
 flowchart TD
-    T["Import bills and expenses\nfrom accounting software"]:::trigger
-    A1["Match expenses to\njobs and projects"]
-    A2["Sync customer records\nbetween accounting and\ndatabase"]
-    A3["Link parent companies to\njob records"]
-    A4["Link sub-customers to\nindividual projects"]
-    A5["Save expense attachments\nand receipts to database"]
-    A6["Categorize transactions by\ntype and department"]
-    A7["Generate expense reports\nby job and time period"]
+    T["Receive Expense Data"]:::trigger
+    A1["Current Time"]
+    A2["Stopwatch Time"]
+    A3["Start Position Value"]
+    A4["Set Start Position"]
+    A5["Calculated Date"]
+    A6["Format Date/Time"]
+    A7["Loop N Times"]
+    A8["Get Progress"]
+    A9["Stop Execution 2"]
+    A10["Find Customer Ref"]
+    A11["Expense Payload"]
+    A12["Upsert Expense\nRecord"]
+    A13["Stop Execution\n(Success)"]
+    A14["Download Attachables\nURL"]
+    A15["Get Attachables"]
+    A16["Loop Over\nAttachables"]
+    A17["Get Attachables URLs"]
+    A18["Attachables Payload"]
+    A19["Update Record"]
+    A20["Sleep"]
+    A21["Update Parent\nCustomer"]
+    A22["Execution - Save\nValue"]
+    A23["List Jobs"]
+    A24["Loop Over Jobs"]
+    A25["List Projects"]
+    A26["Loop Over Projects"]
+    A27["Expenses Sync\nenabled?"]
+    A28["Customer Ref exists?"]
+    A29["Is an Item?"]
+    A30["Attachables fetched?"]
+    A31["Is this a Job or\nProject?"]
+    A32["Customer Payload"]
+    A33["QBO Parent Customer\nID Exists?"]
+    A34["QBO Sub Customer ID\nExists?"]
 
-    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7
+    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7 --> A8 --> A9 --> A10 --> A11 --> A12 --> A13 --> A14 --> A15 --> A16 --> A17 --> A18 --> A19 --> A20 --> A21 --> A22 --> A23 --> A24 --> A25 --> A26 --> A27 --> A28 --> A29 --> A30 --> A31 --> A32 --> A33 --> A34
 
     classDef trigger fill:#FF4A00,stroke:#cc3b00,stroke-width:3px,color:#fff

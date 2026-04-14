@@ -14,7 +14,7 @@ STORYTELLING FRAMEWORK: Before-After-Bridge (BAB)
 - BRIDGE: Walk through exactly how the automation makes this happen (the bulk of the post — describe the workflow steps in a natural, conversational way)
 
 HARD CONSTRAINTS:
-- 300-500 words total. No exceptions.
+- 400-700 words total. No exceptions.
 - First line MUST hook readers in under 210 characters (this is the LinkedIn mobile preview cutoff). Make it punchy, specific, and pain-focused.
 - Casual expert tone — like explaining to a friend who runs a business. Use "you" and "your" liberally. Contractions encouraged. No corporate jargon.
 - Frame everything as "home service company" — never mention painting, painters, or any specific trade.
@@ -103,7 +103,7 @@ ${bundle.idealizedSteps.map((s, i) => `${i + 1}. ${s.label}`).join('\n')}
 Known inefficiencies this automation fixes:
 ${bundle.inefficiencies.join(', ') || 'Manual processes, inconsistent timing, human error'}
 
-Write the post now. Remember: 300-500 words, hook in first 210 chars, BAB framework, casual expert tone, end with mixed CTA + 3 hashtags.`;
+Write the post now. Remember: 400-700 words, hook in first 210 chars, BAB framework, casual expert tone, end with mixed CTA + 3 hashtags.`;
 
   const message = await client.messages.create({
     model: 'claude-sonnet-4-20250514',
@@ -130,13 +130,13 @@ Write the post now. Remember: 300-500 words, hook in first 210 chars, BAB framew
 function validatePost(content, platform, journeyStage) {
   const errors = [];
 
-  // Word count check (300-550 with buffer)
+  // Word count check (400-750 with buffer)
   const wordCount = content.split(/\s+/).filter(w => w.length > 0).length;
-  if (wordCount < 300) {
-    errors.push(`Too short: ${wordCount} words (min 300)`);
+  if (wordCount < 400) {
+    errors.push(`Too short: ${wordCount} words (min 400)`);
   }
-  if (wordCount > 550) {
-    errors.push(`Too long: ${wordCount} words (max 550)`);
+  if (wordCount > 750) {
+    errors.push(`Too long: ${wordCount} words (max 750)`);
   }
 
   // First line hook length (under 215 chars with buffer)

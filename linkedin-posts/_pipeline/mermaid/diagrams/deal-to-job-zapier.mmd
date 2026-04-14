@@ -2,15 +2,17 @@
 title: Deal-to-Job Processing — Zapier
 ---
 flowchart TD
-    T["Deal marked as won\nin CRM"]:::trigger
-    A1["Register deal owner and\nassign project manager"]
-    A2["Sync company and contact\nrecords across systems"]
-    A3["Create job record in\nproject management"]
-    A4["Map HubSpot fields to\nproject file structure"]
-    A5["Generate job folder with\nall customer documents"]
-    A6["Create initial\nproduction schedule"]
-    A7["Notify crew leads of\nupcoming job"]
+    T["Receive Event"]:::trigger
+    A1["Parse Json Form"]
+    A2["Get filter"]
+    A3["List Addendums"]
+    A4["Loop Over COs"]
+    A5["Stop Execution"]
+    A6["Mock List"]
+    A7["Sleep"]
+    A8["Check if CO has Job\nassigned"]
+    A9["Process Data (Step\n9)"]
 
-    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7
+    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7 --> A8 --> A9
 
     classDef trigger fill:#FF4A00,stroke:#cc3b00,stroke-width:3px,color:#fff

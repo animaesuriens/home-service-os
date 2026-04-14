@@ -2,15 +2,17 @@
 title: Estimate-to-Deal Pipeline — Zapier
 ---
 flowchart TD
-    T["Create estimate in\nestimating tool after site\nvisit"]:::trigger
-    A1["Sync estimate details to\nHubSpot deal"]
-    A2["Apply standardized deal\nnaming convention"]
-    A3["Update deal stage and\npipeline position"]
-    A4["Link project photos\nfrom site visit"]
-    A5["Calculate profit margins\nand flag outliers"]
-    A6["Notify sales manager of\nhigh-value estimates"]
-    A7["Send estimate to\ncustomer for review"]
+    T["Receive Event"]:::trigger
+    A1["Estimate Date To\nSync"]
+    A2["Time X Minutes Ago"]
+    A3["Time X Minutes Ago\nto Epoch"]
+    A4["List Quotes"]
+    A5["Loop Over Quotes"]
+    A6["Branch on Expression"]
+    A7["Process Data (Step\n7)"]
+    A8["Process Data (Step\n8)"]
+    A9["Process Data (Step\n9)"]
 
-    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7
+    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7 --> A8 --> A9
 
     classDef trigger fill:#FF4A00,stroke:#cc3b00,stroke-width:3px,color:#fff

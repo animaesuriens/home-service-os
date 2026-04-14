@@ -2,14 +2,50 @@
 title: Change Order Management — n8n
 ---
 flowchart TD
-    A["Customer requests scope\nchange on existing project"]:::trigger
-    B["Create change order record\nlinked to original deal"]
-    C["Calculate revised pricing\nand timeline impact"]
+    A["Receive Event"]:::trigger
+    B["Get Deal Payload"]
+    C["CRM: Get Deals with\nsame job record id"]
     D{"Change Order\nType?"}
-    E["Update deal value in\nCRM with new total"]
-    F["Send revised estimate to\ncustomer for approval"]
-    G["Update project timeline\nand crew schedule"]
-    H["Notify production team of\nscope changes"]
+    E["Split Sources"]
+    F["Source IDs Count"]
+    G["CRM: Get Deal\nProperties"]
+    H["List Deal Properties\nLabel"]
+    I["List Deal Properties\nObject"]
+    J["CRM: Get Deal"]
+    K["CRM: Get Contact\nAssociation"]
+    L["CRM: Get Company\nAssociation"]
+    M["Sales Rate"]
+    N["Loop Over Deals\nAmount"]
+    O["Loop Over Deals\nHours"]
+    P["Loop Over Deals\nLabor"]
+    undefined["Loop Over Deals\nDiscount"]
+    undefined["Loop Over Deals\nMaterials"]
+    undefined["Sum Deal Amounts"]
+    undefined["Sum Deal Hours"]
+    undefined["Sum Deal Labor"]
+    undefined["Sum Deal Materials"]
+    undefined["Sum Deal Discount"]
+    undefined["CO Hours and Amount"]
+    undefined["Adjust Date/Time"]
+    undefined["Time 2 Minutes Ago\nto Epoch"]
+    undefined["Get Deals"]
+    undefined["Loop Over HS Deals"]
+    undefined["Get Fields"]
+    undefined["Mappable Fields"]
+    undefined["Get Job"]
+    undefined["Project"]
+    undefined["Loop Over Projects"]
+    undefined["Code Block"]
+    undefined["CRM: Get Companies\nProperties"]
+    undefined["Loop Over Deals"]
+    undefined["CRM: Get Owner"]
+    undefined["List People"]
+    undefined["Upsert Deal Owners"]
+    undefined["Branch on Expression"]
+    undefined["Difference Branch"]
+    undefined["Contact Detail\nBranch"]
+    undefined["Check if Project\nExist"]
+    undefined["HS Deal ID Exists"]
 
     A --> B
     B --> C
@@ -19,5 +55,41 @@ flowchart TD
     E --> G
     F --> G
     G --> H
+    H --> I
+    I --> J
+    J --> K
+    K --> L
+    L --> M
+    M --> N
+    N --> O
+    O --> P
+    P --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
 
     classDef trigger fill:#2E7D32,stroke:#4CAF50,stroke-width:3px,color:#fff

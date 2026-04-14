@@ -2,24 +2,31 @@
 title: Lead Capture & Qualification — Zapier
 ---
 flowchart TD
-    T["Generate standardized lead\npayload from vendor data"]:::trigger
-    A1["Lookup project type from\ncustomer selection"]
-    A2["Lookup marketing sources\nfor attribution"]
-    A3["Build final contact\npayload with enriched data"]
-    A4["Create or update\ncontact in CRM"]
-    A5["Build final deal payload\nwith contact association"]
-    A6["Create or update\ndeal in CRM"]
-    A7["Handle deal creation\nerrors gracefully"]
-    A8["Fetch deal\nproperties from CRM"]
-    A9["Extract deal properties\nfor processing"]
-    A10["Extract deal details\nfor routing"]
-    A11["Route to booking flow\nbased on deal stage"]
-    A12["Fetch contact\nproperties from CRM"]
-    A13["Extract contact properties\nfor processing"]
-    A14["Loop over associated\ndeals for sync"]
-    A15["Wait before processing\nengagements"]
-    A16["Loop over call and\nmeeting engagements"]
+    T["Receive Lead Data"]:::trigger
+    A1["Sleep"]
+    A2["Loop Over\nEngagements"]
+    A3["Generate Payload"]
+    A4["Lookup Project"]
+    A5["Lookup Sources"]
+    A6["Final Contact\nPayload"]
+    A7["Get Contact"]
+    A8["Final Deal Payload"]
+    A9["Get Deal"]
+    A10["Override payload"]
+    A11["CRM: Search Contact\nby id"]
+    A12["CRM: Search Contact\nby email"]
+    A13["Select Executed Step\nResult"]
+    A14["Merged Payload"]
+    A15["CRM: Get Contact\nProperties"]
+    A16["List Contact\nProperties"]
+    A17["Loop Over Deals"]
+    A18["Deal Error Handler"]
+    A19["Project Type Branch"]
+    A20["Marketing Source\nBranch"]
+    A21["Contact Branch"]
+    A22["HS Contact Final\nOutput"]
+    A23["Check properties\nexist"]
 
-    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7 --> A8 --> A9 --> A10 --> A11 --> A12 --> A13 --> A14 --> A15 --> A16
+    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7 --> A8 --> A9 --> A10 --> A11 --> A12 --> A13 --> A14 --> A15 --> A16 --> A17 --> A18 --> A19 --> A20 --> A21 --> A22 --> A23
 
     classDef trigger fill:#FF4A00,stroke:#cc3b00,stroke-width:3px,color:#fff

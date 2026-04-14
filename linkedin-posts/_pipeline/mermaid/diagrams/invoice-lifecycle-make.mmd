@@ -2,14 +2,62 @@
 title: Invoice Lifecycle — Make
 ---
 flowchart TD
-    A(("Detect unbilled line items\nready for invoicing")):::trigger
-    B["Create invoice in\naccounting software from\nproject data"]
-    C["Sync invoice details back\nto project database"]
-    D["Send invoice to\ncustomer via email"]
+    A(("Receive Event")):::trigger
+    B["Get Cursor"]
+    C["List Project Types"]
+    D["Map Project Types"]
     E{"Track Payment Status\n& Sync Updates"}
-    F["Handle invoice\nmodifications and\ncorrections"]
-    G["Process void requests and\nupdate all systems"]
-    H["Generate work order URLs\nfor customer reference"]
+    F["Get Accepted Quotes"]
+    G["Loop Over Items"]
+    H["Stop Execution 2"]
+    I["Estimate Date To\nSync"]
+    J["Time 2 Minutes Ago"]
+    K["Time 2 Minutes Ago\nto Epoch"]
+    L["Code Block"]
+    M["List Quotes"]
+    N["Loop Over Quotes"]
+    O["Get Job"]
+    P["Get Preferences"]
+    undefined["Get Invoice"]
+    undefined["Get Customer By Id"]
+    undefined["(Job) Customer\nPayload"]
+    undefined["Update Parent\nCustomer"]
+    undefined["List Invoices Linked\nto Job"]
+    undefined["Invoice Lines IDs\nstring"]
+    undefined["Get Invoice Lines"]
+    undefined["Create Lines Array"]
+    undefined["Fill Custom Fields"]
+    undefined["Create Invoice\nPayload"]
+    undefined["Create Invoice"]
+    undefined["Initial Status"]
+    undefined["Get All Invoices"]
+    undefined["Filter Voided\nInvoices"]
+    undefined["Send Invoice"]
+    undefined["Find Associated Job"]
+    undefined["Bill to String"]
+    undefined["Invoice Payload"]
+    undefined["Upsert Invoice"]
+    undefined["Process Invoice Line\nItems"]
+    undefined["Crossflow Payload"]
+    undefined["Process Payments"]
+    undefined["PDF Subflow Payload"]
+    undefined["Save Invoice PDF"]
+    undefined["Filter Transactions"]
+    undefined["Get All Payment\nMethods"]
+    undefined["Loop Over Payments"]
+    undefined["Get Invoice By Id"]
+    undefined["Update Invoice\nPayload"]
+    undefined["Update Invoice"]
+    undefined["Update Doc Number\nPayload"]
+    undefined["Update Doc Number"]
+    undefined["Void Invoice"]
+    undefined["Records to be\nprocessed?"]
+    undefined["Job Found?"]
+    undefined["Invoice created\nsuccessfully?"]
+    undefined["Got any invocies\nfrom QBO?"]
+    undefined["Status Branch"]
+    undefined["Branch on Expression"]
+    undefined["Update Successful?"]
 
     A --> B
     B --> C
@@ -19,5 +67,53 @@ flowchart TD
     E -->|Overdue| G
     F --> H
     G --> H
+    H --> I
+    I --> J
+    J --> K
+    K --> L
+    L --> M
+    M --> N
+    N --> O
+    O --> P
+    P --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
 
     classDef trigger fill:#9b3dae,stroke:#fff,stroke-width:3px,color:#fff

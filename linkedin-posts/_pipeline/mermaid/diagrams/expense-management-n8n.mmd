@@ -2,14 +2,41 @@
 title: Expense Management Pipeline — n8n
 ---
 flowchart TD
-    A["Import bills and expenses\nfrom accounting software"]:::trigger
-    B["Match expenses to\njobs and projects"]
-    C["Sync customer records\nbetween accounting and\ndatabase"]
+    A["Receive Expense Data"]:::trigger
+    B["Current Time"]
+    C["Stopwatch Time"]
     D{"Customer Record\nExists?"}
-    E["Link sub-customers to\nindividual projects"]
-    F["Save expense attachments\nand receipts to database"]
-    G["Categorize transactions by\ntype and department"]
-    H["Generate expense reports\nby job and time period"]
+    E["Set Start Position"]
+    F["Calculated Date"]
+    G["Format Date/Time"]
+    H["Loop N Times"]
+    I["Get Progress"]
+    J["Stop Execution 2"]
+    K["Find Customer Ref"]
+    L["Expense Payload"]
+    M["Upsert Expense\nRecord"]
+    N["Stop Execution\n(Success)"]
+    O["Download Attachables\nURL"]
+    P["Get Attachables"]
+    undefined["Loop Over\nAttachables"]
+    undefined["Get Attachables URLs"]
+    undefined["Attachables Payload"]
+    undefined["Update Record"]
+    undefined["Sleep"]
+    undefined["Update Parent\nCustomer"]
+    undefined["Execution - Save\nValue"]
+    undefined["List Jobs"]
+    undefined["Loop Over Jobs"]
+    undefined["List Projects"]
+    undefined["Loop Over Projects"]
+    undefined["Expenses Sync\nenabled?"]
+    undefined["Customer Ref exists?"]
+    undefined["Is an Item?"]
+    undefined["Attachables fetched?"]
+    undefined["Is this a Job or\nProject?"]
+    undefined["Customer Payload"]
+    undefined["QBO Parent Customer\nID Exists?"]
+    undefined["QBO Sub Customer ID\nExists?"]
 
     A --> B
     B --> C
@@ -19,5 +46,32 @@ flowchart TD
     E --> G
     F --> G
     G --> H
+    H --> I
+    I --> J
+    J --> K
+    K --> L
+    L --> M
+    M --> N
+    N --> O
+    O --> P
+    P --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
 
     classDef trigger fill:#2E7D32,stroke:#4CAF50,stroke-width:3px,color:#fff

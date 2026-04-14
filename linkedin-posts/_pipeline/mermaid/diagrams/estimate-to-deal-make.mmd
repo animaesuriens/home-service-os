@@ -2,14 +2,16 @@
 title: Estimate-to-Deal Pipeline — Make
 ---
 flowchart TD
-    A(("Create estimate in\nestimating tool after site\nvisit")):::trigger
-    B["Sync estimate details to\nHubSpot deal"]
-    C["Apply standardized deal\nnaming convention"]
-    D["Update deal stage and\npipeline position"]
+    A(("Receive Event")):::trigger
+    B["Estimate Date To\nSync"]
+    C["Time X Minutes Ago"]
+    D["Time X Minutes Ago\nto Epoch"]
     E{"Link Project Photos\nFrom Site Visit"}
-    F["Calculate profit margins\nand flag outliers"]
-    G["Notify sales manager of\nhigh-value estimates"]
-    H["Send estimate to\ncustomer for review"]
+    F["Loop Over Quotes"]
+    G["Branch on Expression"]
+    H["Process Data (Step\n7)"]
+    I["Process Data (Step\n8)"]
+    J["Process Data (Step\n9)"]
 
     A --> B
     B --> C
@@ -19,5 +21,7 @@ flowchart TD
     E -->|Standard| G
     F --> H
     G --> H
+    H --> I
+    I --> J
 
     classDef trigger fill:#9b3dae,stroke:#fff,stroke-width:3px,color:#fff

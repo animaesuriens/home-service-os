@@ -2,14 +2,31 @@
 title: HubSpot Contact Sync — Zapier
 ---
 flowchart TD
-    T["Override contact payload\nwith incoming data"]:::trigger
-    A1["Search for existing\ncontact by ID in CRM"]
-    A2["Search for existing\ncontact by email in CRM"]
-    A3["Select which search\nresult to use"]
-    A4["Merge incoming data with\nexisting contact data"]
-    A5["Route to create or update\nbased on search result"]
-    A6["Return final contact\ndetails for downstream use"]
+    T["Receive Lead Data"]:::trigger
+    A1["Sleep"]
+    A2["Loop Over\nEngagements"]
+    A3["Generate Payload"]
+    A4["Lookup Project"]
+    A5["Lookup Sources"]
+    A6["Final Contact\nPayload"]
+    A7["Get Contact"]
+    A8["Final Deal Payload"]
+    A9["Get Deal"]
+    A10["Override payload"]
+    A11["CRM: Search Contact\nby id"]
+    A12["CRM: Search Contact\nby email"]
+    A13["Select Executed Step\nResult"]
+    A14["Merged Payload"]
+    A15["CRM: Get Contact\nProperties"]
+    A16["List Contact\nProperties"]
+    A17["Loop Over Deals"]
+    A18["Deal Error Handler"]
+    A19["Project Type Branch"]
+    A20["Marketing Source\nBranch"]
+    A21["Contact Branch"]
+    A22["HS Contact Final\nOutput"]
+    A23["Check properties\nexist"]
 
-    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6
+    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7 --> A8 --> A9 --> A10 --> A11 --> A12 --> A13 --> A14 --> A15 --> A16 --> A17 --> A18 --> A19 --> A20 --> A21 --> A22 --> A23
 
     classDef trigger fill:#FF4A00,stroke:#cc3b00,stroke-width:3px,color:#fff

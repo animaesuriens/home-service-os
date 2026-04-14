@@ -2,13 +2,30 @@
 title: HubSpot Contact Sync — n8n
 ---
 flowchart TD
-    A["Override contact payload\nwith incoming data"]:::trigger
-    B["Search for existing\ncontact by ID in CRM"]
-    C["Search for existing\ncontact by email in CRM"]
+    A["Receive Lead Data"]:::trigger
+    B["Sleep"]
+    C["Loop Over\nEngagements"]
     D{"Contact Already\nExists?"}
-    E["Merge incoming data with\nexisting contact data"]
-    F["Route to create or update\nbased on search result"]
-    G["Return final contact\ndetails for downstream use"]
+    E["Lookup Project"]
+    F["Lookup Sources"]
+    G["Final Contact\nPayload"]
+    H["Get Contact"]
+    I["Final Deal Payload"]
+    J["Get Deal"]
+    K["Override payload"]
+    L["CRM: Search Contact\nby id"]
+    M["CRM: Search Contact\nby email"]
+    N["Select Executed Step\nResult"]
+    O["Merged Payload"]
+    P["CRM: Get Contact\nProperties"]
+    undefined["List Contact\nProperties"]
+    undefined["Loop Over Deals"]
+    undefined["Deal Error Handler"]
+    undefined["Project Type Branch"]
+    undefined["Marketing Source\nBranch"]
+    undefined["Contact Branch"]
+    undefined["HS Contact Final\nOutput"]
+    undefined["Check properties\nexist"]
 
     A --> B
     B --> C
@@ -17,5 +34,22 @@ flowchart TD
     D -->|Create| F
     E --> G
     F --> G
+    G --> H
+    H --> I
+    I --> J
+    J --> K
+    K --> L
+    L --> M
+    M --> N
+    N --> O
+    O --> P
+    P --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
 
     classDef trigger fill:#2E7D32,stroke:#4CAF50,stroke-width:3px,color:#fff

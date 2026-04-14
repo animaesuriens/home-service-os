@@ -2,11 +2,30 @@
 title: Message Transpiler — Zapier
 ---
 flowchart TD
-    T["Retrieve latest open\ndeal for contact"]:::trigger
-    A1["Generate personalized\nbooking link from deal\ncontext"]
-    A2["Shorten booking URL\nfor customer message"]
-    A3["Route message to\nappropriate channel based\non context"]
+    T["Receive Event"]:::trigger
+    A1["Get latest open deal"]
+    A2["Get YCBM Link"]
+    A3["Get Short Link"]
+    A4["Build Query"]
+    A5["Start Index"]
+    A6["Loop N Times"]
+    A7["Get All Owners"]
+    A8["Get Project Types"]
+    A9["Get All Companies"]
+    A10["Get All PS Quotes"]
+    A11["Get All PS Contacts"]
+    A12["HS Payload Contact"]
+    A13["Bulk upsert contact"]
+    A14["Get All HS Contacts"]
+    A15["Get all HS Deals"]
+    A16["PS Quote x HS Deal\nSync"]
+    A17["Stop Execution"]
+    A18["Photo Management\nSync X HubSpot Deal"]
+    A19["CRM: List Deals"]
+    A20["CRM: List Contacts"]
+    A21["Bulk Contact\nAssociation"]
+    A22["Branch on Expression"]
 
-    T --> A1 --> A2 --> A3
+    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7 --> A8 --> A9 --> A10 --> A11 --> A12 --> A13 --> A14 --> A15 --> A16 --> A17 --> A18 --> A19 --> A20 --> A21 --> A22
 
     classDef trigger fill:#FF4A00,stroke:#cc3b00,stroke-width:3px,color:#fff

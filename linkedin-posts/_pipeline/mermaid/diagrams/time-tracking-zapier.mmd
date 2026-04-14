@@ -2,15 +2,30 @@
 title: Time Tracking Sync Engine — Zapier
 ---
 flowchart TD
-    T["Employees clock in and out\nvia time tracking app"]:::trigger
-    A1["Sync job codes and\nlocations to time system"]
-    A2["Match time entries to\nactive projects and jobs"]
-    A3["Sync new and modified time\nlogs to central database"]
-    A4["Handle deleted or\ncorrected time entries"]
-    A5["Sync employee profiles and\npermissions"]
-    A6["Deactivate job codes for\ncompleted projects"]
-    A7["Generate payroll-ready\ntime summaries"]
+    T["Receive Time Entry"]:::trigger
+    A1["Update Inactive\nJobcodes"]
+    A2["Default Days"]
+    A3["Adjust Date/Time"]
+    A4["Format to ISO Date"]
+    A5["Retrieve All Time\nSheets"]
+    A6["Retrieve All Users"]
+    A7["Retrieve All Active\nJobCodes"]
+    A8["Retrieve All\nProjects"]
+    A9["Retrieve All People"]
+    A10["Bulk Update Timelogs"]
+    A11["Retrieve Eligible\nProjects"]
+    A12["Retrieve All Active\nJobcodes"]
+    A13["Jobcodes Bulk Update"]
+    A14["Update Jobcodes"]
+    A15["Retrieve Locations"]
+    A16["Upsert Location"]
+    A17["Update Location\nAddress"]
+    A18["Retrieve All Deleted\nTime Sheets"]
+    A19["Retrieve All Time\nLogs"]
+    A20["Delete Timelogs"]
+    A21["Delete Non-Work Time\nLogs"]
+    A22["Bulk Update Users"]
 
-    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7
+    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7 --> A8 --> A9 --> A10 --> A11 --> A12 --> A13 --> A14 --> A15 --> A16 --> A17 --> A18 --> A19 --> A20 --> A21 --> A22
 
     classDef trigger fill:#FF4A00,stroke:#cc3b00,stroke-width:3px,color:#fff

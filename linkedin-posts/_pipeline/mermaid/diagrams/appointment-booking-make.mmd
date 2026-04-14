@@ -2,23 +2,38 @@
 title: Appointment Booking & Scheduling — Make
 ---
 flowchart TD
-    A(("Route booking data\nbased on source")):::trigger
-    B["Select booking payload\nfrom routing decision"]
-    C["Retrieve owner assignment\nfrom database"]
-    D["Build initial deal payload\nwith appointment data"]
+    A(("Receive Booking\nEvent")):::trigger
+    B["Get Owner"]
+    C["Initial Deal Payload"]
+    D["Lookup Project Type"]
     E{"Booking\nSource?"}
-    F["Lookup marketing sources\nfor attribution"]
-    G["Extract customer\nemail from booking"]
-    H["Prepare contact sync\npayload for CRM"]
-    I["Check if contact is\nsearchable"]
-    J["Select contact\nresult from search"]
-    K["Build array of project\ntypes for deal"]
-    L["Check deal stage for\nrouting"]
-    M["Route to appropriate\npipeline based on deal\nstage"]
-    N["Process cancellation\ndata"]
-    O["Search for\nappointment in CRM"]
-    P["Update deal and calendar\nwith cancellation"]
-    undefined["Validate reschedule\nbooking data"]
+    F["Extract Email"]
+    G["YCBM HS Contact Sync"]
+    H["Array of Project\nTypes"]
+    I["Check dealStage"]
+    J["Check Deal Stage"]
+    K["Find Customer Ref"]
+    L["Expense Payload"]
+    M["Upsert Expense\nRecord"]
+    N["Crossflow Payload"]
+    O["Save Attachments"]
+    P["Stop Execution\n(Success)"]
+    undefined["Calculated Date"]
+    undefined["Format Date/Time"]
+    undefined["Start Index"]
+    undefined["Loop N Times"]
+    undefined["Get Expense Record"]
+    undefined["Set Start Position"]
+    undefined["Is YCBM ID exist?"]
+    undefined["Branch on Expression"]
+    undefined["Branch on Expression\n3"]
+    undefined["Override Payload"]
+    undefined["If Searchable Branch"]
+    undefined["Output Contact"]
+    undefined["dealStage marketing\npipeline?"]
+    undefined["Customer Ref exists?"]
+    undefined["Is an Item?"]
+    undefined["Flow is enabled in\nWizard?"]
 
     A --> B
     B --> C
@@ -37,5 +52,20 @@ flowchart TD
     N --> O
     O --> P
     P --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
 
     classDef trigger fill:#9b3dae,stroke:#fff,stroke-width:3px,color:#fff

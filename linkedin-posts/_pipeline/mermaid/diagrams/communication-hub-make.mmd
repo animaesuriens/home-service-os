@@ -2,14 +2,20 @@
 title: Communication Hub — Make
 ---
 flowchart TD
-    A(("System event triggers\noutbound communication")):::trigger
+    A(("Receive Booking\nEvent")):::trigger
     B{"Select Channel\nBased on Event Type"}
-    C["Send email notification\nwith formatted details"]
-    D["Send SMS alert for\ntime-sensitive updates"]
-    E["Log all sent messages to\nCRM activity timeline"]
-    F["Update estimate calendar\nwith schedule changes"]
-    G["Route error notifications\nto technical team"]
-    H["Track delivery status and\nflag failures"]
+    C["Expense Payload"]
+    D["Upsert Expense\nRecord"]
+    E["Crossflow Payload"]
+    F["Save Attachments"]
+    G["Stop Execution\n(Success)"]
+    H["Calculated Date"]
+    I["Format Date/Time"]
+    J["Start Index"]
+    K["Loop N Times"]
+    L["Branch on Expression"]
+    M["Customer Ref exists?"]
+    N["Is an Item?"]
 
     A --> B
     B -->|Email| C
@@ -19,5 +25,11 @@ flowchart TD
     E --> F
     F --> G
     G --> H
+    H --> I
+    I --> J
+    J --> K
+    K --> L
+    L --> M
+    M --> N
 
     classDef trigger fill:#9b3dae,stroke:#fff,stroke-width:3px,color:#fff

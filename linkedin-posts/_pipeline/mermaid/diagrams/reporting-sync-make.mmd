@@ -2,12 +2,17 @@
 title: Reporting Dashboard Sync — Make
 ---
 flowchart TD
-    A(("Pull latest deal and\nrevenue data from CRM")):::trigger
-    B["Aggregate metrics across\nall active pipelines"]
+    A(("Receive Event")):::trigger
+    B["Get Config Variables"]
     C{"Data Changed\nSince Last Sync?"}
-    D["Sync updated metrics to\nreporting spreadsheet"]
-    E["Refresh dashboard\nvisualizations\nautomatically"]
-    F["Flag significant\nchanges or anomalies"]
+    D["Stop Execution"]
+    E["Adjust Date/Time"]
+    F["Time 2 Minutes Ago\nto Epoch"]
+    G["Generate get deal\npayload"]
+    H["Process Delete Sync"]
+    I["Upsert"]
+    J["Stop Execution 2"]
+    K["Branch on Expression"]
 
     A --> B
     B --> C
@@ -15,5 +20,10 @@ flowchart TD
     C -->|Stable| E
     D --> F
     E --> F
+    F --> G
+    G --> H
+    H --> I
+    I --> J
+    J --> K
 
     classDef trigger fill:#9b3dae,stroke:#fff,stroke-width:3px,color:#fff

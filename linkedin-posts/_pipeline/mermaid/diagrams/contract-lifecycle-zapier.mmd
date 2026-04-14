@@ -2,15 +2,17 @@
 title: Contract Lifecycle — Zapier
 ---
 flowchart TD
-    T["Generate contract from\napproved estimate"]:::trigger
-    A1["Send contract to customer\nfor e-signature"]
-    A2["Track contract status and\nsend reminders"]
-    A3["Customer signs contract\nelectronically"]
-    A4["Update deal stage to\n'Contract Signed' in CRM"]
-    A5["Create project addendums\nif scope includes extras"]
-    A6["Trigger job setup workflow\nautomatically"]
-    A7["Notify operations team\nthat new job is confirmed"]
+    T["Receive Contract\nEvent"]:::trigger
+    A1["CO Records"]
+    A2["Loop Over Addendums"]
+    A3["Format Date"]
+    A4["Get Addendum Record"]
+    A5["List Expenses"]
+    A6["Loop Over Expenses"]
+    A7["Branch on Expression"]
+    A8["Expenses sync\nenabled?"]
+    A9["Process Data (Step\n9)"]
 
-    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7
+    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7 --> A8 --> A9
 
     classDef trigger fill:#FF4A00,stroke:#cc3b00,stroke-width:3px,color:#fff

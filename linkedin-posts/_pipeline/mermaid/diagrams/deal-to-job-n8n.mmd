@@ -2,14 +2,16 @@
 title: Deal-to-Job Processing — n8n
 ---
 flowchart TD
-    A["Deal marked as won\nin CRM"]:::trigger
-    B["Register deal owner and\nassign project manager"]
-    C["Sync company and contact\nrecords across systems"]
+    A["Receive Event"]:::trigger
+    B["Parse Json Form"]
+    C["Get filter"]
     D{"Customer Record\nStatus?"}
-    E["Map HubSpot fields to\nproject file structure"]
-    F["Generate job folder with\nall customer documents"]
-    G["Create initial\nproduction schedule"]
-    H["Notify crew leads of\nupcoming job"]
+    E["Loop Over COs"]
+    F["Stop Execution"]
+    G["Mock List"]
+    H["Sleep"]
+    I["Check if CO has Job\nassigned"]
+    J["Process Data (Step\n9)"]
 
     A --> B
     B --> C
@@ -19,5 +21,7 @@ flowchart TD
     E --> G
     F --> G
     G --> H
+    H --> I
+    I --> J
 
     classDef trigger fill:#2E7D32,stroke:#4CAF50,stroke-width:3px,color:#fff

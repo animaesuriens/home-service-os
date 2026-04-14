@@ -2,13 +2,52 @@
 title: Message Transpiler — n8n
 ---
 flowchart TD
-    A["Retrieve latest open\ndeal for contact"]:::trigger
-    B["Generate personalized\nbooking link from deal\ncontext"]
-    C["Shorten booking URL\nfor customer message"]
+    A["Receive Event"]:::trigger
+    B["Get latest open deal"]
+    C["Get YCBM Link"]
     D{"Message\nType?"}
+    E["Build Query"]
+    F["Start Index"]
+    G["Loop N Times"]
+    H["Get All Owners"]
+    I["Get Project Types"]
+    J["Get All Companies"]
+    K["Get All PS Quotes"]
+    L["Get All PS Contacts"]
+    M["HS Payload Contact"]
+    N["Bulk upsert contact"]
+    O["Get All HS Contacts"]
+    P["Get all HS Deals"]
+    undefined["PS Quote x HS Deal\nSync"]
+    undefined["Stop Execution"]
+    undefined["Photo Management\nSync X HubSpot Deal"]
+    undefined["CRM: List Deals"]
+    undefined["CRM: List Contacts"]
+    undefined["Bulk Contact\nAssociation"]
+    undefined["Branch on Expression"]
 
     A --> B
     B --> C
     C --> D
+    D -->|Booking| E
+    D -->|Follow-up| F
+    E --> G
+    F --> G
+    G --> H
+    H --> I
+    I --> J
+    J --> K
+    K --> L
+    L --> M
+    M --> N
+    N --> O
+    O --> P
+    P --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
+    undefined --> undefined
 
     classDef trigger fill:#2E7D32,stroke:#4CAF50,stroke-width:3px,color:#fff
