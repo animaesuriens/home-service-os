@@ -35,6 +35,10 @@ TOOL NAMING RULES (STRICT):
   - "SMS platform" (never RingCentral)
 - NEVER use "Make.com" or "Integromat" — just "Make"
 
+ACCURACY RULE (CRITICAL):
+- ONLY describe capabilities that appear in the provided automation steps. Do NOT invent features like "lead scoring", "AI scoring", "automatic scoring", or any capability not listed in the steps.
+- If the steps show "Lookup Project" and "Get Contact", describe lookups and contact management — not scoring or ranking.
+
 HASHTAGS: End with exactly 3 hashtags on a new line:
 1. #Automation (always)
 2. One journey-stage tag (e.g., #LeadGeneration, #InvoiceAutomation, #TimeTracking, #ExpenseManagement, #ProjectManagement, #CRM, #Scheduling)

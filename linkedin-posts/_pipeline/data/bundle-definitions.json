@@ -87,7 +87,7 @@
         }
       ],
       "pain": "Sales reps manually copying form submissions into the CRM, missing hot leads during evenings and weekends, inconsistent follow-up timing costing deals",
-      "solution": "Every lead is captured instantly from any marketing channel, scored automatically, welcomed within 60 seconds, and routed to the right salesperson — even at 2am on a Sunday",
+      "solution": "Every lead is captured instantly from any marketing channel, enriched with project details and CRM data, and routed to the right salesperson — even at 2am on a Sunday",
       "layout": "swimlane",
       "type": "process",
       "diagramConfig": {
@@ -1340,5 +1340,5 @@
       }
     }
   ],
-  "lastDerived": "2026-04-14T08:56:40.842Z"
+  "lastDerived": "2026-04-14T12:25:25.139Z"
 }
