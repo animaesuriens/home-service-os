@@ -1,21 +1,29 @@
-Your sales rep just missed a $15K lead because it came in at 9pm Friday and sat in a form until Monday morning.
+Your sales rep just texted you at 9 PM: "I think I missed a lead from the website today. Where do I find those again?" Sound familiar?
 
-**BEFORE:** Your team is drowning in manual data entry. Every web form, Facebook lead, or phone inquiry gets copy-pasted into your CRM by hand. Weekend leads sit untouched until Monday. Hot prospects get cold responses three days later. You're losing deals to competitors who respond faster, and your sales reps are burning out on admin work instead of selling.
+**BEFORE:** You're running around manually copying form submissions into your CRM, praying nobody filled out a quote request while you were at dinner. Your team misses hot leads during evenings and weekends because someone has to physically move data around. Follow-up timing is all over the place — sometimes it's 10 minutes, sometimes it's 2 days. You're losing deals because your manual process can't keep up.
 
-**AFTER:** Every single lead flows seamlessly into your system within seconds. They get a personalized welcome message before they finish their coffee. Your CRM automatically scores them based on project size and urgency. The right salesperson gets notified immediately with all the context they need. Even that Sunday night inquiry gets captured, qualified, and responded to instantly.
+**AFTER:** Every single lead gets captured instantly from any marketing channel, automatically scored based on project value, welcomed with a personalized message within 60 seconds, and routed to exactly the right salesperson. Even if it's 2 AM on a Sunday and everyone's asleep, your business never stops working.
 
-**THE BRIDGE:** Here's how Make transforms your lead chaos into a conversion machine.
+**Here's how Make handles this behind the scenes:**
 
-When someone submits a form anywhere — your website, Facebook, Google Ads — Make instantly grabs that data and standardizes it into a clean format your CRM loves. It looks up the project type they selected and matches it to your service categories. The system tracks exactly which marketing channel brought them in, so you know where your best leads come from.
+When a lead hits your website form, Make immediately receives that data and starts working. It takes a moment to process everything properly, then loops through all the engagement touchpoints to understand where this person came from and what they're interested in.
 
-Make then builds a complete contact profile, checking if they're already in your system or creating a fresh record. It automatically creates a deal associated with that contact, populating all the project details and estimated value. If something goes wrong, the system handles errors gracefully and tries again.
+The system generates a complete payload with all the lead information, then looks up the specific project type they're inquiring about. It cross-references your marketing sources to see if they came from Google ads, Facebook, your website, or a referral partner.
 
-The magic happens next. Make pulls the deal information back out, analyzes the project size and urgency, then routes it to your booking flow if they're ready to schedule. It syncs contact properties, loops through any related deals to keep everything connected, and processes all the engagement history.
+Make builds a comprehensive contact profile by checking if this person already exists in your CRM. It searches by both ID and email to avoid duplicates, then merges all the available data into one clean record.
 
-Your sales team wakes up to perfectly organized leads with complete context — no more detective work figuring out where someone came from or what they want.
+The really smart part happens next — it analyzes the contact properties and loops through any existing deals they might have. If there's an error anywhere in the deal creation process, Make catches it and routes around the problem.
 
-The best part? This runs 24/7 without coffee breaks. That late-night lead gets the same instant, professional treatment as the Tuesday afternoon inquiry.
+Then comes the decision tree. Based on the project type, marketing source, and contact history, Make automatically branches the lead to the right workflow. A kitchen remodel inquiry gets handled differently than a bathroom refresh request.
 
-What's the biggest lead you've lost to slow follow-up? And if you're ready to never miss another hot prospect, let's chat about setting up your automated lead machine.
+Finally, it outputs everything to HubSpot with all the contact properties properly mapped and verified. Your CRM gets a complete, qualified lead record with full context about where they came from and what they want.
 
-#Automation #LeadCapture #Make
+The whole thing runs in under 2 minutes, and your salesperson gets a notification with a warm lead ready to call.
+
+Now, I'll be honest — this workflow could be streamlined. With 15+ steps and some custom code that could be replaced with native Make actions, there's room for optimization. But even in its current form, it's infinitely better than manual data entry.
+
+Your leads never fall through the cracks again. Your follow-up timing becomes consistent. Your team can focus on having conversations instead of copying and pasting form data.
+
+What's the longest you've ever waited to follow up with a website lead? And if you're ready to never lose another lead to manual processes, let's chat about setting up something similar for your business.
+
+#Automation #LeadGeneration #Make

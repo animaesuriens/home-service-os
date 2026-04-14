@@ -1,5 +1,7 @@
 'use strict';
 
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+
 const fs = require('fs-extra');
 const path = require('path');
 const { generateAllPosts, generatePost, validatePost } = require('../lib/post-generator');

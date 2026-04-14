@@ -1,23 +1,23 @@
-Your sales team is drowning in duplicate contacts while you're paying for CRM storage you can't even trust. Sound familiar?
+Your sales rep just spent 15 minutes hunting through HubSpot for a contact before realizing they created a duplicate last week. Sound familiar?
 
-**BEFORE:** Your reps spend 10 minutes before every call digging through your CRM, trying to figure out which "John Smith" record is the real one. Meanwhile, leads from your website, social media, and referral partners are creating new duplicate contacts daily. Your HubSpot is a mess of conflicting phone numbers, outdated emails, and incomplete data scattered across multiple records for the same person.
+**BEFORE:** Your team gets leads from your website, social media, and referral partners. But every time someone wants to follow up, it's a treasure hunt. "Is this person already in our system?" "Which record is the real one?" "Did someone else already call them?" Meanwhile, duplicate contacts multiply like weeds, your data gets messier by the day, and your sales reps waste precious time playing detective instead of closing deals.
 
-**AFTER:** Every new contact automatically finds its perfect home in your CRM. No duplicates. No manual searching. No outdated information. Your sales team opens a contact record and immediately sees the complete, up-to-date picture of every prospect.
+**AFTER:** Every single lead that hits your system gets automatically processed like clockwork. No matter where they came from — your website form, a Facebook ad, or a referral partner — Make instantly checks if they already exist in HubSpot, merges their info with existing records if found, or creates a clean new contact if they're brand new. Your sales team opens HubSpot and sees exactly one accurate record per person, with all their latest information ready to go.
 
-**THE BRIDGE:** Here's how Make handles this behind the scenes for your home service company.
+**THE BRIDGE:** Here's how Make handles this behind the scenes. When a new lead comes in, the automation first takes a brief pause to let any other systems finish processing (you'd be surprised how often this prevents weird data conflicts). Then it loops through all the engagement data to build a complete picture of this contact.
 
-When a new contact hits your system from any source, Make first grabs all the incoming data and sets it as the master record. Then it runs two parallel searches in HubSpot — one looking for an existing contact ID and another searching by email address.
+The real magic happens in the contact matching process. Make searches your HubSpot database twice — first by contact ID if one exists, then by email address as a backup. This double-check approach catches contacts that might have been created through different channels with slight variations.
 
-This is where it gets smart. Make compares both search results and automatically selects the best match. Found an existing contact? It merges the new information with what's already there, keeping the most recent data for each field. No existing contact? It creates a fresh record with all the new details.
+If Make finds an existing contact, it pulls all their current properties and intelligently merges the new information with what's already there. The system knows which fields to update, which ones to preserve, and how to handle conflicts. If it's a completely new person, Make creates a fresh contact record with all the proper formatting and tagging.
 
-The beauty is in the routing logic. Make automatically decides whether to update an existing contact or create a new one based on what the searches found. No human decision required.
+But here's where it gets really smart — the automation also handles deal creation and project associations automatically. It looks up project types, marketing sources, and contact relationships to make sure everything connects properly in your CRM. No more orphaned deals or contacts floating around without context.
 
-The final step sends the complete, cleaned contact data back to your other systems — your appointment scheduler, your estimating tool, wherever else you need that information to flow.
+The whole process runs through multiple validation checks to make sure data integrity stays rock solid. It even has error handling built in, so if something goes wrong with one contact, it doesn't break the entire flow.
 
-What used to take your team 15+ complex steps with custom code now runs automatically in the background. Your CRM stays clean, your sales team stays focused on selling, and you stop paying for duplicate storage.
+Now I'll be honest — this particular automation has grown pretty complex over time (we're talking 15+ steps here). There are definitely ways to streamline it and replace some of the custom code with Make's native actions. But even in its current form, it's saving hours of manual work every single week and keeping your HubSpot database clean as a whistle.
 
-The best part? This runs 24/7 without you thinking about it. Leads come in at midnight? They're properly sorted and ready for your team by morning.
+Your sales team stops wasting time on data archaeology and starts focusing on what they do best — building relationships and closing deals.
 
-What's the biggest CRM headache your team deals with daily? And if you're tired of playing duplicate contact detective, let's chat about getting Make working for your business.
+What's the biggest time-waster in your current lead management process? And if you're tired of your team playing "find the real contact record," let's chat about setting up something similar for your business.
 
-#Automation #LeadCapture #Make
+#Automation #LeadGeneration #Make
