@@ -6,7 +6,7 @@ flowchart TD
     B["Lookup project type from\ncustomer selection"]
     C["Lookup marketing sources\nfor attribution"]
     D["Build final contact\npayload with enriched data"]
-    E{"Score Lead\nBy Project & Budget"}
+    E{"Contact Exists\nin CRM?"}
     F["Build final deal payload\nwith contact association"]
     G["Create or update\ndeal in CRM"]
     H["Handle deal creation\nerrors gracefully"]
@@ -24,8 +24,8 @@ flowchart TD
     B --> C
     C --> D
     D --> E
-    E -->|High Value| F
-    E -->|All Leads| G
+    E -->|Update| F
+    E -->|Create| G
     F --> H
     G --> H
     H --> I

@@ -6,7 +6,7 @@ flowchart TD
     B["Select booking payload\nfrom routing decision"]
     C["Retrieve owner assignment\nfrom database"]
     D["Build initial deal payload\nwith appointment data"]
-    E{"Create Prep Checklist\nfor Estimator"}
+    E{"Booking\nSource?"}
     F["Lookup marketing sources\nfor attribution"]
     G["Extract customer\nemail from booking"]
     H["Prepare contact sync\npayload for CRM"]
@@ -24,8 +24,8 @@ flowchart TD
     B --> C
     C --> D
     D --> E
-    E -->|Confirmed| F
-    E -->|Cancelled| G
+    E -->|New Booking| F
+    E -->|Reschedule| G
     F --> H
     G --> H
     H --> I

@@ -49,13 +49,13 @@ function wrapLabel(label) {
 const DECISION_CONFIG = {
   'lead-capture': {
     decisionIdx: 4,
-    decisionLabel: 'Score Lead\\nBy Project & Budget',
-    leftLabel: 'High Value', rightLabel: 'All Leads'
+    decisionLabel: 'Contact Exists\\nin CRM?',
+    leftLabel: 'Update', rightLabel: 'Create'
   },
   'appointment-booking': {
     decisionIdx: 4,
-    decisionLabel: 'Create Prep Checklist\\nfor Estimator',
-    leftLabel: 'Confirmed', rightLabel: 'Cancelled'
+    decisionLabel: 'Booking\\nSource?',
+    leftLabel: 'New Booking', rightLabel: 'Reschedule'
   },
   'estimate-to-deal': {
     decisionIdx: 4,
