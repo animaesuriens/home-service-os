@@ -12,7 +12,80 @@
         "P-boo-03",
         "P-boo-05"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Lead Data"
+        },
+        {
+          "label": "Sleep"
+        },
+        {
+          "label": "Loop Over Engagements"
+        },
+        {
+          "label": "Generate Payload"
+        },
+        {
+          "label": "Lookup Project"
+        },
+        {
+          "label": "Lookup Sources"
+        },
+        {
+          "label": "Final Contact Payload"
+        },
+        {
+          "label": "Get Contact"
+        },
+        {
+          "label": "Final Deal Payload"
+        },
+        {
+          "label": "Get Deal"
+        },
+        {
+          "label": "Override payload"
+        },
+        {
+          "label": "CRM: Search Contact by id"
+        },
+        {
+          "label": "CRM: Search Contact by email"
+        },
+        {
+          "label": "Select Executed Step Result"
+        },
+        {
+          "label": "Merged Payload"
+        },
+        {
+          "label": "CRM: Get Contact Properties"
+        },
+        {
+          "label": "List Contact Properties"
+        },
+        {
+          "label": "Loop Over Deals"
+        },
+        {
+          "label": "Deal Error Handler"
+        },
+        {
+          "label": "Project Type Branch"
+        },
+        {
+          "label": "Marketing Source Branch"
+        },
+        {
+          "label": "Contact Branch"
+        },
+        {
+          "label": "HS Contact Final Output"
+        },
+        {
+          "label": "Check properties exist"
+        }
+      ],
       "pain": "Sales reps manually copying form submissions into the CRM, missing hot leads during evenings and weekends, inconsistent follow-up timing costing deals",
       "solution": "Every lead is captured instantly from any marketing channel, scored automatically, welcomed within 60 seconds, and routed to the right salesperson — even at 2am on a Sunday",
       "layout": "swimlane",
@@ -35,7 +108,104 @@
         "P-boo-07",
         "P-boo-09"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Booking Event"
+        },
+        {
+          "label": "Get Owner"
+        },
+        {
+          "label": "Initial Deal Payload"
+        },
+        {
+          "label": "Lookup Project Type"
+        },
+        {
+          "label": "Lookup Sources"
+        },
+        {
+          "label": "Extract Email"
+        },
+        {
+          "label": "YCBM HS Contact Sync"
+        },
+        {
+          "label": "Array of Project Types"
+        },
+        {
+          "label": "Check dealStage"
+        },
+        {
+          "label": "Check Deal Stage"
+        },
+        {
+          "label": "Find Customer Ref"
+        },
+        {
+          "label": "Expense Payload"
+        },
+        {
+          "label": "Upsert Expense Record"
+        },
+        {
+          "label": "Crossflow Payload"
+        },
+        {
+          "label": "Save Attachments"
+        },
+        {
+          "label": "Stop Execution (Success)"
+        },
+        {
+          "label": "Calculated Date"
+        },
+        {
+          "label": "Format Date/Time"
+        },
+        {
+          "label": "Start Index"
+        },
+        {
+          "label": "Loop N Times"
+        },
+        {
+          "label": "Get Expense Record"
+        },
+        {
+          "label": "Set Start Position"
+        },
+        {
+          "label": "Is YCBM ID exist?"
+        },
+        {
+          "label": "Branch on Expression"
+        },
+        {
+          "label": "Branch on Expression 3"
+        },
+        {
+          "label": "Override Payload"
+        },
+        {
+          "label": "If Searchable Branch"
+        },
+        {
+          "label": "Output Contact"
+        },
+        {
+          "label": "dealStage marketing pipeline?"
+        },
+        {
+          "label": "Customer Ref exists?"
+        },
+        {
+          "label": "Is an Item?"
+        },
+        {
+          "label": "Flow is enabled in Wizard?"
+        }
+      ],
       "pain": "Phone tag with customers trying to schedule estimates, double-booked calendars, no-shows because reminders were forgotten, and hours lost to manual calendar management",
       "solution": "Customers book their own appointments from a personalized link, get automatic confirmations and reminders, and the whole team stays in sync without a single phone call",
       "layout": "swimlane",
@@ -55,7 +225,38 @@
       "processIds": [
         "P-boo-01"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Event"
+        },
+        {
+          "label": "Estimate Date To Sync"
+        },
+        {
+          "label": "Time X Minutes Ago"
+        },
+        {
+          "label": "Time X Minutes Ago to Epoch"
+        },
+        {
+          "label": "List Quotes"
+        },
+        {
+          "label": "Loop Over Quotes"
+        },
+        {
+          "label": "Branch on Expression"
+        },
+        {
+          "label": "Process Data (Step 7)"
+        },
+        {
+          "label": "Process Data (Step 8)"
+        },
+        {
+          "label": "Process Data (Step 9)"
+        }
+      ],
       "pain": "Estimates sitting in one tool while deals live in another, sales managers manually copying numbers between systems, inconsistent deal naming making pipeline reports useless",
       "solution": "The moment an estimate is created, every system updates automatically — the CRM deal is created, named consistently, and the sales team sees real-time pipeline value without touching a spreadsheet",
       "layout": "swimlane",
@@ -85,7 +286,140 @@
         "P-boo-92",
         "P-boo-90"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Event"
+        },
+        {
+          "label": "Get Deal Payload"
+        },
+        {
+          "label": "CRM: Get Deals with same job record id"
+        },
+        {
+          "label": "CO count"
+        },
+        {
+          "label": "Split Sources"
+        },
+        {
+          "label": "Source IDs Count"
+        },
+        {
+          "label": "CRM: Get Deal Properties"
+        },
+        {
+          "label": "List Deal Properties Label"
+        },
+        {
+          "label": "List Deal Properties Object"
+        },
+        {
+          "label": "CRM: Get Deal"
+        },
+        {
+          "label": "CRM: Get Contact Association"
+        },
+        {
+          "label": "CRM: Get Company Association"
+        },
+        {
+          "label": "Sales Rate"
+        },
+        {
+          "label": "Loop Over Deals Amount"
+        },
+        {
+          "label": "Loop Over Deals Hours"
+        },
+        {
+          "label": "Loop Over Deals Labor"
+        },
+        {
+          "label": "Loop Over Deals Discount"
+        },
+        {
+          "label": "Loop Over Deals Materials"
+        },
+        {
+          "label": "Sum Deal Amounts"
+        },
+        {
+          "label": "Sum Deal Hours"
+        },
+        {
+          "label": "Sum Deal Labor"
+        },
+        {
+          "label": "Sum Deal Materials"
+        },
+        {
+          "label": "Sum Deal Discount"
+        },
+        {
+          "label": "CO Hours and Amount"
+        },
+        {
+          "label": "Adjust Date/Time"
+        },
+        {
+          "label": "Time 2 Minutes Ago to Epoch"
+        },
+        {
+          "label": "Get Deals"
+        },
+        {
+          "label": "Loop Over HS Deals"
+        },
+        {
+          "label": "Get Fields"
+        },
+        {
+          "label": "Mappable Fields"
+        },
+        {
+          "label": "Get Job"
+        },
+        {
+          "label": "Project"
+        },
+        {
+          "label": "Loop Over Projects"
+        },
+        {
+          "label": "Code Block"
+        },
+        {
+          "label": "CRM: Get Companies Properties"
+        },
+        {
+          "label": "Loop Over Deals"
+        },
+        {
+          "label": "CRM: Get Owner"
+        },
+        {
+          "label": "List People"
+        },
+        {
+          "label": "Upsert Deal Owners"
+        },
+        {
+          "label": "Branch on Expression"
+        },
+        {
+          "label": "Difference Branch"
+        },
+        {
+          "label": "Contact Detail Branch"
+        },
+        {
+          "label": "Check if Project Exist"
+        },
+        {
+          "label": "HS Deal ID Exists"
+        }
+      ],
       "pain": "Change orders scribbled on paper, forgotten price adjustments that eat into margins, crew showing up without knowing the scope changed, and deals stuck showing the wrong value for weeks",
       "solution": "Every change order flows through automatically — pricing updates, the CRM reflects the real deal value, and the production team knows about scope changes before they arrive on site",
       "layout": "vertical",
@@ -107,7 +441,38 @@
         "P-job-06",
         "P-boo-10"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Contract Event"
+        },
+        {
+          "label": "CO Records"
+        },
+        {
+          "label": "Loop Over Addendums"
+        },
+        {
+          "label": "Format Date"
+        },
+        {
+          "label": "Get Addendum Record"
+        },
+        {
+          "label": "List Expenses"
+        },
+        {
+          "label": "Loop Over Expenses"
+        },
+        {
+          "label": "Branch on Expression"
+        },
+        {
+          "label": "Expenses sync enabled?"
+        },
+        {
+          "label": "Process Data (Step 9)"
+        }
+      ],
       "pain": "Contracts emailed as PDFs, customers printing and scanning to sign, nobody knowing when a contract was actually signed until someone checks email, and jobs delayed waiting for paperwork",
       "solution": "Contracts go out with one click, customers sign on their phone, and the moment ink hits the digital page the entire back office starts spinning up the job — zero waiting, zero chasing",
       "layout": "swimlane",
@@ -127,7 +492,38 @@
       "processIds": [
         "P-job-07"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Event"
+        },
+        {
+          "label": "Parse Json Form"
+        },
+        {
+          "label": "Get filter"
+        },
+        {
+          "label": "List Addendums"
+        },
+        {
+          "label": "Loop Over COs"
+        },
+        {
+          "label": "Stop Execution"
+        },
+        {
+          "label": "Mock List"
+        },
+        {
+          "label": "Sleep"
+        },
+        {
+          "label": "Check if CO has Job assigned"
+        },
+        {
+          "label": "Process Data (Step 9)"
+        }
+      ],
       "pain": "Won deals sitting in the CRM while the ops team manually creates job records, copy-pasting customer info between three different systems, and new jobs falling through the cracks during busy season",
       "solution": "The moment a deal is won, every downstream system is populated automatically — job records, customer files, production schedules, and crew notifications happen without anyone lifting a finger",
       "layout": "vertical",
@@ -150,7 +546,38 @@
         "P-dai-02",
         "P-dai-01"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Production Update"
+        },
+        {
+          "label": "Stop Execution"
+        },
+        {
+          "label": "List Records"
+        },
+        {
+          "label": "List Time Logs"
+        },
+        {
+          "label": "Loop Time Logs"
+        },
+        {
+          "label": "List Projects"
+        },
+        {
+          "label": "Loop Projects"
+        },
+        {
+          "label": "Project exists?"
+        },
+        {
+          "label": "Process Data (Step 8)"
+        },
+        {
+          "label": "Process Data (Step 9)"
+        }
+      ],
       "pain": "Office staff calling crews for updates, production data trapped in text messages and phone calls, no idea which jobs are on track until someone drives to the site, and weekly reports that are already outdated",
       "solution": "Field crews log production data once, and the entire office sees real-time progress — schedule variances trigger alerts automatically, and daily summaries write themselves",
       "layout": "swimlane",
@@ -176,7 +603,77 @@
         "P-qui-01",
         "P-qui-04"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Time Entry"
+        },
+        {
+          "label": "Update Inactive Jobcodes"
+        },
+        {
+          "label": "Default Days"
+        },
+        {
+          "label": "Adjust Date/Time"
+        },
+        {
+          "label": "Format to ISO Date"
+        },
+        {
+          "label": "Retrieve All Time Sheets"
+        },
+        {
+          "label": "Retrieve All Users"
+        },
+        {
+          "label": "Retrieve All Active JobCodes"
+        },
+        {
+          "label": "Retrieve All Projects"
+        },
+        {
+          "label": "Retrieve All People"
+        },
+        {
+          "label": "Bulk Update Timelogs"
+        },
+        {
+          "label": "Retrieve Eligible Projects"
+        },
+        {
+          "label": "Retrieve All Active Jobcodes"
+        },
+        {
+          "label": "Jobcodes Bulk Update"
+        },
+        {
+          "label": "Update Jobcodes"
+        },
+        {
+          "label": "Retrieve Locations"
+        },
+        {
+          "label": "Upsert Location"
+        },
+        {
+          "label": "Update Location Address"
+        },
+        {
+          "label": "Retrieve All Deleted Time Sheets"
+        },
+        {
+          "label": "Retrieve All Time Logs"
+        },
+        {
+          "label": "Delete Timelogs"
+        },
+        {
+          "label": "Delete Non-Work Time Logs"
+        },
+        {
+          "label": "Bulk Update Users"
+        }
+      ],
       "pain": "Time entries in one app, job codes in another, payroll staff spending hours reconciling who worked where, deleted entries causing phantom hours, and new employees waiting days to be set up in the time system",
       "solution": "Every clock-in, correction, and deletion flows between systems in real-time — job codes stay current, employee profiles sync automatically, and payroll gets clean data without manual reconciliation",
       "layout": "vertical",
@@ -203,7 +700,176 @@
         "P-boo-22",
         "P-boo-07"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Event"
+        },
+        {
+          "label": "Get Cursor"
+        },
+        {
+          "label": "List Project Types"
+        },
+        {
+          "label": "Map Project Types"
+        },
+        {
+          "label": "Fetch QBO Invoices"
+        },
+        {
+          "label": "Get Accepted Quotes"
+        },
+        {
+          "label": "Loop Over Items"
+        },
+        {
+          "label": "Stop Execution 2"
+        },
+        {
+          "label": "Estimate Date To Sync"
+        },
+        {
+          "label": "Time 2 Minutes Ago"
+        },
+        {
+          "label": "Time 2 Minutes Ago to Epoch"
+        },
+        {
+          "label": "Code Block"
+        },
+        {
+          "label": "List Quotes"
+        },
+        {
+          "label": "Loop Over Quotes"
+        },
+        {
+          "label": "Get Job"
+        },
+        {
+          "label": "Get Preferences"
+        },
+        {
+          "label": "Get Invoice"
+        },
+        {
+          "label": "Get Customer By Id"
+        },
+        {
+          "label": "(Job) Customer Payload"
+        },
+        {
+          "label": "Update Parent Customer"
+        },
+        {
+          "label": "List Invoices Linked to Job"
+        },
+        {
+          "label": "Invoice Lines IDs string"
+        },
+        {
+          "label": "Get Invoice Lines"
+        },
+        {
+          "label": "Create Lines Array"
+        },
+        {
+          "label": "Fill Custom Fields"
+        },
+        {
+          "label": "Create Invoice Payload"
+        },
+        {
+          "label": "Create Invoice"
+        },
+        {
+          "label": "Initial Status"
+        },
+        {
+          "label": "Get All Invoices"
+        },
+        {
+          "label": "Filter Voided Invoices"
+        },
+        {
+          "label": "Send Invoice"
+        },
+        {
+          "label": "Find Associated Job"
+        },
+        {
+          "label": "Bill to String"
+        },
+        {
+          "label": "Invoice Payload"
+        },
+        {
+          "label": "Upsert Invoice"
+        },
+        {
+          "label": "Process Invoice Line Items"
+        },
+        {
+          "label": "Crossflow Payload"
+        },
+        {
+          "label": "Process Payments"
+        },
+        {
+          "label": "PDF Subflow Payload"
+        },
+        {
+          "label": "Save Invoice PDF"
+        },
+        {
+          "label": "Filter Transactions"
+        },
+        {
+          "label": "Get All Payment Methods"
+        },
+        {
+          "label": "Loop Over Payments"
+        },
+        {
+          "label": "Get Invoice By Id"
+        },
+        {
+          "label": "Update Invoice Payload"
+        },
+        {
+          "label": "Update Invoice"
+        },
+        {
+          "label": "Update Doc Number Payload"
+        },
+        {
+          "label": "Update Doc Number"
+        },
+        {
+          "label": "Void Invoice"
+        },
+        {
+          "label": "Records to be processed?"
+        },
+        {
+          "label": "Job Found?"
+        },
+        {
+          "label": "Invoice created successfully?"
+        },
+        {
+          "label": "Got any invocies from QBO?"
+        },
+        {
+          "label": "Status Branch"
+        },
+        {
+          "label": "Branch on Expression"
+        },
+        {
+          "label": "Update Successful?"
+        }
+      ],
       "pain": "Unbilled work slipping through the cracks, invoices created in one system but invisible in another, customers getting outdated versions, and voided invoices still showing up in project dashboards",
       "solution": "Unbilled items are detected automatically, invoices flow between accounting and project management in real-time, and every modification syncs everywhere — nothing falls through the cracks",
       "layout": "swimlane",
@@ -228,7 +894,113 @@
         "P-boo-02",
         "P-boo-03"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Expense Data"
+        },
+        {
+          "label": "Current Time"
+        },
+        {
+          "label": "Stopwatch Time"
+        },
+        {
+          "label": "Start Position Value"
+        },
+        {
+          "label": "Set Start Position"
+        },
+        {
+          "label": "Calculated Date"
+        },
+        {
+          "label": "Format Date/Time"
+        },
+        {
+          "label": "Loop N Times"
+        },
+        {
+          "label": "Get Progress"
+        },
+        {
+          "label": "Stop Execution 2"
+        },
+        {
+          "label": "Find Customer Ref"
+        },
+        {
+          "label": "Expense Payload"
+        },
+        {
+          "label": "Upsert Expense Record"
+        },
+        {
+          "label": "Stop Execution (Success)"
+        },
+        {
+          "label": "Download Attachables URL"
+        },
+        {
+          "label": "Get Attachables"
+        },
+        {
+          "label": "Loop Over Attachables"
+        },
+        {
+          "label": "Get Attachables URLs"
+        },
+        {
+          "label": "Attachables Payload"
+        },
+        {
+          "label": "Update Record"
+        },
+        {
+          "label": "Sleep"
+        },
+        {
+          "label": "Update Parent Customer"
+        },
+        {
+          "label": "Execution - Save Value"
+        },
+        {
+          "label": "List Jobs"
+        },
+        {
+          "label": "Loop Over Jobs"
+        },
+        {
+          "label": "List Projects"
+        },
+        {
+          "label": "Loop Over Projects"
+        },
+        {
+          "label": "Expenses Sync enabled?"
+        },
+        {
+          "label": "Customer Ref exists?"
+        },
+        {
+          "label": "Is an Item?"
+        },
+        {
+          "label": "Attachables fetched?"
+        },
+        {
+          "label": "Is this a Job or Project?"
+        },
+        {
+          "label": "Customer Payload"
+        },
+        {
+          "label": "QBO Parent Customer ID Exists?"
+        },
+        {
+          "label": "QBO Sub Customer ID Exists?"
+        }
+      ],
       "pain": "Receipts in email, bills in accounting software, project costs in a spreadsheet — nobody can answer \"how much did we spend on that job?\" without an hour of digging through three different systems",
       "solution": "Every bill, receipt, and transaction is automatically matched to its job, categorized, and stored in one place — real-time job costing without the treasure hunt",
       "layout": "vertical",
@@ -249,7 +1021,41 @@
         "P-sal-01",
         "P-sal-02"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Event"
+        },
+        {
+          "label": "Get Config Variables"
+        },
+        {
+          "label": "Loop Over Items"
+        },
+        {
+          "label": "Stop Execution"
+        },
+        {
+          "label": "Adjust Date/Time"
+        },
+        {
+          "label": "Time 2 Minutes Ago to Epoch"
+        },
+        {
+          "label": "Generate get deal payload"
+        },
+        {
+          "label": "Process Delete Sync"
+        },
+        {
+          "label": "Upsert"
+        },
+        {
+          "label": "Stop Execution 2"
+        },
+        {
+          "label": "Branch on Expression"
+        }
+      ],
       "pain": "Sales managers manually pulling reports from the CRM every Monday, numbers that are already a week old by the time anyone sees them, and no early warning when pipeline health drops",
       "solution": "Dashboards refresh every two minutes with live CRM data — win rates, revenue trends, and pipeline health are always current, and anomalies trigger alerts before they become problems",
       "layout": "vertical",
@@ -293,7 +1099,50 @@
         "P-boo-13",
         "P-gma-05"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Booking Event"
+        },
+        {
+          "label": "Find Customer Ref"
+        },
+        {
+          "label": "Expense Payload"
+        },
+        {
+          "label": "Upsert Expense Record"
+        },
+        {
+          "label": "Crossflow Payload"
+        },
+        {
+          "label": "Save Attachments"
+        },
+        {
+          "label": "Stop Execution (Success)"
+        },
+        {
+          "label": "Calculated Date"
+        },
+        {
+          "label": "Format Date/Time"
+        },
+        {
+          "label": "Start Index"
+        },
+        {
+          "label": "Loop N Times"
+        },
+        {
+          "label": "Branch on Expression"
+        },
+        {
+          "label": "Customer Ref exists?"
+        },
+        {
+          "label": "Is an Item?"
+        }
+      ],
       "pain": "Important updates buried in someone's inbox, text messages sent manually that get forgotten during busy days, error notifications that nobody sees, and no record of what was communicated to whom",
       "solution": "Every system event automatically triggers the right communication on the right channel — emails, texts, calendar updates, and error alerts all fire without human intervention, with full audit trails in the CRM",
       "layout": "swimlane",
@@ -315,7 +1164,80 @@
         "P-boo-03",
         "P-boo-05"
       ],
-      "idealizedSteps": [],
+      "idealizedSteps": [
+        {
+          "label": "Receive Lead Data"
+        },
+        {
+          "label": "Sleep"
+        },
+        {
+          "label": "Loop Over Engagements"
+        },
+        {
+          "label": "Generate Payload"
+        },
+        {
+          "label": "Lookup Project"
+        },
+        {
+          "label": "Lookup Sources"
+        },
+        {
+          "label": "Final Contact Payload"
+        },
+        {
+          "label": "Get Contact"
+        },
+        {
+          "label": "Final Deal Payload"
+        },
+        {
+          "label": "Get Deal"
+        },
+        {
+          "label": "Override payload"
+        },
+        {
+          "label": "CRM: Search Contact by id"
+        },
+        {
+          "label": "CRM: Search Contact by email"
+        },
+        {
+          "label": "Select Executed Step Result"
+        },
+        {
+          "label": "Merged Payload"
+        },
+        {
+          "label": "CRM: Get Contact Properties"
+        },
+        {
+          "label": "List Contact Properties"
+        },
+        {
+          "label": "Loop Over Deals"
+        },
+        {
+          "label": "Deal Error Handler"
+        },
+        {
+          "label": "Project Type Branch"
+        },
+        {
+          "label": "Marketing Source Branch"
+        },
+        {
+          "label": "Contact Branch"
+        },
+        {
+          "label": "HS Contact Final Output"
+        },
+        {
+          "label": "Check properties exist"
+        }
+      ],
       "pain": "Sales reps manually searching for contacts before every call, duplicate records piling up in the CRM, and no consistent process for merging contact data from different marketing channels",
       "solution": "Every contact is automatically searched by ID and email, merged with existing data if found, or created fresh if new — zero duplicates, zero manual lookups, always the latest info",
       "layout": "vertical",
@@ -332,8 +1254,80 @@
       "title": "Message Transpiler",
       "journeyStage": "Uncategorized",
       "journeySlug": "message-transpiler",
-      "processIds": ["P-boo-15"],
-      "idealizedSteps": [],
+      "processIds": [
+        "P-boo-15"
+      ],
+      "idealizedSteps": [
+        {
+          "label": "Receive Event"
+        },
+        {
+          "label": "Get latest open deal"
+        },
+        {
+          "label": "Get YCBM Link"
+        },
+        {
+          "label": "Get Short Link"
+        },
+        {
+          "label": "Build Query"
+        },
+        {
+          "label": "Start Index"
+        },
+        {
+          "label": "Loop N Times"
+        },
+        {
+          "label": "Get All Owners"
+        },
+        {
+          "label": "Get Project Types"
+        },
+        {
+          "label": "Get All Companies"
+        },
+        {
+          "label": "Get All PS Quotes"
+        },
+        {
+          "label": "Get All PS Contacts"
+        },
+        {
+          "label": "HS Payload Contact"
+        },
+        {
+          "label": "Bulk upsert contact"
+        },
+        {
+          "label": "Get All HS Contacts"
+        },
+        {
+          "label": "Get all HS Deals"
+        },
+        {
+          "label": "PS Quote x HS Deal Sync"
+        },
+        {
+          "label": "Stop Execution"
+        },
+        {
+          "label": "Photo Management Sync X HubSpot Deal"
+        },
+        {
+          "label": "CRM: List Deals"
+        },
+        {
+          "label": "CRM: List Contacts"
+        },
+        {
+          "label": "Bulk Contact Association"
+        },
+        {
+          "label": "Branch on Expression"
+        }
+      ],
       "pain": "Staff manually looking up deals, copying booking links, and shortening URLs before every customer message — slow, error-prone, and impossible to scale during peak season",
       "solution": "Every outbound customer message automatically pulls the latest deal context, generates a personalized booking link, shortens it, and routes the right message format — customers get the right link in seconds, not minutes",
       "layout": "vertical",
@@ -345,5 +1339,6 @@
         "rightLabel": "Follow-up"
       }
     }
-  ]
+  ],
+  "lastDerived": "2026-04-14T08:56:40.842Z"
 }
