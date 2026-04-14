@@ -1,0 +1,630 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 11 QBO Transactions
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: schedule
+        component:
+          isPublic: true
+          key: schedule-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+      schedule:
+        meta:
+          scheduleType: minute
+          timeZone: ""
+        type: value
+        value: "*/5 * * * *"
+    - action:
+        key: adjustDateTime
+        component:
+          isPublic: true
+          key: datetime
+          version: LATEST
+      description: ""
+      inputs:
+        dateTimeInput:
+          type: reference
+          value: trigger.results.startedAt
+        daysInput:
+          type: value
+          value: "-7"
+        hoursInput:
+          type: value
+          value: ""
+        minutesInput:
+          type: value
+          value: ""
+        secondsInput:
+          type: value
+          value: ""
+      name: Adjust Date/Time
+    - action:
+        key: formatDateTime
+        component:
+          isPublic: true
+          key: datetime
+          version: LATEST
+      description: ""
+      inputs:
+        dateTime:
+          type: reference
+          value: adjustDateTime.results
+        format:
+          type: value
+          value: YYYY-MM-DD
+        timeZone:
+          type: value
+          value: etc/UTC
+      name: Format Date/Time
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: quickbooks
+          version: LATEST
+      description: ""
+      inputs:
+        connection:
+          type: configVar
+          value: QuickBooks Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value: []
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: query?query=SELECT%20*%20FROM%20PaymentMethod
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get All Payment Methods
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: quickbooks
+          version: LATEST
+      description: ""
+      inputs:
+        connection:
+          type: configVar
+          value: QuickBooks Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: Content-Type
+              type: value
+              value: application/json
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: template
+          value: /query?query=SELECT%20*%20FROM%20SalesReceipt%20WHERE%20MetaData.LastUpdatedTime%20%3E%20'{{$formatDateTime.results}}'
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Sales Receipts
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: If Exist
+          steps:
+            - action:
+                key: loopOverItems
+                component:
+                  isPublic: true
+                  key: loop
+                  version: LATEST
+              description: ""
+              inputs:
+                items:
+                  type: reference
+                  value: getSalesReceipts.results.QueryResponse.SalesReceipt
+              name: Loop Over Receipts
+              steps:
+                - action:
+                    key: listRecords
+                    component:
+                      isPublic: true
+                      key: airtable
+                      version: LATEST
+                  description: ""
+                  errorConfig:
+                    delaySeconds: 5
+                    errorHandlerType: retry
+                    ignoreFinalError: false
+                    maxAttempts: 3
+                    usesExponentialBackoff: false
+                  inputs:
+                    airtableConnection:
+                      type: configVar
+                      value: Airtable Connection
+                    baseId:
+                      type: configVar
+                      value: Project Management Base
+                    fields:
+                      type: complex
+                      value: []
+                    filterByFormula:
+                      type: template
+                      value: "{QBO Parent Customer ID} =
+                        {{$loopOverReceipts.currentItem.CustomerRef.value}}"
+                    tableName:
+                      type: configVar
+                      value: Jobs Table
+                    view:
+                      type: value
+                      value: ""
+                  name: Get Associated Job 2
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+                          const saleReceipt = stepResults.loopOverReceipts.currentItem;
+                          const job = stepResults.getAssociatedJob2.results[0] || {};
+                          const jobId = job.id || ""
+                          
+                          const paymentMethods = stepResults.getAllPaymentMethods.results.QueryResponse?.PaymentMethod || []
+                          const paymentMethodId = String(saleReceipt?.PaymentMethodRef?.value || "");
+                          const currentPaymentMethod = paymentMethods.find(
+                            m => String(m.Id) === paymentMethodId
+                          );
+
+
+                          const upsertPayload = {
+                            performUpsert: {
+                              fieldsToMergeOn: ["Payment ID"],
+                            },
+                            records: [
+                              {
+                                fields: {
+                                  "Payment Amount": saleReceipt.TotalAmt,
+                                  "Payment Date": saleReceipt.TxnDate,
+                                  "Payment ID": saleReceipt.Id,
+                                  "Payment Method": currentPaymentMethod?.Name || ""
+                                },
+                              },
+                            ],
+                          };
+
+                          if (jobId) {
+                            upsertPayload.records[0].fields["Job"] = [jobId]
+                          }
+                          
+                          return { data: upsertPayload };
+                        };
+                  name: Generate Receipt Payload
+                - action:
+                    key: rawRequest
+                    component:
+                      isPublic: true
+                      key: airtable
+                      version: LATEST
+                  description: In Customer Transactions table
+                  errorConfig:
+                    delaySeconds: 5
+                    errorHandlerType: retry
+                    ignoreFinalError: false
+                    maxAttempts: 3
+                    usesExponentialBackoff: false
+                  inputs:
+                    connection:
+                      type: configVar
+                      value: Airtable Connection
+                    data:
+                      type: reference
+                      value: generateReceiptPayload.results
+                    debugRequest:
+                      type: value
+                      value: "false"
+                    fileData:
+                      type: complex
+                      value: []
+                    fileDataFileNames:
+                      type: complex
+                      value: []
+                    formData:
+                      type: complex
+                      value: []
+                    headers:
+                      type: complex
+                      value: []
+                    maxRetries:
+                      type: value
+                      value: "0"
+                    method:
+                      type: value
+                      value: PATCH
+                    queryParams:
+                      type: complex
+                      value: []
+                    responseType:
+                      type: value
+                      value: json
+                    retryAllErrors:
+                      type: value
+                      value: "false"
+                    retryDelayMS:
+                      type: value
+                      value: "0"
+                    timeout:
+                      type: value
+                      value: ""
+                    url:
+                      type: template
+                      value: /v0/{{#Project Management Base}}/{{#Customer Transactions Table}}
+                    useExponentialBackoff:
+                      type: value
+                      value: "false"
+                  name: Upsert Sales Receipts
+        - name: Else
+          steps:
+            - action:
+                key: writeLog
+                component:
+                  isPublic: true
+                  key: log
+                  version: LATEST
+              description: ""
+              inputs:
+                level:
+                  type: value
+                  value: info
+                message:
+                  type: reference
+                  value: getSalesReceipts.results
+              name: Else Sales Receipt Log
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: If Exist
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: getSalesReceipts.results.QueryResponse.SalesReceipt
+      name: Sales Receipt Branch
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: quickbooks
+          version: LATEST
+      description: ""
+      inputs:
+        connection:
+          type: configVar
+          value: QuickBooks Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: Content-Type
+              type: value
+              value: application/json
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: template
+          value: /query?query=SELECT%20*%20FROM%20Payment%20WHERE%20MetaData.LastUpdatedTime%20%3E%20%27{{$formatDateTime.results}}%27
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Payments
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: If Payment Exist
+          steps:
+            - action:
+                key: loopOverItems
+                component:
+                  isPublic: true
+                  key: loop
+                  version: LATEST
+              description: ""
+              inputs:
+                items:
+                  type: reference
+                  value: getPayments.results.QueryResponse.Payment
+              name: Loop Over Payments
+              steps:
+                - action:
+                    key: listRecords
+                    component:
+                      isPublic: true
+                      key: airtable
+                      version: LATEST
+                  description: ""
+                  errorConfig:
+                    delaySeconds: 5
+                    errorHandlerType: retry
+                    ignoreFinalError: false
+                    maxAttempts: 3
+                    usesExponentialBackoff: false
+                  inputs:
+                    airtableConnection:
+                      type: configVar
+                      value: Airtable Connection
+                    baseId:
+                      type: configVar
+                      value: Project Management Base
+                    fields:
+                      type: complex
+                      value: []
+                    filterByFormula:
+                      type: template
+                      value: "{QBO Parent Customer ID} =
+                        {{$loopOverPayments.currentItem.CustomerRef.value}}"
+                    tableName:
+                      type: configVar
+                      value: Jobs Table
+                    view:
+                      type: value
+                      value: ""
+                  name: Get Associated Job
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+                          const payment = stepResults.loopOverPayments.currentItem;
+                          const job = stepResults.getAssociatedJob.results[0] || {};
+                          const jobId = job.id || "";
+                          const paymentMethods = stepResults.getAllPaymentMethods.results.QueryResponse?.PaymentMethod || []
+                          const paymentMethodId = String(payment?.PaymentMethodRef?.value || "");
+                          const currentPaymentMethod = paymentMethods.find(
+                            m => String(m.Id) === paymentMethodId
+                          );
+
+                          const upsertPayload = {
+                            performUpsert: {
+                              fieldsToMergeOn: ["Payment ID"],
+                            },
+                            records: [
+                              {
+                                fields: {
+                                  "Payment Amount": payment.TotalAmt,
+                                  "Payment Date": payment.TxnDate,
+                                  "Payment ID": payment.Id,
+                                  "Payment Method": currentPaymentMethod?.Name || ""
+                                },
+                              },
+                            ],
+                          };
+
+                          if (jobId) {
+                            upsertPayload.records[0].fields["Job"] = [jobId];
+                          }
+
+                          return { data: upsertPayload };
+                        };
+                  name: Generate Payment Payload
+                - action:
+                    key: rawRequest
+                    component:
+                      isPublic: true
+                      key: airtable
+                      version: LATEST
+                  description: In Customer Transactions table
+                  errorConfig:
+                    delaySeconds: 5
+                    errorHandlerType: retry
+                    ignoreFinalError: false
+                    maxAttempts: 3
+                    usesExponentialBackoff: false
+                  inputs:
+                    connection:
+                      type: configVar
+                      value: Airtable Connection
+                    data:
+                      type: reference
+                      value: generatePaymentPayload.results
+                    debugRequest:
+                      type: value
+                      value: "false"
+                    fileData:
+                      type: complex
+                      value: []
+                    fileDataFileNames:
+                      type: complex
+                      value: []
+                    formData:
+                      type: complex
+                      value: []
+                    headers:
+                      type: complex
+                      value: []
+                    maxRetries:
+                      type: value
+                      value: "0"
+                    method:
+                      type: value
+                      value: PATCH
+                    queryParams:
+                      type: complex
+                      value: []
+                    responseType:
+                      type: value
+                      value: json
+                    retryAllErrors:
+                      type: value
+                      value: "false"
+                    retryDelayMS:
+                      type: value
+                      value: "0"
+                    timeout:
+                      type: value
+                      value: ""
+                    url:
+                      type: template
+                      value: /v0/{{#Project Management Base}}/{{#Customer Transactions Table}}
+                    useExponentialBackoff:
+                      type: value
+                      value: "false"
+                  name: Upsert Payments
+        - name: Else
+          steps:
+            - action:
+                key: writeLog
+                component:
+                  isPublic: true
+                  key: log
+                  version: LATEST
+              description: ""
+              inputs:
+                level:
+                  type: value
+                  value: info
+                message:
+                  type: reference
+                  value: getPayments.results
+              name: Else Payments Log
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: If Payment Exist
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: getPayments.results.QueryResponse.Payment
+      name: Payments Branch

@@ -1,0 +1,273 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: Event Router
+  description: Work in progress - Ready to test in an Alpha.
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: webhook
+        component:
+          isPublic: true
+          key: webhook-triggers
+          version: LATEST
+      description: ""
+      inputs:
+        body:
+          type: value
+          value: ""
+        contentType:
+          type: value
+          value: ""
+        headers:
+          type: complex
+          value: []
+        statusCode:
+          type: value
+          value: ""
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Expenses
+          steps:
+            - action:
+                key: stopExecution
+                component:
+                  isPublic: true
+                  key: stop-execution
+                  version: LATEST
+              description: ""
+              inputs:
+                contentType:
+                  type: value
+                  value: application/json
+                headers:
+                  type: complex
+                  value: []
+                jsonBody:
+                  type: value
+                  value: ""
+                statusCode:
+                  type: value
+                  value: "200"
+              name: Stop Execution
+            - action:
+                key: branchOnExpression
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              branches:
+                - name: Update
+                  steps: []
+                - name: Delete
+                  steps:
+                    - action:
+                        key: invokeFlow
+                        component:
+                          isPublic: true
+                          key: cross-flow
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        data:
+                          type: template
+                          value: '{ "qboExpenseId": "{{$trigger.results.body.data.entities.0.id}}" }'
+                        flowName:
+                          type: value
+                          value: Sync Expense
+                      name: Delete expense in Airtable
+                - name: Else
+                  steps: []
+              description: ""
+              inputs:
+                conditions:
+                  type: complex
+                  value:
+                    - name: Update
+                      type: complex
+                      value:
+                        - and
+                        - - equal
+                          - name: ""
+                            type: reference
+                            value: trigger.results.body.data.entities.0.operation
+                          - name: ""
+                            type: value
+                            value: Update
+                    - name: Delete
+                      type: complex
+                      value:
+                        - and
+                        - - equal
+                          - name: ""
+                            type: reference
+                            value: trigger.results.body.data.entities.0.operation
+                          - name: ""
+                            type: value
+                            value: Delete
+              name: Check Operation (Expenses)
+        - name: Invoices
+          steps:
+            - action:
+                key: stopExecution
+                component:
+                  isPublic: true
+                  key: stop-execution
+                  version: LATEST
+              description: ""
+              inputs:
+                contentType:
+                  type: value
+                  value: application/json
+                headers:
+                  type: complex
+                  value: []
+                jsonBody:
+                  type: value
+                  value: ""
+                statusCode:
+                  type: value
+                  value: "200"
+              name: Stop Execution 2
+            - action:
+                key: branchOnExpression
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              branches:
+                - name: Update
+                  steps: []
+                - name: Delete
+                  steps: []
+                - name: Else
+                  steps: []
+              description: ""
+              inputs:
+                conditions:
+                  type: complex
+                  value:
+                    - name: Update
+                      type: complex
+                      value:
+                        - and
+                        - - equal
+                          - name: ""
+                            type: reference
+                            value: trigger.results.body.data.entities.0.operation
+                          - name: ""
+                            type: value
+                            value: Update
+                    - name: Delete
+                      type: complex
+                      value:
+                        - and
+                        - - equal
+                          - name: ""
+                            type: reference
+                            value: trigger.results.body.data.entities.0.operation
+                          - name: ""
+                            type: value
+                            value: Delete
+              name: Check Operation (Invoices)
+        - name: Account
+          steps:
+            - action:
+                key: invokeFlow
+                component:
+                  isPublic: true
+                  key: cross-flow
+                  version: LATEST
+              description: ""
+              inputs:
+                data:
+                  type: reference
+                  value: trigger.results.body.data.entities.0
+                flowName:
+                  type: value
+                  value: Sync Account
+              name: Sync Account
+        - name: Payment
+          steps:
+            - action:
+                key: invokeFlow
+                component:
+                  isPublic: true
+                  key: cross-flow
+                  version: LATEST
+              description: ""
+              inputs:
+                data:
+                  type: reference
+                  value: trigger.results.body.data.entities.0
+                flowName:
+                  type: value
+                  value: Sync Payment
+              name: Sync Payment
+        - name: Else
+          steps: []
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Expenses
+              type: complex
+              value:
+                - or
+                - - equal
+                  - name: ""
+                    type: reference
+                    value: trigger.results.body.data.entities.0.name
+                  - name: ""
+                    type: value
+                    value: Bill
+                - - equal
+                  - name: ""
+                    type: reference
+                    value: trigger.results.body.data.entities.0.name
+                  - name: ""
+                    type: value
+                    value: VendorCredit
+            - name: Invoices
+              type: complex
+              value:
+                - and
+                - - equal
+                  - name: ""
+                    type: reference
+                    value: trigger.results.body.data.entities.0.name
+                  - name: ""
+                    type: value
+                    value: Invoice
+            - name: Account
+              type: complex
+              value:
+                - and
+                - - equal
+                  - name: ""
+                    type: reference
+                    value: trigger.results.body.data.entities.0.name
+                  - name: ""
+                    type: value
+                    value: Account
+            - name: Payment
+              type: complex
+              value:
+                - and
+                - - equal
+                  - name: ""
+                    type: reference
+                    value: trigger.results.body.data.entities.0.name
+                  - name: ""
+                    type: value
+                    value: Payment
+      name: Check event type

@@ -1,0 +1,369 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 02 Upsert QBO Parent Customer Linked to Jobs
+  description: Upsert QBO Parent Customer Linked to Jobs
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: schedule
+        component:
+          isPublic: true
+          key: schedule-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+      schedule:
+        meta:
+          scheduleType: minute
+          timeZone: ""
+        type: value
+        value: "*/30 * * * *"
+    - action:
+        key: listRecords
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 5
+        errorHandlerType: retry
+        ignoreFinalError: true
+        maxAttempts: 2
+        usesExponentialBackoff: false
+      inputs:
+        airtableConnection:
+          type: configVar
+          value: Airtable Connection
+        baseId:
+          type: configVar
+          value: Project Management Base
+        fields:
+          type: complex
+          value: []
+        filterByFormula:
+          type: template
+          value: AND({{{#⚙️ Update Customer QBO Field - Jobs}}} = "TRUE", {Job Status} !=
+            "Closed", {{{#⚙️Include in QBO Customer Customer Upsert Automation
+            Field - Jobs}}} = "TRUE")
+        tableName:
+          type: configVar
+          value: Jobs Table
+        view:
+          type: value
+          value: ""
+      name: List Jobs
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: listJobs.results
+      name: Loop Over Jobs
+      steps:
+        - action:
+            key: invokeFlow
+            component:
+              isPublic: true
+              key: cross-flow
+              version: LATEST
+          description: Invoke flow
+          inputs:
+            data:
+              type: reference
+              value: loopOverJobs.currentItem
+            flowName:
+              type: value
+              value: 02.1 Process Job
+          name: Process Job
+        - action:
+            key: convertToString
+            component:
+              isPublic: true
+              key: change-data-format
+              version: LATEST
+          description: ""
+          inputs:
+            value:
+              type: reference
+              value: processJob.results
+          name: Process Job Result
+        - action:
+            key: branchOnExpression
+            component:
+              isPublic: true
+              key: branch
+              version: LATEST
+          branches:
+            - name: Yes
+              steps:
+                - action:
+                    key: getCustomerById
+                    component:
+                      isPublic: true
+                      key: quickbooks
+                      version: LATEST
+                  description: ""
+                  errorConfig:
+                    delaySeconds: null
+                    errorHandlerType: ignore
+                    ignoreFinalError: null
+                    maxAttempts: null
+                    usesExponentialBackoff: null
+                  inputs:
+                    debug:
+                      type: value
+                      value: "false"
+                    id:
+                      type: reference
+                      value: processJobResult.results
+                    quickbooksConnection:
+                      type: configVar
+                      value: QuickBooks Connection
+                  name: Get Customer By Id
+                - action:
+                    key: branchOnExpression
+                    component:
+                      isPublic: true
+                      key: branch
+                      version: LATEST
+                  branches:
+                    - name: Yes
+                      steps:
+                        - action:
+                            key: getCurrentDateTime
+                            component:
+                              isPublic: true
+                              key: datetime
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            displayEpochInSeconds:
+                              type: value
+                              value: "false"
+                          name: Get Current Timedate
+                        - action:
+                            key: runCode
+                            component:
+                              isPublic: true
+                              key: code
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            code:
+                              type: value
+                              value: >
+                                module.exports = async ({ logger, configVars },
+                                stepResults) => {
+                                  let date = new Date(stepResults.getCurrentTimedate.results);
+
+                                  date.setSeconds(date.getSeconds() + 3);
+                                  return { data: date };
+                                };
+                          name: Add seconds to Timedate
+                        - action:
+                            key: updateRecord
+                            component:
+                              isPublic: true
+                              key: airtable
+                              version: LATEST
+                          description: ""
+                          errorConfig:
+                            delaySeconds: 10
+                            errorHandlerType: retry
+                            ignoreFinalError: false
+                            maxAttempts: 3
+                            usesExponentialBackoff: false
+                          inputs:
+                            airtableConnection:
+                              type: configVar
+                              value: Airtable Connection
+                            baseId:
+                              type: configVar
+                              value: Project Management Base
+                            dynamicFields:
+                              type: value
+                              value: ""
+                            record:
+                              type: reference
+                              value: loopOverJobs.currentItem.id
+                            recordFields:
+                              type: complex
+                              value:
+                                - name:
+                                    type: value
+                                    value: QBO Parent Customer ID
+                                  type: reference
+                                  value: processJobResult.results
+                                - name:
+                                    type: value
+                                    value: ⚙️ QBO Customer Last Sync
+                                  type: reference
+                                  value: addSecondsToTimedate.results
+                                - name:
+                                    type: value
+                                    value: ⚙️ Boolean Automation System Status
+                                  type: value
+                                  value: " "
+                            tableName:
+                              type: configVar
+                              value: Jobs Table
+                          name: Update Record
+                        - action:
+                            key: runCode
+                            component:
+                              isPublic: true
+                              key: code
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            code:
+                              type: value
+                              value: >
+                                module.exports = async ({ logger, configVars },
+                                stepResults) => {
+                                  const job = stepResults.loopOverJobs.currentItem;
+
+                                  const payload = {
+                                    recordType: "Job",
+                                    id: job.id,
+                                  };
+
+                                  return { data: payload };
+                                };
+                          name: Cross Flow Payload
+                        - action:
+                            key: invokeFlow
+                            component:
+                              isPublic: true
+                              key: cross-flow
+                              version: LATEST
+                          description: Invoke flow
+                          inputs:
+                            data:
+                              type: reference
+                              value: crossFlowPayload.results
+                            flowName:
+                              type: value
+                              value: 04 Sync QBO Customer
+                          name: Sync QB Parent Customer
+                    - name: Else
+                      steps:
+                        - action:
+                            key: updateRecord
+                            component:
+                              isPublic: true
+                              key: airtable
+                              version: LATEST
+                          description: ""
+                          errorConfig:
+                            delaySeconds: 10
+                            errorHandlerType: retry
+                            ignoreFinalError: false
+                            maxAttempts: 3
+                            usesExponentialBackoff: false
+                          inputs:
+                            airtableConnection:
+                              type: configVar
+                              value: Airtable Connection
+                            baseId:
+                              type: configVar
+                              value: Project Management Base
+                            dynamicFields:
+                              type: value
+                              value: ""
+                            record:
+                              type: reference
+                              value: loopOverJobs.currentItem.id
+                            recordFields:
+                              type: complex
+                              value:
+                                - name:
+                                    type: value
+                                    value: ⚙️ Boolean Automation System Status
+                                  type: value
+                                  value: Invalid Customer ID. Customer not found in QBO.
+                            tableName:
+                              type: configVar
+                              value: Jobs Table
+                          name: Update Record (Error)
+                  description: ""
+                  inputs:
+                    conditions:
+                      type: complex
+                      value:
+                        - name: Yes
+                          type: complex
+                          value:
+                            - and
+                            - - doesNotExist
+                              - name: ""
+                                type: reference
+                                value: getCustomerById.results.error
+                  name: Customer Found
+            - name: Else
+              steps:
+                - action:
+                    key: updateRecord
+                    component:
+                      isPublic: true
+                      key: airtable
+                      version: LATEST
+                  description: ""
+                  errorConfig:
+                    delaySeconds: 10
+                    errorHandlerType: retry
+                    ignoreFinalError: false
+                    maxAttempts: 3
+                    usesExponentialBackoff: false
+                  inputs:
+                    airtableConnection:
+                      type: configVar
+                      value: Airtable Connection
+                    baseId:
+                      type: configVar
+                      value: Project Management Base
+                    dynamicFields:
+                      type: value
+                      value: ""
+                    record:
+                      type: reference
+                      value: loopOverJobs.currentItem.id
+                    recordFields:
+                      type: complex
+                      value:
+                        - name:
+                            type: value
+                            value: ⚙️ Boolean Automation System Status
+                          type: value
+                          value: Error while Processing the Job. No ID returned.
+                    tableName:
+                      type: configVar
+                      value: Jobs Table
+                  name: Update Record (Error) 2
+          description: ""
+          inputs:
+            conditions:
+              type: complex
+              value:
+                - name: Yes
+                  type: complex
+                  value:
+                    - and
+                    - - isNotEmpty
+                      - name: ""
+                        type: reference
+                        value: processJobResult.results
+                      - name: ""
+                        type: value
+                        value: ""
+          name: Is a valid ID?

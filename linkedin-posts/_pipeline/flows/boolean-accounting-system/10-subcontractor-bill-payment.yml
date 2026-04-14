@@ -1,0 +1,491 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 10 Subcontractor Bill Payment
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: schedule
+        component:
+          isPublic: true
+          key: schedule-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Subcontractor Bill Payment Trigger
+      schedule:
+        meta:
+          scheduleType: minute
+          timeZone: ""
+        type: value
+        value: "*/2 * * * *"
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Yes
+          steps: []
+        - name: Else
+          steps:
+            - action:
+                key: stopExecution
+                component:
+                  isPublic: true
+                  key: stop-execution
+                  version: LATEST
+              description: ""
+              inputs:
+                contentType:
+                  type: value
+                  value: application/json
+                headers:
+                  type: complex
+                  value: []
+                jsonBody:
+                  type: value
+                  value: ""
+                statusCode:
+                  type: value
+                  value: "200"
+              name: Stop Execution
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Yes
+              type: complex
+              value:
+                - and
+                - - equal
+                  - name: ""
+                    type: configVar
+                    value: Sync Bills and Vendor Credits
+                  - name: ""
+                    type: value
+                    value: "true"
+      name: Expenses sync enabled?
+    - action:
+        key: listRecords
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: ""
+      inputs:
+        airtableConnection:
+          type: configVar
+          value: Airtable Connection
+        baseId:
+          type: configVar
+          value: Project Management Base
+        fields:
+          type: complex
+          value: []
+        filterByFormula:
+          type: value
+          value: AND({QBO Expense ID} = "", {Type} = "Bill", {Vendor})
+        tableName:
+          type: configVar
+          value: Expenses Table
+        view:
+          type: value
+          value: ""
+      name: List Expenses
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: listExpenses.results
+      name: Loop Over Expenses
+      steps:
+        - action:
+            key: runCode
+            component:
+              isPublic: true
+              key: code
+              version: LATEST
+          description: ""
+          inputs:
+            code:
+              type: value
+              value: >
+                module.exports = async ({ logger, configVars }, stepResults) =>
+                {
+                  const expenseData = stepResults.loopOverExpenses.currentItem.fields;
+
+                  const detailType = expenseData?.["QBO Expense Detail Type"]
+                    ? expenseData?.["QBO Expense Detail Type"]
+                    : "AccountBasedExpenseLineDetail";
+                  const qboVendorId = expenseData?.["QBO Vendor ID"]
+                    ? expenseData?.["QBO Vendor ID"][0]
+                    : "";
+                  const qboAccountId = expenseData?.["QBO Account ID"]
+                    ? expenseData?.["QBO Account ID"][0]
+                    : "";
+
+                  const errorMsgs = [];
+
+                  if (!qboAccountId) {
+                    errorMsgs.push("qboAccountId was not provided");
+                  }
+                  if (!qboVendorId) {
+                    errorMsgs.push("qboVendorId was not provided");
+                  }
+                  if (!detailType) {
+                    errorMsgs.push("detailType was not provided");
+                  }
+
+                  const errorLog = errorMsgs.length > 0 ? errorMsgs.join(" - ") : "";
+
+                  return { data: errorLog };
+                };
+          name: Check missing data
+        - action:
+            key: branchOnExpression
+            component:
+              isPublic: true
+              key: branch
+              version: LATEST
+          branches:
+            - name: Data is OK
+              steps:
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+                          const syncSubCustomerId =
+                            configVars["Associate Customer/Project on Initial Sync"];
+                          const includeTaxCodeRef = configVars["Include TaxCodeRef"];
+
+                          const expenseData = stepResults.loopOverExpenses.currentItem.fields;
+
+                          const detailType =
+                            expenseData?.["QBO Expense Detail Type"] || "AccountBasedExpenseLineDetail";
+                          const taxCodeId =
+                            expenseData?.["QBO Expense Tax Code ID"]?.value ||
+                            expenseData?.["QBO Expense Tax Code ID"]?.[0] ||
+                            "";
+                          const classId = expenseData?.["QBO Expense Class ID"]?.[0] || "";
+                          const qboVendorId = expenseData?.["QBO Vendor ID"]?.[0] || "";
+                          const qboAccountId = expenseData?.["QBO Account ID"]?.[0] || "";
+                          const subCustomerId = expenseData["QBO Sub-Customer ID"]?.[0] ?? null;
+
+                          const accountBasedExpenseLineDetail = {
+                            AccountRef: {
+                              value: qboAccountId,
+                            },
+                          };
+
+                          if (subCustomerId && syncSubCustomerId === "true") {
+                            accountBasedExpenseLineDetail.CustomerRef = {
+                              value: subCustomerId,
+                            };
+                          }
+
+                          if (includeTaxCodeRef && taxCodeId) {
+                            accountBasedExpenseLineDetail.TaxCodeRef = {
+                              value: taxCodeId,
+                            };
+                          }
+
+                          const payload = {
+                            GlobalTaxCalculation: "TaxExcluded",
+                            Line: [
+                              {
+                                Description: expenseData["Notes"],
+                                DetailType: detailType,
+                                Amount: expenseData["Amount"],
+                                AccountBasedExpenseLineDetail: accountBasedExpenseLineDetail,
+                              },
+                            ],
+                            VendorRef: {
+                              value: qboVendorId,
+                            },
+                          };
+
+                          if (classId) {
+                            payload.ClassRef = {
+                              value: classId,
+                            };
+                          }
+
+                          return { data: payload };
+                        };
+                  name: Generate Payload
+                - action:
+                    key: rawRequest
+                    component:
+                      isPublic: true
+                      key: quickbooks
+                      version: LATEST
+                  description: ""
+                  errorConfig:
+                    delaySeconds: null
+                    errorHandlerType: ignore
+                    ignoreFinalError: null
+                    maxAttempts: null
+                    usesExponentialBackoff: null
+                  inputs:
+                    connection:
+                      type: configVar
+                      value: QuickBooks Connection
+                    data:
+                      type: reference
+                      value: generatePayload.results
+                    debugRequest:
+                      type: value
+                      value: "true"
+                    fileData:
+                      type: complex
+                      value: []
+                    formData:
+                      type: complex
+                      value: []
+                    headers:
+                      type: complex
+                      value:
+                        - name:
+                            type: value
+                            value: Content-Type
+                          type: value
+                          value: application/json
+                    maxRetries:
+                      type: value
+                      value: "0"
+                    method:
+                      type: value
+                      value: POST
+                    queryParams:
+                      type: complex
+                      value: []
+                    responseType:
+                      type: value
+                      value: json
+                    retryAllErrors:
+                      type: value
+                      value: "false"
+                    retryDelayMS:
+                      type: value
+                      value: "0"
+                    timeout:
+                      type: value
+                      value: ""
+                    url:
+                      type: value
+                      value: /bill
+                    useExponentialBackoff:
+                      type: value
+                      value: "false"
+                  name: Create Bill
+                - action:
+                    key: branchOnExpression
+                    component:
+                      isPublic: true
+                      key: branch
+                      version: LATEST
+                  branches:
+                    - name: Yes
+                      steps:
+                        - action:
+                            key: updateRecord
+                            component:
+                              isPublic: true
+                              key: airtable
+                              version: LATEST
+                          description: ""
+                          errorConfig:
+                            delaySeconds: 10
+                            errorHandlerType: retry
+                            ignoreFinalError: false
+                            maxAttempts: 2
+                            usesExponentialBackoff: false
+                          inputs:
+                            airtableConnection:
+                              type: configVar
+                              value: Airtable Connection
+                            baseId:
+                              type: configVar
+                              value: Project Management Base
+                            dynamicFields:
+                              type: value
+                              value: ""
+                            record:
+                              type: reference
+                              value: loopOverExpenses.currentItem.id
+                            recordFields:
+                              type: complex
+                              value:
+                                - name:
+                                    type: value
+                                    value: QBO Expense ID
+                                  type: template
+                                  value: "{{$createBill.results.Bill.Id}}"
+                                - name:
+                                    type: value
+                                    value: Bill Payment Status
+                                  type: value
+                                  value: success
+                                - name:
+                                    type: value
+                                    value: Line ID
+                                  type: reference
+                                  value: createBill.results.Bill.Line.0.Id
+                                - name:
+                                    type: value
+                                    value: Assigned QBO Customer Name
+                                  type: reference
+                                  value: createBill.results.Bill.Line.0.AccountBasedExpenseLineDetail.CustomerRef.name
+                                - name:
+                                    type: value
+                                    value: Assigned QBO Customer ID
+                                  type: reference
+                                  value: createBill.results.Bill.Line.0.AccountBasedExpenseLineDetail.CustomerRef.value
+                            tableName:
+                              type: configVar
+                              value: Expenses Table
+                          name: Update Record - Success
+                    - name: Else
+                      steps:
+                        - action:
+                            key: runCode
+                            component:
+                              isPublic: true
+                              key: code
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            code:
+                              type: value
+                              value: >
+                                module.exports = async ({ logger, configVars },
+                                stepResults) => {
+                                  const response = stepResults.createBill.results.error.message;
+
+                                  const errorDetails = JSON.parse(response);
+
+                                  const parsedError = errorDetails.data.Fault.Error.map(
+                                    (error) => error.Detail,
+                                  ).join(" - ");
+
+                                  return { data: parsedError };
+                                };
+                          name: Parse Create Bill Error
+                        - action:
+                            key: updateRecord
+                            component:
+                              isPublic: true
+                              key: airtable
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            airtableConnection:
+                              type: configVar
+                              value: Airtable Connection
+                            baseId:
+                              type: configVar
+                              value: Project Management Base
+                            dynamicFields:
+                              type: value
+                              value: ""
+                            record:
+                              type: reference
+                              value: loopOverExpenses.currentItem.id
+                            recordFields:
+                              type: complex
+                              value:
+                                - name:
+                                    type: value
+                                    value: Bill Payment Status
+                                  type: reference
+                                  value: parseCreateBillError.results
+                            tableName:
+                              type: configVar
+                              value: Expenses Table
+                          name: Update Record - Error
+                  description: ""
+                  inputs:
+                    conditions:
+                      type: complex
+                      value:
+                        - name: Yes
+                          type: complex
+                          value:
+                            - and
+                            - - doesNotExist
+                              - name: ""
+                                type: reference
+                                value: createBill.results.error.name
+                  name: Bill was created successfully?
+            - name: Else
+              steps:
+                - action:
+                    key: updateRecord
+                    component:
+                      isPublic: true
+                      key: airtable
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    airtableConnection:
+                      type: configVar
+                      value: Airtable Connection
+                    baseId:
+                      type: configVar
+                      value: Project Management Base
+                    dynamicFields:
+                      type: value
+                      value: ""
+                    record:
+                      type: reference
+                      value: loopOverExpenses.currentItem.id
+                    recordFields:
+                      type: complex
+                      value:
+                        - name:
+                            type: value
+                            value: Bill Payment Status
+                          type: reference
+                          value: checkMissingData.results
+                    tableName:
+                      type: configVar
+                      value: Expenses Table
+                  name: Update Record - Error 2
+          description: ""
+          inputs:
+            conditions:
+              type: complex
+              value:
+                - name: Data is OK
+                  type: complex
+                  value:
+                    - and
+                    - - isEmpty
+                      - name: ""
+                        type: reference
+                        value: checkMissingData.results
+                      - name: ""
+                        type: value
+                        value: ""
+          name: Is there missing data?

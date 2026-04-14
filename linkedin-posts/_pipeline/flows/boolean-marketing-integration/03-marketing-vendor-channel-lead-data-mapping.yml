@@ -1,0 +1,452 @@
+sourceFile: boolean-marketing-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 03 Marketing Vendor / Channel Lead Data Mapping
+  description: "Purpose: Format incoming lead data from whatever JSON format a
+    marketing vendor/channel has lead data into the standard format that we need
+    to process the new lead"
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: webhook
+        component:
+          isPublic: true
+          key: webhook-triggers
+          version: LATEST
+      description: ""
+      inputs:
+        body:
+          type: value
+          value: ""
+        contentType:
+          type: value
+          value: ""
+        headers:
+          type: complex
+          value: []
+        statusCode:
+          type: value
+          value: "202"
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: This will manipulate the crm data, mapping, and identifier, then
+        output the HS properties for the flows to use.
+      errorConfig:
+        delaySeconds: 5
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 2
+        usesExponentialBackoff: false
+      inputs:
+        code:
+          type: value
+          value: >-
+            module.exports = async ({ logger, configVars }, stepResults) => {
+                let crmData = stepResults.trigger.results.body.data;
+                let crmDataKeys = Object.keys(crmData);
+                let dealFormatMapping = configVars["Vendor JSON to HS Deal Properties"];
+                let contactFormatMapping = configVars["Vendor JSON to HS Contact Property"];
+                let identifiers = configVars["Vendor Unique Identifier"] || [];
+
+                logger.log("CRM Data:", crmData);
+                logger.log("CRM Data Keys:", crmDataKeys);
+                logger.log("Deal Mapping Config:", dealFormatMapping);
+                logger.log("Contact Mapping Config:", contactFormatMapping);
+                logger.log("Identifier:", identifiers);
+
+                let dealData = null, contactData = null;
+
+                // Get Identifier
+                for (let i = 0; i < identifiers.length; i++) {
+                    let name = identifiers[i].name;
+                    let identifier = identifiers[i].identifier;
+
+                    if (!crmDataKeys.includes(identifier)) {
+                        logger.log(`Skipping ${name} (Identifier: ${identifier}) - Not found in CRM Data.`);
+                        continue;
+                    }
+
+                    logger.log(`Key ID for ${name} (Identifier: ${identifier}):`, identifier);
+
+                    // Run both `pullSpecificMapping` calls in parallel
+                    [dealData, contactData] = await Promise.all([
+                        pullSpecificMapping(name, dealFormatMapping),
+                        pullSpecificMapping(name, contactFormatMapping)
+                    ]);
+
+                    if (dealData || contactData) {
+                        break;
+                    }
+                }
+
+                async function pullSpecificMapping(name, mappedFields) {
+                    if (!mappedFields) return null;
+
+                    let result = mappedFields.filter(item => item.source.includes(name));
+                    return result.length > 0 ? result : null;
+                }
+
+                logger.log("Vendor Deal Data:", dealData);
+                logger.log("Vendor Contact Data:", contactData);
+
+                // **Extract the Correct Source Key Based on Depth**
+                function extractSourceKey(source) {
+                    let parts = source.split(".");
+                    parts.shift(); // Remove the first key dynamically
+                    return parts.join("."); // Join the remaining parts
+                }
+
+                // **Transform the Contact Data Mapping**
+                const contactProperties = (contactData || []).reduce((acc, { source, destination }) => {
+                    let sourceKey = extractSourceKey(source);
+                    let value = sourceKey.split('.').reduce((obj, key) => obj?.[key], crmData) ?? null;
+                    if (value !== null) {
+                        acc[destination] = value;
+                    }
+                    return acc;
+                }, {});
+
+                // **Transform the Deal Data Mapping**
+                const dealProperties = (dealData || []).reduce((acc, { source, destination }) => {
+                    let sourceKey = extractSourceKey(source);
+                    let value = sourceKey.split('.').reduce((obj, key) => obj?.[key], crmData) ?? null;
+                    if (value !== null) {
+                        acc[destination] = value;
+                    }
+                    return acc;
+                }, {});
+
+                return {
+                    contactPayload: { properties: contactProperties },
+                    dealPayload: { properties: dealProperties }
+                };
+            };
+      name: Generate Payload
+    - action:
+        key: invokeFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: Invoke Flow 03.1
+      inputs:
+        data:
+          type: reference
+          value: generatePayload.results.dealPayload
+        flowName:
+          type: value
+          value: 03.1 Customer-Selected Project Type -> Project Type Conversion
+      name: Lookup Project
+    - action:
+        key: invokeFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: Invoke Flow 03.2
+      inputs:
+        data:
+          type: reference
+          value: generatePayload.results.dealPayload
+        flowName:
+          type: value
+          value: 03.2 Customer-Selected Marketing Source -> Multi-Source Conversion
+      name: Lookup Sources
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >-
+            module.exports = async ({ logger, configVars }, stepResults) => {
+
+              let contactData = stepResults.generatePayload.results.contactPayload || {}
+              let sources = stepResults.lookupSources.results || {}
+             
+              // Build the deal payload object
+              let contactPayload = {
+                properties: {        
+                  ...contactData.properties,
+                  primary_contact_marketing_source: sources.primary || "",
+                  // contact_source: sources.primary || "", // Removed for new clients
+                  contact_multi_source_attribution: sources.multiAttribution
+                }
+              };
+
+              // Return the properties object
+              return contactPayload
+            };
+      name: Final Contact Payload
+    - action:
+        key: invokeFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs:
+        data:
+          type: reference
+          value: finalContactPayload.results
+        flowName:
+          type: value
+          value: 03.3 Update/Create HubSpot Contact
+      name: Get Contact
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >-
+            module.exports = async ({ logger, configVars }, stepResults) => {
+
+              let hs_deal_id = stepResults.trigger.results.body.data.hs_deal_id || ""
+              let dealData = stepResults.generatePayload.results?.dealPayload || {}
+              let contactData = stepResults.getContact.results || {}
+              let projectTypes = stepResults.lookupProject.results || ""
+              let sources = stepResults.lookupSources.results || {}
+              
+              let dealName = `${dealData?.properties?.job_contact_first_name || ""} ${dealData?.properties?.job_contact_last_name || ""}`;
+              let contactId = contactData.id
+
+              // Build the contact payload object
+              let dealPayload = {
+                associations: [
+                  {
+                    types: [
+                      {
+                        associationCategory: "HUBSPOT_DEFINED",
+                        associationTypeId: 3
+                      }
+                    ],
+                    to: {
+                      id: contactId
+                    }
+                  }
+                ],
+                properties: {        
+                  dealname: dealName,
+                  dealstage: configVars["Lead - Not Contacted"],
+                  project_type: projectTypes,
+                  primary_marketing_source: sources.primary,
+                  // source: sources.primary, // Removed for new clients
+                  multi_source_attribution: sources.multiAttribution,
+                  ...dealData.properties
+                }
+              };
+
+              // Return the properties object
+              return {
+                dealPayload,
+                hs_deal_id
+              }
+            };
+      name: Final Deal Payload
+    - action:
+        key: invokeFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: null
+        errorHandlerType: ignore
+        ignoreFinalError: null
+        maxAttempts: null
+        usesExponentialBackoff: null
+      inputs:
+        data:
+          type: reference
+          value: finalDealPayload.results
+        flowName:
+          type: value
+          value: 03.4 Update/Create HubSpot Deal
+      name: Get Deal
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Deal Error
+          steps:
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >+
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      
+                      const contactData = stepResults.generatePayload.results.contactPayload.properties || {}
+                      
+                      const subject = configVars["Error Email Template"].filter(item => {
+                        if (item.key == "subject") {
+                          return item
+                        }
+                      })[0].value
+                      const bodyTemplate = configVars["Error Email Template"].filter(item => {
+                        if (item.key == "body") {
+                          return item
+                        }
+                      })[0].value
+                      
+                      logger.log(subject)
+                      logger.log(bodyTemplate)
+
+                      const content = replaceTemplatePlaceholders(bodyTemplate, contactData)
+
+                      function replaceTemplatePlaceholders(template, data) {
+                          return template.replace(/{(.*?)}/g, (match, key) => {
+                              return key in data ? data[key] : match; // Replace if key exists, else keep original placeholder
+                          });
+                      }
+
+                      const emailPayload = {
+
+                        from: configVars['The "From Name" for Automation Alerts'],
+                        to: configVars['Resource Coordinator - Default Notification Email'],
+                        cc: "",
+                        bcc: configVars['HubSpot Portal ID']+'@bcc.hubspot.com',
+                        subject: subject,
+                        body: content
+                      };
+
+                      logger.info("Generated Email Payload:", emailPayload);
+
+                      return { data: emailPayload };
+                    };
+
+
+              name: Error Notification to CSR
+            - action:
+                key: httpPost
+                component:
+                  isPublic: true
+                  key: http
+                  version: LATEST
+              description: Flow 01
+              inputs:
+                connection:
+                  type: configVar
+                  value: ""
+                data:
+                  type: reference
+                  value: errorNotificationToCsr.results
+                debugRequest:
+                  type: value
+                  value: "false"
+                headers:
+                  type: complex
+                  value: []
+                ignoreSslErrors:
+                  type: value
+                  value: "false"
+                includeFullResponse:
+                  type: value
+                  value: "false"
+                maxRetries:
+                  type: value
+                  value: "0"
+                queryParams:
+                  type: complex
+                  value: []
+                responseType:
+                  type: value
+                  value: json
+                retryDelayMS:
+                  type: value
+                  value: "0"
+                retryOnAllErrors:
+                  type: value
+                  value: "false"
+                timeout:
+                  type: value
+                  value: ""
+                url:
+                  type: configVar
+                  value: Email Sender Webhook URL
+                useExponentialBackoff:
+                  type: value
+                  value: "false"
+              name: Send to Communicator Integration
+        - name: Else
+          steps:
+            - action:
+                key: invokeFlow
+                component:
+                  isPublic: true
+                  key: cross-flow
+                  version: LATEST
+              description: ""
+              inputs:
+                data:
+                  type: template
+                  value: |-
+                    {
+                    "contact_id":"{{$getContact.results.id}}"
+                    }
+                flowName:
+                  type: value
+                  value: 14 Auto Reply Business Hours
+              name: Auto Reply Process
+            - action:
+                key: stopExecution
+                component:
+                  isPublic: true
+                  key: stop-execution
+                  version: LATEST
+              description: ""
+              inputs:
+                contentType:
+                  type: value
+                  value: application/json
+                headers:
+                  type: complex
+                  value: []
+                jsonBody:
+                  type: value
+                  value: ""
+                statusCode:
+                  type: value
+                  value: "200"
+              name: Stop Execution
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Deal Error
+              type: complex
+              value:
+                - and
+                - - isTrue
+                  - name: ""
+                    type: reference
+                    value: getDeal.results.error
+      name: Deal Error Handler

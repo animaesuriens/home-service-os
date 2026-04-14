@@ -1,0 +1,651 @@
+sourceFile: boolean-marketing-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 14 Auto Reply Business Hours
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: HTTP
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Enabled Feature
+          steps:
+            - action:
+                key: rawRequest
+                component:
+                  isPublic: true
+                  key: hubspot
+                  version: LATEST
+              description: ""
+              inputs:
+                connection:
+                  type: configVar
+                  value: HubSpot Private App Connection
+                data:
+                  type: value
+                  value: ""
+                fileData:
+                  type: complex
+                  value: []
+                fileDataFileNames:
+                  type: complex
+                  value: []
+                formData:
+                  type: complex
+                  value: []
+                headers:
+                  type: complex
+                  value: []
+                maxRetries:
+                  type: value
+                  value: "0"
+                method:
+                  type: value
+                  value: GET
+                queryParams:
+                  type: complex
+                  value: []
+                responseType:
+                  type: value
+                  value: json
+                retryAllErrors:
+                  type: value
+                  value: "false"
+                retryDelayMS:
+                  type: value
+                  value: "0"
+                timeout:
+                  type: value
+                  value: ""
+                url:
+                  type: value
+                  value: /crm/v3/properties/contacts?archived=false
+                useExponentialBackoff:
+                  type: value
+                  value: "false"
+              name: Get contact properties
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      let properties = stepResults.getContactProperties.results.results;
+
+                      // Filter properties
+                      let propNames = properties
+                        .filter(
+                          (prop) =>
+                            // Exclude "deal_activity" group
+                            prop.groupName !== "deal_activity" &&
+                            // Include "dealstage", "pipeline", and "hubspot_owner_id" explicitly, or exclude "dealstages" group
+                            (prop.name === "dealstage" ||
+                              prop.name === "pipeline" ||
+                              prop.name === "hubspot_owner_id" ||
+                              prop.groupName !== "dealstages")
+                        )
+                        .map((prop) => prop.name);
+                      propNames?.push('mobile')
+                      propNames?.push('mobilephone')
+                      return propNames?.toString();
+                    };
+              name: Contact properties
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      let properties = stepResults?.contactProperties?.results // Extract property names
+                      let hubspotToken = configVars["HubSpot Private App Connection"]?.fields?.accessToken;
+                      if (!hubspotToken) {
+                        throw new Error("HubSpot token not found in configVars");
+                      }
+
+                      const contactId = stepResults.http?.results.body.data.contact_id;
+                      const email = stepResults.http?.results.body.data.jobEmail;
+
+                      let contact = null;
+
+                      try {
+                        if (contactId) {
+                          // 🔹 Get contact by ID with properties
+                          const url = new URL(`https://api.hubapi.com/crm/v3/objects/contacts/${contactId}`);
+                          if (properties.length) {
+                            url.searchParams.append("properties", properties);
+                          }
+
+                          const response = await fetch(url, {
+                            method: "GET",
+                            headers: {
+                              Authorization: `Bearer ${hubspotToken}`,
+                              "Content-Type": "application/json",
+                            },
+                          });
+                          if (!response.ok) throw new Error(`Failed to fetch contact by ID: ${response.statusText}`);
+                          contact = await response.json();
+                        } else if (email) {
+                          // 🔹 Search contact by email with properties
+                          properties = properties.split(",")
+                          const response = await fetch("https://api.hubapi.com/crm/v3/objects/contacts/search", {
+                            method: "POST",
+                            headers: {
+                              Authorization: `Bearer ${hubspotToken}`,
+                              "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({
+                              filterGroups: [
+                                {
+                                  filters: [
+                                    {
+                                      propertyName: "email",
+                                      operator: "EQ",
+                                      value: email,
+                                    },
+                                  ],
+                                },
+                              ],
+                              properties, // request only these properties
+                              limit: 1,
+                            }),
+                          });
+
+                          if (!response.ok) throw new Error(`Failed to search contact by email: ${response.statusText}`);
+                          const data = await response.json();
+                          contact = data.results?.[0] || null;
+                        } else {
+                          throw new Error("No contactId or email provided");
+                        }
+
+                        return contact;
+                      } catch (err) {
+                        logger.error("Error fetching HubSpot contact", err);
+                        throw err;
+                      }
+                    };
+              name: Search Contact By Email or ID
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      // ✅ Step 1: Define a mapping from abbreviations to IANA time zones
+                      const timeZoneMap = {
+                        PST: "America/Los_Angeles",
+                        PDT: "America/Los_Angeles",
+                        MST: "America/Denver",
+                        MDT: "America/Denver",
+                        CST: "America/Chicago",
+                        CDT: "America/Chicago",
+                        EST: "America/New_York",
+                        EDT: "America/New_York",
+                      };
+
+                      // Step 2: Get the configured time zone and resolve to IANA-compatible name
+                      const rawTimeZone = configVars['Time Zone'] || "UTC";
+                      const timeZone = timeZoneMap[rawTimeZone] || rawTimeZone;
+
+                      const openHour = configVars['Open Hour'];
+                      const replyDuringBusinessHours = configVars['Do you want to auto reply during business hours?'] === "true";
+                      const replyAfterBusinessHours = configVars['Do you want to auto reply after business hours?'] === "true";
+                      const openBusinessResponseEmail = configVars['Open Business Response Email Template'];
+                      const openBusinessResponseText = configVars['Open Business Response Text Template'];
+                      const closeBusinessResponseEmail = configVars['Close Business Response Email Template'];
+                      const closeBusinessResponseText = configVars['Close Business Response Text Template'];
+                      const fromNumber = configVars['Company Phone Number'];
+
+                      // Step 3: Get current time in the resolved time zone
+                      const now = new Date();
+                      const nowInTZ = new Date(now.toLocaleString("en-US", { timeZone }));
+
+                      const todayName = nowInTZ.toLocaleDateString("en-US", { weekday: "long", timeZone });
+                      const currentTimeInTZ = nowInTZ.toLocaleTimeString("en-US", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                        hour12: true,
+                        timeZone
+                      });
+                      const currentDateTimeInTZ = nowInTZ.toLocaleString("en-US", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                        hour12: true,
+                        timeZone
+                      });
+
+                      // Step 4: Find today’s schedule
+                      const todaySchedule = openHour?.schedule?.find(s => s.day === todayName);
+                      let send = false;
+                      let responseTemplate = null;
+                      let notificationType = null;
+
+                      if (todaySchedule) {
+                        const parseTime = (timeStr) => {
+                          const [time, modifier] = timeStr.split(" ");
+                          let [hours, minutes] = time.split(":").map(Number);
+                          if (modifier === "PM" && hours !== 12) hours += 12;
+                          if (modifier === "AM" && hours === 12) hours = 0;
+                          return { hours, minutes: minutes || 0 };
+                        };
+
+                        const { hours: openH, minutes: openM } = parseTime(todaySchedule.openTime);
+                        const { hours: closeH, minutes: closeM } = parseTime(todaySchedule.closeTime);
+
+                        const openDate = new Date(nowInTZ);
+                        openDate.setHours(openH, openM, 0, 0);
+
+                        const closeDate = new Date(nowInTZ);
+                        closeDate.setHours(closeH, closeM, 0, 0);
+
+                        // Check business hours
+                        if (replyDuringBusinessHours && nowInTZ >= openDate && nowInTZ <= closeDate) {
+                          send = true;
+                          notificationType = "during_hours";
+                          responseTemplate = {
+                            email: openBusinessResponseEmail,
+                            text: openBusinessResponseText
+                          };
+                        }
+
+                        if (replyAfterBusinessHours && (nowInTZ < openDate || nowInTZ > closeDate)) {
+                          send = true;
+                          notificationType = "after_hours";
+                          responseTemplate = {
+                            email: closeBusinessResponseEmail,
+                            text: closeBusinessResponseText
+                          };
+                        }
+                        
+                         if (todaySchedule.openTime === "Closed" || todaySchedule.closeTime === "Closed") {
+                          send = true;
+                          notificationType = "after_hours";
+                          responseTemplate = {
+                            email: closeBusinessResponseEmail,
+                            text: closeBusinessResponseText
+                          };
+                        }
+
+                        logger.info("Business Hours Evaluation", {
+                          rawTimeZone,
+                          resolvedTimeZone: timeZone,
+                          todayName,
+                          currentDateTimeInTZ,
+                          send,
+                          notificationType
+                        });
+                      } else {
+                        logger.warn("No schedule found for today", { todayName });
+                      }
+
+                      // Step 5: Also log PST (for reference)
+                      const currentTimePST = new Date().toLocaleString("en-US", {
+                        timeZone: "America/Los_Angeles",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: true
+                      });
+
+                      // Create a label like "estTimeNow"
+                      const tzAbbrev = rawTimeZone.toLowerCase();
+                      const tzKey = `${tzAbbrev}TimeNow`;
+
+                      // Format time cleanly (e.g., "10:00 AM")
+                      const formattedCurrentTime = new Date().toLocaleTimeString("en-US", {
+                        timeZone,
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: true
+                      });
+
+                      return {
+                        data: {
+                          fromNumber,
+                          rawTimeZone,
+                          resolvedTimeZone: timeZone,
+                          todayName,
+                          currentTimeInTZ,
+                          currentDateTimeInTZ,
+                          replyDuringBusinessHours,
+                          replyAfterBusinessHours,
+                          responseTemplate,
+                          notificationType,
+                          send,
+                          currentTimePST,
+                          [tzKey]: formattedCurrentTime  // 👈 dynamically adds e.g. estTimeNow: "10:00 AM"
+                        }
+                      };
+                    }
+              name: Initialize data
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      let contact_id = stepResults?.http?.results?.body?.data?.contact_id
+                      let emailData = stepResults?.initializeData.results.responseTemplate?.email
+                      let text_template = stepResults?.initializeData.results.responseTemplate?.text
+
+                      let emailMessage = ""
+                      let emailSubject = ""
+
+                      for(let item of emailData){
+                        if (item?.key === "body") {
+                            emailMessage = item.value;
+                        }
+                         if (item?.key === "subject") {
+                             emailSubject = item.value;
+                         }
+                      }
+
+                      return {
+                          data: {
+                              text: {
+                                  contact_id,
+                                  template: text_template,
+                              },
+                              email: {
+                                  contact_id,
+                                  template: emailMessage,
+                              },
+                              breakdown: {
+                                  contact_id,
+                                  emailSubject,
+                                  emailMessage,
+                              },
+                              contact_id,
+                              double:true
+                          },
+                      };
+                    };
+              name: Transpile Message Payload
+            - action:
+                key: invokeFlow
+                component:
+                  isPublic: true
+                  key: cross-flow
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: 10
+                errorHandlerType: retry
+                ignoreFinalError: false
+                maxAttempts: 2
+                usesExponentialBackoff: false
+              inputs:
+                data:
+                  type: reference
+                  value: transpileMessagePayload.results
+                flowName:
+                  type: value
+                  value: 15 - Message Transpiler
+              name: Transform Message
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      let customerPhone = stepResults?.searchContactByEmailOrId?.results?.properties?.mobilephone || 
+                      stepResults?.searchContactByEmailOrId?.results?.properties?.phone
+
+                      let customerEmail = stepResults?.searchContactByEmailOrId?.results?.properties?.email ||""
+                      let fromNumber = configVars['Company Phone Number']
+                      let textMessage = stepResults?.transformMessage?.results?.text_message
+                      let emailMessage = stepResults?.transformMessage?.results?.email_message
+
+                      let emailFrom = configVars['The "From Name" for Automation Alerts']
+                      let emailSubject = stepResults?.transpileMessagePayload?.results?.breakdown?.emailSubject
+
+                      const ccEmail = configVars["Custom CC Email"]
+                      const bccEmail = configVars["Custom BCC Email"]
+
+
+                      return { 
+                        data: {
+                          text_payload:{
+                            from: fromNumber, //fromNumber,
+                            to:customerPhone,
+                            text:textMessage
+                          },
+                           email_payload:{
+                            "from": emailFrom,
+                            "to": customerEmail,
+                            "cc": ccEmail == "None" ? "" : ccEmail,
+                            "bcc": bccEmail == "None" ? "" : bccEmail,
+                            "subject": emailSubject,
+                            "body": emailMessage
+                          }
+                        } 
+                      };
+                    };
+              name: Send Payloads
+            - action:
+                key: branchOnExpression
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              branches:
+                - name: Send Notifications
+                  steps:
+                    - action:
+                        key: httpPost
+                        component:
+                          isPublic: true
+                          key: http
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: ""
+                        data:
+                          type: reference
+                          value: sendPayloads.results.text_payload
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        headers:
+                          type: complex
+                          value:
+                            - name:
+                                type: value
+                                value: content-type
+                              type: value
+                              value: application/json
+                        ignoreSslErrors:
+                          type: value
+                          value: "false"
+                        includeFullResponse:
+                          type: value
+                          value: "false"
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        queryParams:
+                          type: complex
+                          value: []
+                        responseType:
+                          type: value
+                          value: json
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        retryOnAllErrors:
+                          type: value
+                          value: "false"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: configVar
+                          value: Text Sender Webhook URL
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: Send Message
+                    - action:
+                        key: httpPost
+                        component:
+                          isPublic: true
+                          key: http
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: ""
+                        data:
+                          type: reference
+                          value: sendPayloads.results.email_payload
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        headers:
+                          type: complex
+                          value:
+                            - name:
+                                type: value
+                                value: content-type
+                              type: value
+                              value: application/json
+                        ignoreSslErrors:
+                          type: value
+                          value: "false"
+                        includeFullResponse:
+                          type: value
+                          value: "false"
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        queryParams:
+                          type: complex
+                          value: []
+                        responseType:
+                          type: value
+                          value: json
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        retryOnAllErrors:
+                          type: value
+                          value: "false"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: configVar
+                          value: Email Sender Webhook URL
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: Send Email
+                - name: Else
+                  steps: []
+              description: ""
+              inputs:
+                conditions:
+                  type: complex
+                  value:
+                    - name: Send Notifications
+                      type: complex
+                      value:
+                        - and
+                        - - isTrue
+                          - name: ""
+                            type: reference
+                            value: initializeData.results.send
+              name: Branch on Expression 2
+        - name: Else
+          steps:
+            - action:
+                key: writeLog
+                component:
+                  isPublic: true
+                  key: log
+                  version: LATEST
+              description: Feature is not enabled
+              inputs:
+                level:
+                  type: value
+                  value: info
+                message:
+                  type: value
+                  value: Feature is not enabled
+              name: Feature is not enabled
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Enabled Feature
+              type: complex
+              value:
+                - or
+                - - isTrue
+                  - name: ""
+                    type: configVar
+                    value: Do you want to auto reply during business hours?
+                - - and
+                  - - isTrue
+                    - name: ""
+                      type: configVar
+                      value: Do you want to auto reply after business hours?
+      name: Branch on Expression

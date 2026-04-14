@@ -4,6 +4,30 @@
  */
 
 /**
+ * Create deterministic process ID from fileName and flowNumber
+ *
+ * @param {String} fileName - Source file name (e.g., "boolean-marketing-integration-export.yml")
+ * @param {String|null} flowNumber - Flow number (e.g., "05" or "05.1" or null)
+ * @returns {String} Process ID (e.g., "P-boo-05" or "P-boo-lead")
+ */
+function createProcessId(fileName, flowNumber) {
+  // Extract file abbreviation: first word before first dash, first 3 chars
+  const firstWord = fileName.split('-')[0] || fileName;
+  const fileAbbrev = firstWord.substring(0, 3).toLowerCase();
+
+  if (flowNumber) {
+    // Format: P-{fileAbbrev}-{flowNumber}
+    // Replace dots with dashes for sub-flows (e.g., "05.1" becomes "05-1")
+    const flowPart = flowNumber.replace('.', '-');
+    return `P-${fileAbbrev}-${flowPart}`;
+  } else {
+    // For flows without numbers, use first 4 chars of flow name (alphanumeric only)
+    // This will be handled by the caller passing a fallback identifier
+    return `P-${fileAbbrev}-xx`;
+  }
+}
+
+/**
  * Group sub-flows with parent flows and merge cross-file processes
  *
  * @param {Array} businessFlows - Array of business flow objects from parsed-flows.json
@@ -83,8 +107,11 @@ function groupIntoProcesses(businessFlows, connections) {
   });
 
   // Step C: Build final process objects with IDs and metadata
-  const processes = Array.from(processMap.values()).map((process, index) => {
-    const processId = `P-${String(index + 1).padStart(2, '0')}`;
+  const processes = Array.from(processMap.values()).map((process) => {
+    const processId = createProcessId(
+      process.parentFlow.fileName,
+      process.parentFlow.flowNumber
+    );
     const processName = cleanProcessName(process.parentFlow.flowName);
 
     return {

@@ -1,0 +1,293 @@
+sourceFile: boolean-marketing-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 12.1 Generate YCBM Customer Facing Pre-filled Link
+  description: ""
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: HTTP
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: No Contact Data Found
+          steps:
+            - action:
+                key: invokeFlow
+                component:
+                  isPublic: true
+                  key: cross-flow
+                  version: LATEST
+              description: ""
+              inputs:
+                data:
+                  type: template
+                  value: |-
+                    {
+                     "contact_id":"{{$http.results.body.data.contact_id}}"
+                    }
+                flowName:
+                  type: value
+                  value: 13 Get Latest Open Deal
+              name: Get Latest Open Deal
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                        // Extract results safely using optional chaining
+                        const dealData = stepResults?.getLatestOpenDeal?.results?.dealData || {}
+                        const contactData = stepResults?.getLatestOpenDeal?.results?.contactData || {};
+                        const companyData = stepResults?.getLatestOpenDeal?.results?.companyData || {};
+                        const ownerData = stepResults?.getLatestOpenDeal?.results?.ownerData || {};
+                        const ycbmUrl = configVars?.["Customer Facing YCBM Booking Link"] || "";
+
+                        // Helper functions
+                        const ifempty = (...values) =>
+                            values.find((v) => v != null && v !== "") || "";
+                        const formatPhoneInternational = (phone) => {
+                            if (!phone) return "";
+                            return phone.startsWith("+1") ? phone : `+1${phone.replace(/\D/g, "")}`;
+                        };
+
+                        // Load mappings & shortcodes safely
+                        const mapping = configVars?.["YCBM to HS Deal Fields"] || [];
+                        const shortCodes = JSON.parse(configVars?.["Short Code Setup"] || "{}");
+
+                        // Flatten deal properties for easier access
+                        const dealProps = { ...dealData?.properties };
+                        logger?.log("Deal Properties:", dealProps);
+
+                        // Start building payload from your field‐mapping config
+                        const payload = mapping.reduce((acc, { source, destination }) => {
+                            const val = dealProps?.[destination];
+                            if (val != null && val !== "") acc[source] = val;
+                            return acc;
+                        }, {});
+
+                        // Core required fields
+                        payload.dealId = dealData?.id || "";
+                        payload.team = configVars["Auto Mapped Estimator"] === 'true' ? ownerData?.email : "";
+                        payload.estimatorEmail = ownerData?.email|| "";
+                        payload.teamPhone = formatPhoneInternational(
+                            ownerData?.phone || ""
+                        );
+                        payload.startAt = new Date();
+                        payload.startsAt = new Date();
+                        payload.appointmentType =
+                            dealProps?.appointment_type || "In-Person Estimate";
+                        payload.projectType = String(ifempty(dealProps?.project_type)).replace(
+                            /;/g,
+                            ","
+                        );
+                         payload.project_type = String(ifempty(dealProps?.project_type)).replace(
+                             /;/g,
+                             ","
+                         );
+                        payload.source = String(
+                            ifempty(
+                                dealProps?.source,
+                                dealProps?.multi_source_attribution,
+                                dealProps?.primary_marketing_source
+                            )
+                        ).replace(/;/g, ",");
+
+                        payload.jobFirstName = ifempty(
+                            dealProps?.job_contact_first_name,
+                            contactData?.firstname,
+                            ""
+                        );
+                        payload.jobLastName = ifempty(
+                            dealProps?.job_contact_last_name,
+                            contactData?.lastname,
+                            ""
+                        );
+                        payload.jobEmail = ifempty(
+                            dealProps?.job_contact_email,
+                            contactData?.email,
+                            ""
+                        );
+                        payload.jobPhone = formatPhoneInternational(
+                            ifempty(
+                                dealProps?.job_contact_phone,
+                                contactData?.mobilephone,
+                                contactData?.phone,
+                                ""
+                            )
+                        );
+                        payload.jobStreet = ifempty(
+                            dealProps?.job_site_street_address,
+                            contactData?.address,
+                            dealProps?.billing_street_address,
+                            ""
+                        );
+                         payload.address = ifempty(
+                             dealProps?.job_site_street_address,
+                             contactData?.address,
+                             dealProps?.billing_street_address,
+                             ""
+                         );
+                        payload.jobCity = ifempty(
+                            dealProps?.job_site_city,
+                            contactData?.city,
+                            dealProps?.billing_city,
+                            ""
+                        );
+                        payload.city = ifempty(
+                            dealProps?.job_site_city,
+                            contactData?.city,
+                            dealProps?.billing_city,
+                            ""
+                        );
+                        payload.jobState = ifempty(
+                            dealProps?.job_site_state,
+                            contactData?.state,
+                            dealProps?.billing_state,
+                            ""
+                        );
+                         payload.state = ifempty(
+                             dealProps?.job_site_state,
+                             contactData?.state,
+                             dealProps?.billing_state,
+                             ""
+                         );
+                        payload.jobPostal = ifempty(
+                            dealProps?.job_site_postal_code,
+                            contactData?.zip,
+                            dealProps?.billing_postal_code,
+                            ""
+                        );
+                         payload.postal = ifempty(
+                             dealProps?.job_site_postal_code,
+                             contactData?.zip,
+                             dealProps?.billing_postal_code,
+                             ""
+                         );
+                        payload.billingFirstName = ifempty(
+                            dealProps?.billing_contact_first_name,
+                            contactData?.firstname,
+                            dealProps?.job_contact_first_name
+                        );
+                        payload.billingLastName = ifempty(
+                            dealProps?.billing_contact_last_name,
+                            contactData?.lastname,
+                            dealProps?.job_contact_last_name
+                        );
+                        payload.billingEmail = ifempty(
+                            dealProps?.billing_contact_email,
+                            contactData?.email,
+                            dealProps?.job_contact_email
+                        );
+                        payload.billingPhone = formatPhoneInternational(
+                            ifempty(
+                                dealProps?.billing_contact_phone,
+                                contactData?.mobilephone,
+                                contactData?.phone,
+                                dealProps?.job_contact_phone
+                            )
+                        );
+                        payload.billingStreet = ifempty(
+                            dealProps?.billing_street_address,
+                            dealProps?.job_site_street_address,
+                            contactData?.address
+                        );
+                        payload.billingCity = ifempty(
+                            dealProps?.billing_city,
+                            dealProps?.job_site_city,
+                            contactData?.city
+                        );
+                        payload.billingState = ifempty(
+                            dealProps?.billing_state,
+                            dealProps?.job_site_state,
+                            contactData?.state
+                        );
+                        payload.billingPostal = ifempty(
+                            dealProps?.billing_postal_code,
+                            dealProps?.job_site_postal_code,
+                            contactData?.zip
+                        );
+                        payload.company = ifempty(dealProps?.company_name, companyData?.name);
+                        payload.company_name = ifempty(dealProps?.company_name, companyData?.name);
+
+                        // Apply shortcode mapping
+                        const withCalendarData = applyShortcodes(payload, shortCodes);
+                        logger?.log("Final payload:", payload);
+                        logger?.log("Shortcoded payload:", withCalendarData);
+
+                        // Build your final URL
+                        const encodedData = new URLSearchParams(withCalendarData).toString();
+                        const location = `${ycbmUrl}?${encodedData}`;
+
+                        return {
+                            location,
+                            noCalendar: payload,
+                        };
+                    };
+
+
+                    // Helper: translate your field keys into the YCBM shortcode
+                    names
+
+                    function applyShortcodes(dealData, shortcodeMap) {
+                        const output = {};
+                        for (const [key, value] of Object.entries(dealData)) {
+                            const sc = shortcodeMap?.[key];
+                            if (sc && value != null && value !== "") {
+                                output[sc] = value;
+                            }
+                        }
+                        return output;
+                    }
+              name: Gerate YCBM Link
+        - name: Else
+          steps:
+            - action:
+                key: writeLog
+                component:
+                  isPublic: true
+                  key: log
+                  version: LATEST
+              description: No contact id found
+              inputs:
+                level:
+                  type: value
+                  value: info
+                message:
+                  type: value
+                  value: No contact id found
+              name: No contact id found
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: No Contact Data Found
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: http.results.body.data.contact_id
+      name: Branch on Expression

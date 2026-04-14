@@ -1,0 +1,340 @@
+sourceFile: daily-production-data-export.yml
+category: Boolean PaintOS
+flow:
+  name: 02 Update DPD
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: schedule
+        component:
+          isPublic: true
+          key: schedule-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+      schedule:
+        meta:
+          scheduleType: minute
+          timeZone: ""
+        type: value
+        value: "*/5 * * * *"
+    - action:
+        key: listRecords
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 5
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 3
+        usesExponentialBackoff: false
+      inputs:
+        airtableConnection:
+          type: configVar
+          value: Airtable Connection
+        baseId:
+          type: configVar
+          value: Project Management Base
+        fields:
+          type: complex
+          value: []
+        filterByFormula:
+          type: template
+          value: AND({{{#⚙️ Daily Production Data Up-to-Date}}}="False",{Project})
+        tableName:
+          type: configVar
+          value: Time Logs Table
+        view:
+          type: value
+          value: ""
+      name: List Time Logs
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: listTimeLogs.results
+      name: Loop Time Logs
+      steps:
+        - action:
+            key: runCode
+            component:
+              isPublic: true
+              key: code
+              version: LATEST
+          description: ""
+          inputs:
+            code:
+              type: value
+              value: >
+                /*
+                  Access config variables by name through the configVars object. e.g.
+                    const apiEndpoint = `${configVars["App Base URL"]}/api`;
+
+                  Access previous steps' results through the stepResults object. Trigger
+                  and step names are camelCased. If the step "Get Data from API" returned
+                  {"foo": "bar", "baz": 123}, you could destructure that data with:
+                    const { foo, baz } = stepResults.getDataFromApi.results;
+
+                  You can return string, number or complex object data. e.g.
+                    return { data: { foo: "Hello", bar: 123.45, baz: true } };
+                */
+
+
+                module.exports = async ({ logger, configVars }, stepResults) =>
+                {
+
+                  let listTimeLogs = stepResults.listTimeLogs.results
+                  let timeLogsData = stepResults.loopTimeLogs.currentItem
+                  let uniqeId = timeLogsData.fields["Date:Project Number"]
+                  let clockedId = timeLogsData.fields["Clocked In"]
+
+
+                  // let project = timeLogsData.fields["Project"]
+
+                  let currentLog = listTimeLogs.filter(record => {
+                    return record.fields["Date:Project Number"] == uniqeId
+                  })
+
+                  // logger.log(currentLog)
+
+                  let totalHoursWorked = 0;
+                  let totalAdjustedHours = 0;
+                  let totalPayrollCost = 0;
+                  let auditTrail = [];
+                  let project = null;
+
+
+                  for (let record of currentLog) {
+                    
+                    let hoursWorked = record.fields["Hours Worked"]
+                    let adjustedHours = record.fields["Adjusted Hours"]
+                    let payrollCost = record.fields["Total Payroll Cost"]
+                    let name = record.fields["Name"]
+
+                    totalHoursWorked += hoursWorked;
+                    totalAdjustedHours += adjustedHours;
+                    totalPayrollCost += payrollCost;
+
+                    auditTrail.push(
+                        `[${name}]: Hours Worked = ${hoursWorked}, Adjusted Hours = ${adjustedHours}, Total Payroll Cost = ${payrollCost}`
+                    );
+
+                    // Set the project ID based on the Project field of any record, assuming all are the same for a given Date:Project Number
+                    if (timeLogsData.fields["Project"]) {
+                        project = timeLogsData.fields["Project"][0];
+                    }
+                }
+                  
+                  return { 
+                    project: project,
+                    uniqeId: uniqeId,
+                    totalHoursWorked: totalHoursWorked,
+                    totalAdjustedHours: totalAdjustedHours,
+                    totalPayrollCost: totalPayrollCost,
+                    auditTrail: auditTrail,
+                    clockedIn: clockedId
+                  }
+                };
+          name: Aggregate DPD Data
+        - action:
+            key: branchOnExpression
+            component:
+              isPublic: true
+              key: branch
+              version: LATEST
+          branches:
+            - name: If Project Exist
+              steps:
+                - action:
+                    key: listRecords
+                    component:
+                      isPublic: true
+                      key: airtable
+                      version: LATEST
+                  description: ""
+                  errorConfig:
+                    delaySeconds: 5
+                    errorHandlerType: retry
+                    ignoreFinalError: false
+                    maxAttempts: 3
+                    usesExponentialBackoff: false
+                  inputs:
+                    airtableConnection:
+                      type: configVar
+                      value: Airtable Connection
+                    baseId:
+                      type: configVar
+                      value: Project Management Base
+                    fields:
+                      type: complex
+                      value: []
+                    filterByFormula:
+                      type: template
+                      value: '{Date:Project Number}="{{$aggregateDpdData.results.uniqeId}}"'
+                    tableName:
+                      type: configVar
+                      value: Daily Production Data Table
+                    view:
+                      type: value
+                      value: ""
+                  name: Get DPD
+                - action:
+                    key: branchOnExpression
+                    component:
+                      isPublic: true
+                      key: branch
+                      version: LATEST
+                  branches:
+                    - name: If DPD Exist
+                      steps:
+                        - action:
+                            key: updateRecord
+                            component:
+                              isPublic: true
+                              key: airtable
+                              version: LATEST
+                          description: ""
+                          errorConfig:
+                            delaySeconds: 5
+                            errorHandlerType: retry
+                            ignoreFinalError: true
+                            maxAttempts: 3
+                            usesExponentialBackoff: false
+                          inputs:
+                            airtableConnection:
+                              type: configVar
+                              value: Airtable Connection
+                            baseId:
+                              type: configVar
+                              value: Project Management Base
+                            dynamicFields:
+                              type: value
+                              value: ""
+                            record:
+                              type: reference
+                              value: getDpd.results.0.id
+                            recordFields:
+                              type: complex
+                              value:
+                                - name:
+                                    type: value
+                                    value: Actual Daily Hours Worked
+                                  type: reference
+                                  value: aggregateDpdData.results.totalHoursWorked
+                                - name:
+                                    type: value
+                                    value: Actual Daily Adjusted Hours Worked
+                                  type: reference
+                                  value: aggregateDpdData.results.totalAdjustedHours
+                                - name:
+                                    type: value
+                                    value: Actual Daily Hourly Labor Expense
+                                  type: reference
+                                  value: aggregateDpdData.results.totalPayrollCost
+                                - name:
+                                    type: value
+                                    value: Contributing Time Log Records - Audit
+                                  type: reference
+                                  value: aggregateDpdData.results.auditTrail
+                            tableName:
+                              type: configVar
+                              value: Daily Production Data Table
+                          name: Update DPD
+                        - action:
+                            key: updateRecord
+                            component:
+                              isPublic: true
+                              key: airtable
+                              version: LATEST
+                          description: ⚙️ Daily Production Data Records Last Updated
+                          errorConfig:
+                            delaySeconds: 5
+                            errorHandlerType: retry
+                            ignoreFinalError: true
+                            maxAttempts: 3
+                            usesExponentialBackoff: false
+                          inputs:
+                            airtableConnection:
+                              type: configVar
+                              value: Airtable Connection
+                            baseId:
+                              type: configVar
+                              value: Project Management Base
+                            dynamicFields:
+                              type: value
+                              value: ""
+                            record:
+                              type: reference
+                              value: loopTimeLogs.currentItem.id
+                            recordFields:
+                              type: complex
+                              value:
+                                - name:
+                                    type: configVar
+                                    value: ⚙️ Daily Production Data Records Last Updated
+                                  type: reference
+                                  value: trigger.results.startedAt
+                            tableName:
+                              type: configVar
+                              value: Time Logs Table
+                          name: Update Time Log
+                    - name: Else
+                      steps: []
+                  description: ""
+                  inputs:
+                    conditions:
+                      type: complex
+                      value:
+                        - name: If DPD Exist
+                          type: complex
+                          value:
+                            - and
+                            - - exists
+                              - name: ""
+                                type: reference
+                                value: getDpd.results.0.id
+                  name: DPD Branch
+            - name: Else
+              steps:
+                - action:
+                    key: writeLog
+                    component:
+                      isPublic: true
+                      key: log
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    level:
+                      type: value
+                      value: warn
+                    message:
+                      type: value
+                      value: Project ID is missing for the specified Date:Project Number.
+                  name: Missing Project ID
+          description: ""
+          inputs:
+            conditions:
+              type: complex
+              value:
+                - name: If Project Exist
+                  type: complex
+                  value:
+                    - and
+                    - - exists
+                      - name: ""
+                        type: reference
+                        value: aggregateDpdData.results.project
+          name: Branch on Expression

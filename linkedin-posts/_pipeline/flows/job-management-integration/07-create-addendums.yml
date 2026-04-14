@@ -1,0 +1,247 @@
+sourceFile: job-management-integration-export.yml
+category: Boolean PaintOS
+flow:
+  name: 07 Create Addendums
+  description: Creates new Addendums deal in HubSpot for field types.
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: schedule
+        component:
+          isPublic: true
+          key: schedule-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Create Addendums Trigger
+      schedule:
+        meta:
+          scheduleType: minute
+          timeZone: ""
+        type: value
+        value: "*/2 * * * *"
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const mappingData = configVars?.["Airtable Addendums Fields to HubSpot Deal Properties Mapping"];
+
+              const parsedMappingData = mappingData?.map((item) => {
+                const regex = /^\[([^\]]+)\](.+)$/;
+                const match = item?.source?.match?.(regex);
+                logger.info(item)
+                if (match) {
+                  return {
+                    at_table: match?.[1],
+                    at_field: match?.[2]?.trim(),
+                    hs_field: item?.destination,
+                  };
+                }
+
+                return {};
+              });
+
+              return { data: parsedMappingData };
+            };
+      name: Parse Json Form
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              let filter = configVars["Include 'Accepted' status in the Addendum filter."]
+              logger.info(filter)
+              logger.info(typeof(filter))
+              let defaultFilter = `AND({CO HS Deal Record ID}="",{Addendum Type}="Change Order",{Status}="Pending")`
+              let statusFilter = `AND({CO HS Deal Record ID}="",{Addendum Type}="Change Order",OR({Status}="Pending",{Status}="Accepted"))`
+              return { data: filter === "Yes" ?  statusFilter : defaultFilter};
+            };
+      name: Get filter
+    - action:
+        key: listRecords
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: true
+        maxAttempts: 5
+        usesExponentialBackoff: false
+      inputs:
+        airtableConnection:
+          type: configVar
+          value: Airtable Connection
+        baseId:
+          type: configVar
+          value: Project Management Base
+        fields:
+          type: complex
+          value: []
+        filterByFormula:
+          type: reference
+          value: getFilter.results
+        tableName:
+          type: configVar
+          value: Addendums Table
+        view:
+          type: value
+          value: ""
+      name: List Addendums
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: listAddendums.results
+      name: Loop Over COs
+      steps:
+        - action:
+            key: runCode
+            component:
+              isPublic: true
+              key: code
+              version: LATEST
+          description: ""
+          inputs:
+            code:
+              type: value
+              value: >
+                /*
+                  Access config variables by name through the configVars object. e.g.
+                    const apiEndpoint = `${configVars["App Base URL"]}/api`;
+
+                  Access previous steps' results through the stepResults object. Trigger
+                  and step names are camelCased. If the step "Get Data from API" returned
+                  {"foo": "bar", "baz": 123}, you could destructure that data with:
+                    const { foo, baz } = stepResults.getDataFromApi.results;
+
+                  You can return string, number or complex object data. e.g.
+                    return { data: { foo: "Hello", bar: 123.45, baz: true } };
+                */
+
+
+                module.exports = async ({ logger, configVars }, stepResults) =>
+                {
+
+                  return { data: {
+                    parsedForm:stepResults?.parseJsonForm?.results,
+                    currentItem:stepResults?.loopOverCos?.currentItem
+                  } };
+                };
+          name: Subflow payload
+        - action:
+            key: invokeFlow
+            component:
+              isPublic: true
+              key: cross-flow
+              version: LATEST
+          description: ""
+          inputs:
+            data:
+              type: reference
+              value: subflowPayload.results
+            flowName:
+              type: value
+              value: Subflow - 07 Create Addendums
+          name: Invoke Flow
+    - action:
+        key: stopExecution
+        component:
+          isPublic: true
+          key: stop-execution
+          version: LATEST
+      description: ""
+      inputs:
+        contentType:
+          type: value
+          value: application/json
+        headers:
+          type: complex
+          value: []
+        jsonBody:
+          type: value
+          value: ""
+        statusCode:
+          type: value
+          value: "200"
+      name: Stop Execution
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const mock = [
+                {
+                  id: "recstisf7YXAMvwlF",
+                  createdTime: "2025-01-01T15:15:07.000Z",
+                  fields: {
+                    Project: ["rec53AavJFx22TNie"],
+                    Status: "Pending",
+                    "Addendum Point of Contact First Name": "Rod",
+                    "Addendum Point of Contact Last Name": "Gayacao",
+                    "Addendum Point of Contact Email": "rod@hellobollean.com",
+                    "Addendum Point of Contact Phone": "(555) 387-6952",
+                    Description: "Testing from Fillout form 01/25",
+                    "CO Type": "Field",
+                    "Retail Amount - CO": 100,
+                    "CO Hours": 10,
+                    "Addendum Type": "Change Order",
+                    "Project Number": ["231303-4"],
+                    "Job Name Only": ["Brittany Smith Conference Room "],
+                    "Addendum Create Date": "2025-01-01",
+                    "Addendum Title":
+                      "231303-4 - Change Order - Brittany Smith Conference Room  - 01/01/2025",
+                    "$ Line Item Total": 0,
+                    "Addendum Total": 100,
+                    "Hours - Line Item Total": 0,
+                    "Addendum Hours": 10,
+                    "Addendum Body": "\n$100 - Testing from Fillout form 01/25",
+                    "Project Type": ["recjqQpb1Lhdfa9cc"],
+                    "Employee Contact": ["Dalton Thomas"],
+                    "Job Number": ["231303"],
+                    Jobs: ["recU1B9hesukXrX9O"],
+                    "Full Job Site Address": ["8410 E La Junta Rd Scottsdale, AZ 85255"],
+                    "CO Total Expenses": 0,
+                    "Point of Contact": "Rod Gayacao",
+                    "Job Name": ["Brittany Smith Conference Room "],
+                    "Job Record ID": ["recU1B9hesukXrX9O"],
+                    "Project Name": ["231303-4 INTP Brittany Smith Conference Room "],
+                  },
+                },
+              ];
+
+              return { data: mock };
+            };
+      name: Mock List

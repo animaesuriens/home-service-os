@@ -1,0 +1,1434 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 13 Import Invoices from QBO
+  description: Given a Job Record ID
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: webhook
+        component:
+          isPublic: true
+          key: webhook-triggers
+          version: LATEST
+      description: ""
+      inputs:
+        body:
+          type: value
+          value: ""
+        contentType:
+          type: value
+          value: ""
+        headers:
+          type: complex
+          value: []
+        statusCode:
+          type: value
+          value: ""
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: updateRecord
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 3
+        usesExponentialBackoff: false
+      inputs:
+        airtableConnection:
+          type: configVar
+          value: Airtable Connection
+        baseId:
+          type: configVar
+          value: Project Management Base
+        dynamicFields:
+          type: value
+          value: ""
+        record:
+          type: reference
+          value: trigger.results.body.data.jobRecordId
+        recordFields:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: Invoice Automation Status
+              type: value
+              value: Initializing Sync...
+        tableName:
+          type: configVar
+          value: Jobs Table
+      name: Initial Status
+    - action:
+        key: listRecords
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: By Estimate / Job Number
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 3
+        usesExponentialBackoff: false
+      inputs:
+        airtableConnection:
+          type: configVar
+          value: Airtable Connection
+        baseId:
+          type: configVar
+          value: Project Management Base
+        fields:
+          type: complex
+          value: []
+        filterByFormula:
+          type: template
+          value: "{Job Record ID}='{{$trigger.results.body.data.jobRecordId}}'"
+        tableName:
+          type: configVar
+          value: Jobs Table
+        view:
+          type: value
+          value: ""
+      name: Get Job
+    - action:
+        key: listRecords
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 3
+        usesExponentialBackoff: false
+      inputs:
+        airtableConnection:
+          type: configVar
+          value: Airtable Connection
+        baseId:
+          type: configVar
+          value: Project Management Base
+        fields:
+          type: complex
+          value: []
+        filterByFormula:
+          type: template
+          value: ""
+        tableName:
+          type: configVar
+          value: Project Type(s) Table
+        view:
+          type: value
+          value: ""
+      name: List Project Types
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: |
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const projectTypes = stepResults.listProjectTypes.results;
+
+              const map = projectTypes.map((item) => {
+                return {
+                  qboId: item.fields["QBO Object ID"],
+                  type: item.fields["QBO Object - Project Type Mapping"],
+                  atId: item.id,
+                };
+              });
+
+              return { data: map };
+            };
+      name: Map Project Types
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: quickbooks
+          version: LATEST
+      description: ""
+      inputs:
+        connection:
+          type: configVar
+          value: QuickBooks Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "true"
+        fileData:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value: []
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: template
+          value: /query?query=SELECT * FROM Invoice WHERE CustomerRef =
+            '{{$getJob.results.0.fields.QBO Parent Customer ID}}'
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get All Invoices
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              let invoices = stepResults.getAllInvoices.results.QueryResponse?.Invoice;
+
+              if (invoices) {
+                invoices = invoices.filter((inv) => inv?.PrivateNote !== "Voided");
+              }
+
+              return { data: invoices };
+            };
+      name: Filter Voided Invoices
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Yes
+          steps:
+            - action:
+                key: loopOverItems
+                component:
+                  isPublic: true
+                  key: loop
+                  version: LATEST
+              description: ""
+              inputs:
+                items:
+                  type: reference
+                  value: getAllInvoices.results.QueryResponse.Invoice
+              name: Loop Over Invoices
+              steps:
+                - action:
+                    key: listRecords
+                    component:
+                      isPublic: true
+                      key: airtable
+                      version: LATEST
+                  description: By internal ID
+                  errorConfig:
+                    delaySeconds: 10
+                    errorHandlerType: retry
+                    ignoreFinalError: false
+                    maxAttempts: 3
+                    usesExponentialBackoff: false
+                  inputs:
+                    airtableConnection:
+                      type: configVar
+                      value: Airtable Connection
+                    baseId:
+                      type: configVar
+                      value: Project Management Base
+                    fields:
+                      type: complex
+                      value: []
+                    filterByFormula:
+                      type: template
+                      value: AND({QBO Invoice ID} = "{{$loopOverInvoices.currentItem.Id}}",
+                        NOT(OR({Status} = "Voided", {Status} = "Void")))
+                    tableName:
+                      type: configVar
+                      value: Invoices Table
+                    view:
+                      type: value
+                      value: ""
+                  name: Search Invoice in AT
+                - action:
+                    key: branchOnExpression
+                    component:
+                      isPublic: true
+                      key: branch
+                      version: LATEST
+                  branches:
+                    - name: Yes
+                      steps:
+                        - action:
+                            key: runCode
+                            component:
+                              isPublic: true
+                              key: code
+                              version: LATEST
+                          description: Into a string
+                          inputs:
+                            code:
+                              type: value
+                              value: >
+                                module.exports = async ({ logger, configVars },
+                                stepResults) => {
+                                  const invoice = stepResults.searchInvoiceInAt.results[0];
+                                  let linesString = "";
+
+                                  if (
+                                    invoice.fields["Invoice Line Items"] &&
+                                    invoice.fields["Invoice Line Items"].length > 0
+                                  ) {
+                                    linesString = invoice.fields["Invoice Line Items"].join(",");
+                                  }
+
+                                  return { data: linesString };
+                                };
+                          name: Parse Lines Ids
+                        - action:
+                            key: listRecords
+                            component:
+                              isPublic: true
+                              key: airtable
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            airtableConnection:
+                              type: configVar
+                              value: Airtable Connection
+                            baseId:
+                              type: configVar
+                              value: Project Management Base
+                            fields:
+                              type: complex
+                              value: []
+                            filterByFormula:
+                              type: template
+                              value: SEARCH({Record ID}, "{{$parseLinesIds.results}}")
+                            tableName:
+                              type: configVar
+                              value: Invoice Lines Table
+                            view:
+                              type: value
+                              value: ""
+                          name: Get lines from Invoice
+                        - action:
+                            key: runCode
+                            component:
+                              isPublic: true
+                              key: code
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            code:
+                              type: value
+                              value: >
+                                module.exports = async ({ logger, configVars },
+                                stepResults) => {
+                                  const qboLines = stepResults.loopOverInvoices.currentItem.Line;
+                                  const atLines = stepResults.getLinesFromInvoice.results;
+
+                                  const qboLineIds = qboLines
+                                    .filter((line) => line.SalesItemLineDetail)
+                                    .map((line) => line.Id);
+
+                                  const atLinesIds = atLines.map((line) => {
+                                    return {
+                                      lineId: line.fields["Line Item Id"],
+                                      lineRecordId: line.id,
+                                    };
+                                  });
+
+                                  const idsToDelete = atLinesIds
+                                    .filter((line) => !qboLineIds.includes(line.lineId))
+                                    .map((line) => line.lineRecordId);
+
+                                  const queryParams = buildQueryParams(idsToDelete);
+
+                                  return {
+                                    data: queryParams,
+                                  };
+                                };
+
+
+                                function buildQueryParams(ids) {
+                                  return ids.map((id) => `records[]=${encodeURIComponent(id)}`).join("&");
+                                }
+                          name: Compare Lines existence
+                        - action:
+                            key: runCode
+                            component:
+                              isPublic: true
+                              key: code
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            code:
+                              type: value
+                              value: >
+                                const axios = require("axios");
+
+
+                                module.exports = async ({ logger, configVars },
+                                stepResults) => {
+                                  const baseId = configVars["Project Management Base"];
+                                  const tableName = configVars["Invoice Lines Table"];
+                                  const apiKey = configVars["Airtable Connection"].fields.apiKey;
+                                  const queryParams = stepResults.compareLinesExistence.results;
+
+                                  const baseUrl = `https://api.airtable.com/v0/${baseId}/${tableName}`;
+                                  const fullUrl = `${baseUrl}?${queryParams}`;
+
+                                  let result = "";
+
+                                  if (!queryParams) {
+                                    return "No lines to delete.";
+                                  }
+
+                                  axios
+                                    .delete(fullUrl, {
+                                      headers: {
+                                        Authorization: `Bearer ${apiKey}`,
+                                      },
+                                    })
+                                    .then((response) => {
+                                      result = "Deleted records:" + response.data;
+                                    })
+                                    .catch((error) => {
+                                      result = "Error:" + error.response ? error.response.data : error.message;
+                                    });
+
+                                  return { data: result };
+                                };
+                          name: Delete Lines Axios Request
+                    - name: Else
+                      steps: []
+                  description: If there is not existing invoice, we won't have pre existing lines
+                    so the following steps don't make sense. We skip ahead and
+                    create everything.
+                  inputs:
+                    conditions:
+                      type: complex
+                      value:
+                        - name: Yes
+                          type: complex
+                          value:
+                            - and
+                            - - isNotEmpty
+                              - name: ""
+                                type: reference
+                                value: searchInvoiceInAt.results
+                              - name: ""
+                                type: value
+                                value: ""
+                  name: Existing Invoice?
+                - action:
+                    key: branchOnExpression
+                    component:
+                      isPublic: true
+                      key: branch
+                      version: LATEST
+                  branches:
+                    - name: Yes
+                      steps:
+                        - action:
+                            key: runCode
+                            component:
+                              isPublic: true
+                              key: code
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            code:
+                              type: value
+                              value: >-
+                                module.exports = async ({ logger, configVars },
+                                stepResults) => {
+                                  const billAddr = stepResults.loopOverInvoices.currentItem.BillAddr;
+
+                                  if (!billAddr) {
+                                    return { data: "" };
+                                  }
+
+                                  const createBillTo = (billAddr) => {
+                                    // Structured format: City/State/Zip are separate fields
+                                    if (billAddr.City || billAddr.CountrySubDivisionCode || billAddr.PostalCode) {
+                                      const addressParts = [
+                                        billAddr.Line1,
+                                        billAddr.Line2,
+                                        `${billAddr.City ?? ""}, ${billAddr.CountrySubDivisionCode ?? ""} ${billAddr.PostalCode ?? ""}`.trim(),
+                                        billAddr.Country,
+                                      ];
+                                      return addressParts.filter(Boolean).join("\n");
+                                    }
+
+                                    // Pre-formatted format: address spread across Line1–Line4
+                                    return [billAddr.Line1, billAddr.Line2, billAddr.Line3, billAddr.Line4]
+                                      .filter(Boolean)
+                                      .join("\n");
+                                  };
+
+                                  const billTo = createBillTo(billAddr);
+
+                                  return { data: billTo };
+                                };
+                          name: Generate Bill To String
+                        - action:
+                            key: rawRequest
+                            component:
+                              isPublic: true
+                              key: quickbooks
+                              version: LATEST
+                          description: ""
+                          errorConfig:
+                            delaySeconds: null
+                            errorHandlerType: ignore
+                            ignoreFinalError: null
+                            maxAttempts: null
+                            usesExponentialBackoff: null
+                          inputs:
+                            connection:
+                              type: configVar
+                              value: QuickBooks Connection
+                            data:
+                              type: value
+                              value: ""
+                            debugRequest:
+                              type: value
+                              value: "false"
+                            fileData:
+                              type: complex
+                              value: []
+                            formData:
+                              type: complex
+                              value: []
+                            headers:
+                              type: complex
+                              value: []
+                            maxRetries:
+                              type: value
+                              value: "0"
+                            method:
+                              type: value
+                              value: GET
+                            queryParams:
+                              type: complex
+                              value: []
+                            responseType:
+                              type: value
+                              value: json
+                            retryAllErrors:
+                              type: value
+                              value: "false"
+                            retryDelayMS:
+                              type: value
+                              value: "0"
+                            timeout:
+                              type: value
+                              value: ""
+                            url:
+                              type: template
+                              value: /invoice/{{$loopOverInvoices.currentItem.Id}}?minorversion=65&include=invoiceLink
+                            useExponentialBackoff:
+                              type: value
+                              value: "false"
+                          name: Get QBO Invoice
+                        - action:
+                            key: runCode
+                            component:
+                              isPublic: true
+                              key: code
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            code:
+                              type: value
+                              value: >
+                                module.exports = async ({ logger, configVars },
+                                stepResults) => {
+                                  const invoice = stepResults.getQboInvoice.results;
+
+                                  return { data: invoice?.InvoiceLink ?? "" };
+                                };
+                          name: QBO Invoice Link
+                        - action:
+                            key: runCode
+                            component:
+                              isPublic: true
+                              key: code
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            code:
+                              type: value
+                              value: >
+                                module.exports = async ({ logger, configVars },
+                                stepResults) => {
+                                  const invoice = stepResults.loopOverInvoices.currentItem;
+                                  const job = stepResults.getJob.results[0];
+                                  const mapper = configVars["QBO to AT Custom Fields Mapper"] || [];
+                                  const billTo = stepResults.generateBillToString.results;
+                                  const invoiceUrl = stepResults?.qboInvoiceLink?.results;
+
+                                  const customFields = mapper.reduce((acc, field) => {
+                                    const matchingItem = invoice.CustomField?.find(
+                                      (item) => item.Name === field.source,
+                                    );
+                                    if (matchingItem) {
+                                      const valueKey = `${matchingItem.Type.replace(/Type/g, "")}Value`;
+                                      const values = {
+                                        definitionId: matchingItem.DefinitionId,
+                                        valueType: matchingItem.Type,
+                                        value: matchingItem[valueKey],
+                                      };
+                                      acc[field.destination] = JSON.stringify(values);
+                                    }
+                                    return acc;
+                                  }, {});
+
+                                  const payload = {
+                                    performUpsert: {
+                                      fieldsToMergeOn: ["QBO Invoice ID"],
+                                    },
+                                    records: [
+                                      {
+                                        fields: {
+                                          "QBO Invoice ID": parseInt(invoice.Id),
+                                          "Invoice Number": invoice.DocNumber,
+                                          "⚙️ Automation Status": "Created from the initial sync flow",
+                                          Job: [job.id],
+                                          "Bill To": billTo,
+                                          ...(invoice.ShipAddr?.Line1 && { "Ship To": invoice.ShipAddr.Line1 }),
+                                          ...customFields,
+                                          "QBO Sync Token": invoice.SyncToken,
+                                          "Invoice URL": invoiceUrl ?? "",
+                                          "Due Date": invoice.DueDate,
+                                          "Invoice Date": invoice.TxnDate,
+                                          "QBO Invoice Balance": invoice.Balance,
+                                          ...(invoice.CustomerMemo && {
+                                            "Customer Memo": invoice.CustomerMemo.value,
+                                          }),
+                                        },
+                                      },
+                                    ],
+                                  };
+
+                                  return { data: payload };
+                                };
+                          name: Create Invoice Payload
+                        - action:
+                            key: rawRequest
+                            component:
+                              isPublic: true
+                              key: airtable
+                              version: LATEST
+                          description: ""
+                          errorConfig:
+                            delaySeconds: 10
+                            errorHandlerType: retry
+                            ignoreFinalError: false
+                            maxAttempts: 3
+                            usesExponentialBackoff: false
+                          inputs:
+                            connection:
+                              type: configVar
+                              value: Airtable Connection
+                            data:
+                              type: reference
+                              value: createInvoicePayload.results
+                            debugRequest:
+                              type: value
+                              value: "false"
+                            fileData:
+                              type: complex
+                              value: []
+                            fileDataFileNames:
+                              type: complex
+                              value: []
+                            formData:
+                              type: complex
+                              value: []
+                            headers:
+                              type: complex
+                              value:
+                                - name:
+                                    type: value
+                                    value: Content-Type
+                                  type: value
+                                  value: application/json
+                            maxRetries:
+                              type: value
+                              value: "0"
+                            method:
+                              type: value
+                              value: PATCH
+                            queryParams:
+                              type: complex
+                              value: []
+                            responseType:
+                              type: value
+                              value: json
+                            retryAllErrors:
+                              type: value
+                              value: "false"
+                            retryDelayMS:
+                              type: value
+                              value: "0"
+                            timeout:
+                              type: value
+                              value: ""
+                            url:
+                              type: template
+                              value: /v0/{{#Project Management Base}}/{{#Invoices Table}}
+                            useExponentialBackoff:
+                              type: value
+                              value: "false"
+                          name: Upsert Invoice
+                        - action:
+                            key: runCode
+                            component:
+                              isPublic: true
+                              key: code
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            code:
+                              type: value
+                              value: |-
+                                const axios = require("axios");
+
+                                module.exports = async ({ logger, configVars }, stepResults) => {
+
+                                    // ── 0. Validate step results ──────────────────────────────────────────────
+                                    logger.info("Validating step results", {
+                                        action: "VALIDATE_STEP_RESULTS",
+                                        input: { availableSteps: Object.keys(stepResults ?? {}) },
+                                    });
+
+                                    if (!stepResults?.upsertInvoice?.results?.data?.records?.[0]) {
+                                        logger.error("Missing or invalid upsertInvoice step result", {
+                                            action: "VALIDATE_STEP_RESULTS",
+                                            status: "ERROR",
+                                            output: { upsertInvoice: stepResults?.upsertInvoice ?? null },
+                                        });
+                                        throw new Error("Missing or invalid upsertInvoice step result");
+                                    }
+
+                                    if (!stepResults?.loopOverInvoices?.currentItem?.Line) {
+                                        logger.error("Missing or invalid loopOverInvoices step result", {
+                                            action: "VALIDATE_STEP_RESULTS",
+                                            status: "ERROR",
+                                            output: { loopOverInvoices: stepResults?.loopOverInvoices ?? null },
+                                        });
+                                        throw new Error("Missing or invalid loopOverInvoices step result");
+                                    }
+
+                                    logger.info("Step results validated", {
+                                        action: "VALIDATE_STEP_RESULTS",
+                                        status: "SUCCESS",
+                                        output: {
+                                            availableSteps: Object.keys(stepResults ?? {}),
+                                            hasUpsertInvoice: !!stepResults.upsertInvoice?.results?.data?.records?.[0],
+                                            hasLoopOverInvoices: !!stepResults.loopOverInvoices?.currentItem?.Line,
+                                            hasJob: !!stepResults.getJob?.results?.[0],
+                                        },
+                                    });
+
+                                    // ── 1. Extract variables ──────────────────────────────────────────────────
+                                    const invoice = stepResults.upsertInvoice.results.data.records[0];
+                                    const qboLines = stepResults.loopOverInvoices.currentItem.Line;
+                                    const job = stepResults?.getJob?.results?.[0];
+                                    const projectTypesMap = stepResults.mapProjectTypes.results;
+                                    const airtableAccessToken = configVars["Airtable Connection"].fields.apiKey;
+                                    const invoiceLineItemTableId = configVars["Invoice Lines Table"];
+                                    const invoicesTableId = configVars["Invoices Table"];
+                                    const base = configVars["Project Management Base"];
+
+                                    logger.info("Variables extracted", {
+                                        action: "EXTRACT_VARIABLES",
+                                        status: "SUCCESS",
+                                        output: {
+                                            invoiceATId: invoice.id,
+                                            qboLineCount: qboLines?.length ?? 0,
+                                            jobId: job?.id ?? "none",
+                                            projectTypesCount: projectTypesMap?.length ?? 0,
+                                            invoiceLineItemTableId,
+                                            invoicesTableId,
+                                            base,
+                                        },
+                                    });
+
+                                    // ── 2. Initialize Airtable client ─────────────────────────────────────────
+                                    const airtableClient = axios.create({
+                                        baseURL: `https://api.airtable.com/v0/${base}`,
+                                        headers: {
+                                            Authorization: `Bearer ${airtableAccessToken}`,
+                                            "Content-Type": "application/json",
+                                        },
+                                    });
+
+                                    // ── 3. GET fresh invoice record by ID ─────────────────────────────────────
+                                    logger.info("Fetching fresh invoice record", {
+                                        action: "FETCH_INVOICE",
+                                        input: { invoiceATId: invoice.id, table: invoicesTableId },
+                                    });
+
+                                    let freshInvoice;
+                                    try {
+                                        const response = await retryOperation(
+                                            () => airtableClient.get(`/${encodeURIComponent(invoicesTableId)}/${invoice.id}`),
+                                            [5, 10, 20, 30]
+                                        );
+                                        freshInvoice = response.data;
+                                        logger.info("Fresh invoice record fetched", {
+                                            action: "FETCH_INVOICE",
+                                            status: "SUCCESS",
+                                            output: {
+                                                invoiceATId: freshInvoice.id,
+                                                lineItemIds: freshInvoice.fields?.["Invoice Line Items"] ?? [],
+                                                lineItemCount: freshInvoice.fields?.["Invoice Line Items"]?.length ?? 0,
+                                            },
+                                        });
+                                    } catch (error) {
+                                        logger.error("Failed to fetch fresh invoice record", {
+                                            action: "FETCH_INVOICE",
+                                            status: "ERROR",
+                                            input: { invoiceATId: invoice.id, table: invoicesTableId },
+                                            error: {
+                                                message: error.message,
+                                                status: error.response?.status,
+                                                data: error.response?.data,
+                                            },
+                                        });
+                                        throw error;
+                                    }
+
+                                    // ── 4. Filter valid QBO lines ─────────────────────────────────────────────
+                                    logger.info("Filtering QBO line items", {
+                                        action: "FILTER_QBO_LINES",
+                                        input: { totalLines: qboLines?.length ?? 0 },
+                                    });
+
+                                    const validQboLines = (qboLines ?? []).filter(
+                                        (line) => line?.DetailType === "SalesItemLineDetail" && line?.SalesItemLineDetail
+                                    );
+
+                                    logger.info("QBO line items filtered", {
+                                        action: "FILTER_QBO_LINES",
+                                        status: "SUCCESS",
+                                        output: {
+                                            validCount: validQboLines.length,
+                                            lines: validQboLines.map((l) => ({ id: l.Id, lineNum: l.LineNum, description: l.Description })),
+                                        },
+                                    });
+
+                                    // ── 5. Fetch existing AT line items by record ID ──────────────────────────
+                                    const existingLineItemIds = freshInvoice.fields?.["Invoice Line Items"] ?? [];
+
+                                    logger.info("Fetching existing Airtable line items", {
+                                        action: "FETCH_AT_LINE_ITEMS",
+                                        input: {
+                                            invoiceATId: freshInvoice.id,
+                                            lineItemIds: existingLineItemIds,
+                                            count: existingLineItemIds.length,
+                                        },
+                                    });
+
+                                    let existingATLineItems = [];
+                                    try {
+                                        existingATLineItems = await fetchLineItemsByIds(
+                                            airtableClient,
+                                            invoiceLineItemTableId,
+                                            existingLineItemIds,
+                                            logger
+                                        );
+                                        logger.info("Airtable line items fetched", {
+                                            action: "FETCH_AT_LINE_ITEMS",
+                                            status: "SUCCESS",
+                                            output: {
+                                                count: existingATLineItems.length,
+                                                records: existingATLineItems.map((r) => ({
+                                                    recordId: r.id,
+                                                    lineItemId: r.fields?.["Line Item Id"],
+                                                    lineItemNumber: r.fields?.["Line Item Number"],
+                                                    description: r.fields?.["Description"],
+                                                })),
+                                            },
+                                        });
+                                    } catch (error) {
+                                        logger.error("Failed to fetch Airtable line items", {
+                                            action: "FETCH_AT_LINE_ITEMS",
+                                            status: "ERROR",
+                                            input: { lineItemIds: existingLineItemIds },
+                                            error: {
+                                                message: error.message,
+                                                status: error.response?.status,
+                                                data: error.response?.data,
+                                            },
+                                        });
+                                        throw error;
+                                    }
+
+                                    // ── 6. Build upsert plan ──────────────────────────────────────────────────
+                                    const atLineGrouped = new Map();
+                                    for (const record of existingATLineItems) {
+                                        const lineItemId = record.fields?.["Line Item Id"]?.toString();
+                                        if (!lineItemId) continue;
+                                        if (!atLineGrouped.has(lineItemId)) {
+                                            atLineGrouped.set(lineItemId, []);
+                                        }
+                                        atLineGrouped.get(lineItemId).push(record);
+                                    }
+
+                                    const atLineMap = new Map();
+                                    const staleDuplicates = [];
+
+                                    for (const [lineItemId, records] of atLineGrouped) {
+                                        const sorted = records.sort(
+                                            (a, b) => new Date(a.createdTime) - new Date(b.createdTime)
+                                        );
+                                        const [primary, ...duplicates] = sorted.reverse();
+                                        atLineMap.set(lineItemId, primary);
+                                        for (const dupe of duplicates) {
+                                            staleDuplicates.push(dupe.id);
+                                        }
+                                    }
+
+                                    if (staleDuplicates.length > 0) {
+                                        logger.warn("Stale duplicate line items detected — will delete before upsert", {
+                                            action: "BUILD_UPSERT_PLAN",
+                                            status: "WARNING",
+                                            output: {
+                                                duplicateCount: staleDuplicates.length,
+                                                duplicateRecordIds: staleDuplicates,
+                                            },
+                                        });
+                                        await bulkDelete(airtableClient, invoiceLineItemTableId, staleDuplicates, logger);
+                                    }
+
+                                    const toUpdate = [];
+                                    const toCreate = [];
+
+                                    for (const qboLine of validQboLines) {
+                                        const qboId = qboLine.Id?.toString();
+                                        const fields = buildLineItemFields(qboLine, job, invoice, projectTypesMap);
+                                        const atRecord = atLineMap.get(qboId);
+
+                                        if (atRecord) {
+                                            toUpdate.push({ id: atRecord.id, fields });
+                                        } else {
+                                            toCreate.push({ fields });
+                                        }
+                                    }
+
+                                    logger.info("Upsert plan built", {
+                                        action: "BUILD_UPSERT_PLAN",
+                                        status: "SUCCESS",
+                                        output: {
+                                            staleDuplicatesDeleted: staleDuplicates.length,
+                                            toCreate: toCreate.length,
+                                            toUpdate: toUpdate.length,
+                                            createLineIds: toCreate.map((r) => r.fields?.["Line Item Id"]),
+                                            updateRecordIds: toUpdate.map((r) => r.id),
+                                        },
+                                    });
+
+                                    // ── 7. Build delete plan ──────────────────────────────────────────────────
+                                    const qboLineIds = new Set(validQboLines.map((l) => l.Id?.toString()));
+
+                                    const toDelete = existingATLineItems
+                                        .filter((r) => !qboLineIds.has(r.fields?.["Line Item Id"]?.toString()))
+                                        .map((r) => r.id);
+
+                                    logger.info("Delete plan built", {
+                                        action: "BUILD_DELETE_PLAN",
+                                        status: "SUCCESS",
+                                        output: {
+                                            toDelete: toDelete.length,
+                                            deleteRecordIds: toDelete,
+                                        },
+                                    });
+
+                                    // ── 8. Execute deletes ────────────────────────────────────────────────────
+                                    if (toDelete.length > 0) {
+                                        logger.info("Deleting removed line items", {
+                                            action: "DELETE_LINE_ITEMS",
+                                            input: { recordIds: toDelete, count: toDelete.length },
+                                        });
+                                        try {
+                                            await bulkDelete(airtableClient, invoiceLineItemTableId, toDelete, logger);
+                                            logger.info("Removed line items deleted", {
+                                                action: "DELETE_LINE_ITEMS",
+                                                status: "SUCCESS",
+                                                output: { deletedCount: toDelete.length },
+                                            });
+                                        } catch (error) {
+                                            logger.error("Failed to delete removed line items", {
+                                                action: "DELETE_LINE_ITEMS",
+                                                status: "ERROR",
+                                                input: { recordIds: toDelete },
+                                                error: {
+                                                    message: error.message,
+                                                    status: error.response?.status,
+                                                    data: error.response?.data,
+                                                },
+                                            });
+                                            throw error;
+                                        }
+                                    } else {
+                                        logger.info("No line items to delete", {
+                                            action: "DELETE_LINE_ITEMS",
+                                            status: "SKIPPED",
+                                        });
+                                    }
+
+                                    // ── 9. Execute updates ────────────────────────────────────────────────────
+                                    let updatedRecords = [];
+                                    if (toUpdate.length > 0) {
+                                        const updateBatches = chunkArray(toUpdate, 10);
+                                        logger.info("Updating existing line items", {
+                                            action: "UPDATE_LINE_ITEMS",
+                                            input: {
+                                                totalRecords: toUpdate.length,
+                                                batchCount: updateBatches.length,
+                                                recordIds: toUpdate.map((r) => r.id),
+                                            },
+                                        });
+                                        for (const [i, batch] of updateBatches.entries()) {
+                                            try {
+                                                const response = await retryOperation(
+                                                    () => bulkUpdate(airtableClient, invoiceLineItemTableId, batch),
+                                                    [5, 10, 20, 30]
+                                                );
+                                                updatedRecords = [...updatedRecords, ...response.records];
+                                                logger.info(`Updated batch ${i + 1}/${updateBatches.length}`, {
+                                                    action: "UPDATE_LINE_ITEMS",
+                                                    status: "SUCCESS",
+                                                    output: {
+                                                        batchIndex: i + 1,
+                                                        batchSize: response.records.length,
+                                                        recordIds: response.records.map((r) => r.id),
+                                                    },
+                                                });
+                                            } catch (error) {
+                                                logger.error(`Failed to update batch ${i + 1}/${updateBatches.length} — skipping`, {
+                                                    action: "UPDATE_LINE_ITEMS",
+                                                    status: "ERROR",
+                                                    input: { batchIndex: i + 1, records: batch },
+                                                    error: {
+                                                        message: error.message,
+                                                        status: error.response?.status,
+                                                        data: error.response?.data,
+                                                    },
+                                                });
+                                            }
+                                        }
+                                    } else {
+                                        logger.info("No line items to update", {
+                                            action: "UPDATE_LINE_ITEMS",
+                                            status: "SKIPPED",
+                                        });
+                                    }
+
+                                    // ── 10. Execute creates ───────────────────────────────────────────────────
+                                    let createdRecords = [];
+                                    if (toCreate.length > 0) {
+                                        const createBatches = chunkArray(toCreate, 10);
+                                        logger.info("Creating new line items", {
+                                            action: "CREATE_LINE_ITEMS",
+                                            input: {
+                                                totalRecords: toCreate.length,
+                                                batchCount: createBatches.length,
+                                                lineItemIds: toCreate.map((r) => r.fields?.["Line Item Id"]),
+                                            },
+                                        });
+                                        for (const [i, batch] of createBatches.entries()) {
+                                            try {
+                                                const response = await retryOperation(
+                                                    () => bulkCreate(airtableClient, invoiceLineItemTableId, batch),
+                                                    [5, 10, 20, 30]
+                                                );
+                                                createdRecords = [...createdRecords, ...response.records];
+                                                logger.info(`Created batch ${i + 1}/${createBatches.length}`, {
+                                                    action: "CREATE_LINE_ITEMS",
+                                                    status: "SUCCESS",
+                                                    output: {
+                                                        batchIndex: i + 1,
+                                                        batchSize: response.records.length,
+                                                        recordIds: response.records.map((r) => r.id),
+                                                    },
+                                                });
+                                            } catch (error) {
+                                                logger.error(`Failed to create batch ${i + 1}/${createBatches.length} — skipping`, {
+                                                    action: "CREATE_LINE_ITEMS",
+                                                    status: "ERROR",
+                                                    input: { batchIndex: i + 1, records: batch },
+                                                    error: {
+                                                        message: error.message,
+                                                        status: error.response?.status,
+                                                        data: error.response?.data,
+                                                    },
+                                                });
+                                            }
+                                        }
+                                    } else {
+                                        logger.info("No new line items to create", {
+                                            action: "CREATE_LINE_ITEMS",
+                                            status: "SKIPPED",
+                                        });
+                                    }
+
+                                    // ── 11. Final summary ─────────────────────────────────────────────────────
+                                    logger.info("Sync complete", {
+                                        action: "SYNC_COMPLETE",
+                                        status: "SUCCESS",
+                                        output: {
+                                            created: createdRecords.length,
+                                            updated: updatedRecords.length,
+                                            deleted: toDelete.length,
+                                            createdRecordIds: createdRecords.map((r) => r.id),
+                                            updatedRecordIds: updatedRecords.map((r) => r.id),
+                                            deletedRecordIds: toDelete,
+                                        },
+                                    });
+
+                                    return { createdRecords, updatedRecords, deletedCount: toDelete.length };
+                                };
+
+                                // ── Field builder ─────────────────────────────────────────────────────────────
+                                function buildLineItemFields(line, job, invoice, projectTypesMap) {
+                                    const projectType = projectTypesMap?.find(
+                                        (item) =>
+                                            item.qboId === line?.SalesItemLineDetail?.ItemRef?.value &&
+                                            item.type === "Item"
+                                    );
+
+                                    const unitPrice = line?.SalesItemLineDetail?.UnitPrice;
+                                    const amount = line?.Amount ?? 0;
+                                    const shouldUseAmount = unitPrice === 0 || unitPrice === null || unitPrice === undefined;
+                                    const lineItemRate = shouldUseAmount ? amount : unitPrice;
+                                    const lineItemQty = shouldUseAmount ? 1 : (line?.SalesItemLineDetail?.Qty ?? 1);
+
+                                    const fields = {
+                                        "Line Item Id": line?.Id?.toString() ?? "",
+                                        "Line Item Number": line?.LineNum?.toString() ?? "",
+                                        Description: line?.Description ?? "",
+                                        "Line Item Rate": lineItemRate ?? 0,
+                                        "Line Item Qty": lineItemQty,
+                                        "Line Item Sales Tax ID": line?.SalesItemLineDetail?.TaxCodeRef?.value ?? "",
+                                        Job: job ? [job.id] : [],
+                                        Invoice: [invoice.id],
+                                        "Product/Service": projectType ? [projectType.atId] : [],
+                                    };
+
+                                    if (line?.SalesItemLineDetail?.ServiceDate) {
+                                        fields["Line Item Service Date"] = line.SalesItemLineDetail.ServiceDate;
+                                    }
+
+                                    return fields;
+                                }
+
+                                // ── Airtable helpers ──────────────────────────────────────────────────────────
+                                async function fetchLineItemsByIds(client, tableName, recordIds, logger) {
+                                    if (!Array.isArray(recordIds) || recordIds.length === 0) {
+                                        return [];
+                                    }
+
+                                    logger.info("Fetching line items by record ID", {
+                                        action: "FETCH_AT_LINE_ITEMS_BY_ID",
+                                        input: { count: recordIds.length, recordIds },
+                                    });
+
+                                    const results = [];
+
+                                    for (const recordId of recordIds) {
+                                        try {
+                                            const response = await retryOperation(
+                                                () => client.get(`/${encodeURIComponent(tableName)}/${encodeURIComponent(recordId)}`),
+                                                [5, 10, 20, 30]
+                                            );
+                                            results.push(response.data);
+                                            logger.info("Fetched line item record", {
+                                                action: "FETCH_AT_LINE_ITEMS_BY_ID",
+                                                status: "SUCCESS",
+                                                output: {
+                                                    recordId: response.data.id,
+                                                    lineItemId: response.data.fields?.["Line Item Id"],
+                                                    lineItemNumber: response.data.fields?.["Line Item Number"],
+                                                    description: response.data.fields?.["Description"],
+                                                },
+                                            });
+                                        } catch (error) {
+                                            logger.warn(`Failed to fetch line item record ${recordId} — skipping`, {
+                                                action: "FETCH_AT_LINE_ITEMS_BY_ID",
+                                                status: "WARNING",
+                                                input: { recordId },
+                                                error: {
+                                                    message: error.message,
+                                                    status: error.response?.status,
+                                                    data: error.response?.data,
+                                                },
+                                            });
+                                        }
+                                    }
+
+                                    logger.info("Finished fetching line item records", {
+                                        action: "FETCH_AT_LINE_ITEMS_BY_ID",
+                                        status: "SUCCESS",
+                                        output: {
+                                            requested: recordIds.length,
+                                            fetched: results.length,
+                                            records: results.map((r) => ({
+                                                recordId: r.id,
+                                                lineItemId: r.fields?.["Line Item Id"],
+                                                lineItemNumber: r.fields?.["Line Item Number"],
+                                                description: r.fields?.["Description"],
+                                            })),
+                                        },
+                                    });
+
+                                    return results;
+                                }
+
+                                async function bulkDelete(client, tableName, recordIds, logger) {
+                                    const chunks = chunkArray(recordIds.filter(Boolean), 10);
+                                    for (const [i, chunk] of chunks.entries()) {
+                                        logger.info(`Deleting chunk ${i + 1}/${chunks.length}`, {
+                                            action: "DELETE_CHUNK",
+                                            input: { recordIds: chunk, count: chunk.length },
+                                        });
+                                        const query = chunk.map((id) => `records[]=${encodeURIComponent(id)}`).join("&");
+                                        await retryOperation(
+                                            () => client.delete(`/${encodeURIComponent(tableName)}?${query}`),
+                                            [5, 10, 20, 30]
+                                        );
+                                        logger.info(`Deleted chunk ${i + 1}/${chunks.length}`, {
+                                            action: "DELETE_CHUNK",
+                                            status: "SUCCESS",
+                                            output: { count: chunk.length },
+                                        });
+                                    }
+                                }
+
+                                async function bulkUpdate(client, tableName, records) {
+                                    const response = await client.patch(`/${encodeURIComponent(tableName)}`, { records });
+                                    return response.data;
+                                }
+
+                                async function bulkCreate(client, tableName, records) {
+                                    const response = await client.post(`/${encodeURIComponent(tableName)}`, { records });
+                                    return response.data;
+                                }
+
+                                async function retryOperation(operationFn, retryDelaysInSeconds = [5, 10, 20, 30]) {
+                                    let lastError;
+
+                                    try {
+                                        return await operationFn();
+                                    } catch (error) {
+                                        lastError = error;
+                                        if (error.response?.status !== 429) throw error;
+                                        console.warn("Rate limit hit. Will retry...");
+                                        await sleep(retryDelaysInSeconds[0] * 1000);
+                                    }
+
+                                    for (const delayInSeconds of retryDelaysInSeconds) {
+                                        try {
+                                            return await operationFn();
+                                        } catch (error) {
+                                            lastError = error;
+                                            if (error.response?.status !== 429) throw error;
+                                            const actualDelay = delayInSeconds * 2;
+                                            console.warn(`Rate limit hit. Retrying in ${actualDelay}s...`);
+                                            await sleep(actualDelay * 1000);
+                                        }
+                                    }
+
+                                    throw lastError;
+                                }
+
+                                function chunkArray(array, size) {
+                                    const chunks = [];
+                                    for (let i = 0; i < array.length; i += size) {
+                                        chunks.push(array.slice(i, i + size));
+                                    }
+                                    return chunks;
+                                }
+
+                                function sleep(ms) {
+                                    return new Promise((resolve) => setTimeout(resolve, ms));
+                                }
+                          name: Process Invoice Line Items
+                        - action:
+                            key: runCode
+                            component:
+                              isPublic: true
+                              key: code
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            code:
+                              type: value
+                              value: >
+                                module.exports = async ({ logger, configVars },
+                                stepResults) => {
+                                  const atInvoiceId =
+                                    stepResults.upsertInvoice.results.data.records[0].id;
+                                  const qboInvoiceId = stepResults.loopOverInvoices.currentItem.Id;
+
+                                  const payload = {
+                                    atInvoiceId: atInvoiceId,
+                                    qboInvoiceId: qboInvoiceId,
+                                  };
+
+                                  return { data: payload };
+                                };
+                          name: Save/Update PDF Payload
+                        - action:
+                            key: invokeFlow
+                            component:
+                              isPublic: true
+                              key: cross-flow
+                              version: LATEST
+                          description: ""
+                          errorConfig:
+                            delaySeconds: null
+                            errorHandlerType: ignore
+                            ignoreFinalError: null
+                            maxAttempts: null
+                            usesExponentialBackoff: null
+                          inputs:
+                            data:
+                              type: reference
+                              value: saveUpdatePdfPayload.results
+                            flowName:
+                              type: value
+                              value: 30 Save Invoice's PDF in Airtable
+                          name: Save/Update PDF to AT
+                    - name: Else
+                      steps:
+                        - action:
+                            key: writeLog
+                            component:
+                              isPublic: true
+                              key: log
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            level:
+                              type: value
+                              value: info
+                            message:
+                              type: value
+                              value: Job was not found for this Invoice
+                          name: Write Log Message
+                  description: ""
+                  inputs:
+                    conditions:
+                      type: complex
+                      value:
+                        - name: Yes
+                          type: complex
+                          value:
+                            - and
+                            - - isNotEmpty
+                              - name: ""
+                                type: reference
+                                value: getJob.results
+                              - name: ""
+                                type: value
+                                value: ""
+                  name: Job Found?
+        - name: Else
+          steps:
+            - action:
+                key: updateRecord
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: 10
+                errorHandlerType: retry
+                ignoreFinalError: false
+                maxAttempts: 3
+                usesExponentialBackoff: false
+              inputs:
+                airtableConnection:
+                  type: configVar
+                  value: Airtable Connection
+                baseId:
+                  type: configVar
+                  value: Project Management Base
+                dynamicFields:
+                  type: value
+                  value: ""
+                record:
+                  type: reference
+                  value: trigger.results.body.data.jobRecordId
+                recordFields:
+                  type: complex
+                  value:
+                    - name:
+                        type: value
+                        value: Invoice Automation Status
+                      type: value
+                      value: No invoices found. Sync complete.
+                tableName:
+                  type: configVar
+                  value: Jobs Table
+              name: Update Record
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Yes
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: filterVoidedInvoices.results
+      name: Got any invocies from QBO?

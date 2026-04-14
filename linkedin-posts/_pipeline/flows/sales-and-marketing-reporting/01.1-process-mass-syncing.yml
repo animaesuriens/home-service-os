@@ -1,0 +1,542 @@
+sourceFile: sales-and-marketing-reporting-export.yml
+category: Marketing and Sales System
+flow:
+  name: 01.1 Process Mass Syncing
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Cross Flow
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Hubspot Token Found
+          steps:
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      const access_token = stepResults?.crossFlow?.results?.body?.data?.hubspotTokenId;
+                      const clientVariableName = stepResults?.crossFlow?.results?.body?.data?.clientVariableName;
+                      const fieldCondition = configVars["Field Settings"]?.[clientVariableName] || {};
+
+                      const headers = { Authorization: `Bearer ${access_token}`, "Content-Type": "application/json" };
+
+                      // 1. Fetch all available deal properties
+                      const dealPropsResponse = await fetch("https://api.hubapi.com/crm/v3/properties/deals", { headers });
+                      if (!dealPropsResponse.ok) {
+                        const errorText = await dealPropsResponse.text();
+                        logger.error(`Error fetching HubSpot deal properties: ${errorText}`);
+                        throw new Error("Failed to fetch deal properties from HubSpot.");
+                      }
+                      const dealProps = await dealPropsResponse.json();
+
+                      // 2. Filter valid deal fields
+                      const validDealFields = (dealProps.results || [])
+                        .filter(p => p.groupName !== "analytics_history")
+                        .map(p => p.name);
+
+                      // 3. Extract unique fields from fieldCondition
+                      const conditionalFields = Object.values(fieldCondition)
+                        .flat()
+                        .map(obj => Object.values(obj))
+                        .flat();
+
+                      const orderedUniqueFields = conditionalFields.filter(
+                        (field, index, self) => self.indexOf(field) === index
+                      );
+
+                      const uniqueFields = orderedUniqueFields.filter(field =>
+                        validDealFields.includes(field)
+                      );
+
+                      ["closedate", "dealstage", "pipeline"].forEach(requiredField => {
+                        if (validDealFields.includes(requiredField) && !uniqueFields.includes(requiredField)) {
+                          uniqueFields.push(requiredField);
+                        }
+                      });
+
+                      // -----------------GET STAGES LIST----------------//
+                      const pipelinesRes = await fetch("https://api.hubapi.com/crm/v3/pipelines/deals", { headers });
+                      if (!pipelinesRes.ok) {
+                        const error = await pipelinesRes.text();
+                        throw new Error(`Failed to fetch pipelines: ${error}`);
+                      }
+                      const pipelinesData = await pipelinesRes.json();
+                      const pipelines = pipelinesData.results;
+                      let stages = [];
+                      for (let pipe of pipelines) {
+                        for (let stage of pipe.stages) {
+                          stages.push({ id: stage?.id, label: stage?.label });
+                        }
+                      }
+                      const findStageLabel = (stageId) =>
+                        stages.find((s) => s.id === stageId)?.label || stageId;
+
+                      const findPipeLineLabel = (pipelineId) =>
+                        pipelines.find((s) => s.id === pipelineId)?.label || pipelineId;
+
+                      // -----------------GET OWNER LIST----------------//
+                      const ownersRes = await fetch("https://api.hubapi.com/crm/v3/owners", { headers });
+                      const ownersData = await ownersRes.json();
+                      if (ownersData.errors && ownersData.errors?.length > 0) {
+                        throw Error(ownersData.errors[0]?.message);
+                      }
+                      const owners = ownersData.results;
+
+                      const findOwnerName = (ownerId) => {
+                        const owner = owners.find((o) => o.id === ownerId);
+                        if (!owner) return ownerId;
+                        const firstName = owner?.firstName || "";
+                        const lastName = owner?.lastName || "";
+                        return `${firstName} ${lastName}`.trim();
+                      };
+
+                      const changeOrderLogic = (deal, displayValue) => {
+                        let findContractTypefield = fieldCondition?.contract_type;
+                        let contracTypeValue = '';
+
+                        for (let item of findContractTypefield) {
+                          let value = deal[item?.contract_type];
+                          if (value) {
+                            contracTypeValue = value;
+                            break;
+                          }
+                        }
+                        return contracTypeValue?.toLowerCase()?.includes("change order") ? "" : displayValue;
+                      };
+
+                      const wonLogic = (deal) => {
+                        const stageLabel = findStageLabel(deal?.dealstage);
+                        const pipelineLabel = findPipeLineLabel(deal?.pipeline);
+
+                        if (!stageLabel?.toLowerCase().includes("won")) {
+                          return null;
+                        }
+                        if (pipelineLabel?.toLowerCase().includes("sales pipeline") && stageLabel?.toLowerCase().includes("won")) {
+                          return deal?.closedate || null;
+                        }
+                        return null;
+                      };
+
+                      // 5. Fetch paginated deals with associated contacts
+                      let deals = [];
+                      let hasMore = true;
+                      let after = undefined;
+
+                      while (hasMore) {
+                        const url = new URL("https://api.hubapi.com/crm/v3/objects/deals");
+                        url.searchParams.set("limit", "100");
+                        url.searchParams.set("properties", uniqueFields.join(","));
+                        url.searchParams.set("associations", "contacts");
+                        if (after) url.searchParams.set("after", after);
+
+                        const response = await fetch(url.toString(), { headers });
+                        if (!response.ok) {
+                          const errorText = await response.text();
+                          logger.error(`Error fetching deals: ${errorText}`);
+                          throw new Error("Failed to fetch deals from HubSpot.");
+                        }
+
+                        const json = await response.json();
+                        deals = deals.concat(json.results || []);
+                        hasMore = Boolean(json.paging?.next?.after);
+                        after = json.paging?.next?.after;
+                      }
+
+                      // 6. Collect all unique contact IDs
+                      const allContactIds = [
+                        ...new Set(
+                          deals.flatMap(d => d.associations?.contacts?.results?.map(c => c.id) || [])
+                        )
+                      ];
+
+                      // 7. Fetch contact details in batches using batch read
+                      const contactMap = {};
+                      for (let i = 0; i < allContactIds.length; i += 100) {
+                        const batchIds = allContactIds.slice(i, i + 100);
+                        const contactRes = await fetch("https://api.hubapi.com/crm/v3/objects/contacts/batch/read", {
+                          method: "POST",
+                          headers,
+                          body: JSON.stringify({
+                            properties: ["firstname", "lastname", "email", "phone"], // add more if needed
+                            inputs: batchIds.map(id => ({ id }))
+                          })
+                        });
+                        const contactJson = await contactRes.json();
+                        for (const c of contactJson.results || []) {
+                          contactMap[c.id] = c.properties;
+                        }
+                      }
+
+                      // 8. Map deals to output format, enrich with contact details
+                      const mappedDeals = deals.map(deal => {
+                        const mappedRecord = {};
+
+                        // Get all associated contacts for this deal
+                        const contactIds = deal.associations?.contacts?.results?.map(c => c.id) || [];
+                        const associatedContacts = contactIds.map(id => contactMap[id] || {});
+
+                        // For each target field in your fieldCondition
+                        for (const [targetField, mappings] of Object.entries(fieldCondition)) {
+                          let value = null;
+
+                          for (const mapObj of mappings) {
+                            const hubspotField = Object.values(mapObj)[0];
+
+                            // 1. First, try to get from deal properties
+                            if (deal.properties?.[hubspotField]) {
+                              value = deal.properties[hubspotField];
+                              break;
+                            }
+
+                            // 2. If not found in deal, check each associated contact
+                            for (const contact of associatedContacts) {
+                              if (contact[hubspotField]) {
+                                value = contact[hubspotField];
+                                break;
+                              }
+                            }
+
+                            if (value !== null) break; // stop once we have a value
+                          }
+
+                          // --- Transform display values if needed ---
+                          let displayValue = value;
+                          const lowerTarget = targetField.toLowerCase();
+                          if (lowerTarget.includes("deal_stage")) {
+                            displayValue = findStageLabel(value);
+                          } else if (lowerTarget.includes("deal_owner")) {
+                            displayValue = findOwnerName(value);
+                          } else if (lowerTarget.includes("pipeline")) {
+                            displayValue = findPipeLineLabel(value);
+                          } else if (lowerTarget.includes("won_date")) {
+                            displayValue = wonLogic(deal.properties);
+                          } else if (lowerTarget.includes("createdate") || lowerTarget.includes("create_date")) {
+                            displayValue = changeOrderLogic(deal.properties, displayValue);
+                          } else if (lowerTarget.includes("estimate_date")) {
+                            displayValue = changeOrderLogic(deal.properties, displayValue);
+                          }
+
+                          // --- Add to mapped record with nice formatting ---
+                          mappedRecord[
+                            targetField.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())
+                          ] = displayValue || null;
+                        }
+
+                        // Add full associated contact details as a separate field (unchanged)
+                        mappedRecord["Associated Contacts"] = associatedContacts;
+
+                        return mappedRecord;
+                      });
+
+
+                      return {
+                        data: {
+                          deals: mappedDeals,
+                          uniqueFields,
+                          orderedUniqueFields,
+                          fieldCondition,
+                          hs_deals: deals
+                        }
+                      };
+                    };
+              name: Generate Payload Googlesheet
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: "module.exports = async ({ logger, configVars }, stepResults) => {
+
+                    \    try {
+
+                    \    const worksheetToken = configVars['Google Sheets
+                    Connection']?.token?.access_token
+
+                    \    const fieldSettings = configVars['Setting Up Google
+                    Sheets Page']
+
+                    \    const spreadsheetId =
+                    stepResults?.crossFlow?.results?.body?.data?.spreadsheetId
+
+                    \    const clientName =
+                    stepResults?.crossFlow?.results?.body?.data?.clientName
+
+                    \    const clientSettings = fieldSettings?.find(item =>
+                    item?.clientName === clientName)
+
+                    \    const worksheetName = clientSettings?.worksheetTabName
+
+                    \ \ 
+
+                    \    const headers = {
+
+                    \      Authorization: `Bearer ${worksheetToken}`,
+
+                    \      'Content-Type': 'application/json',
+
+                    \    };
+
+                    \   \ 
+
+                    \        // Range to clear: from row 2 downwards (A2:Z
+                    covers all columns; adjust as needed)
+
+                    \        const rangeToClear = `${worksheetName}!A2:Z`;
+
+                    \        const url =
+                    `https://sheets.googleapis.com/v4/spreadsheets/${spreadshee\
+                    tId}/values/${encodeURIComponent(
+
+                    \            rangeToClear
+
+                    \        )}:clear`;
+
+
+                    \        const response = await fetch(url, {
+
+                    \            method: \"POST\",
+
+                    \            headers,
+
+                    \        });
+
+
+                    \        if (!response.ok) {
+
+                    \            const errorText = await response.text();
+
+                    \            logger.error(`Failed to clear sheet:
+                    ${errorText}`);
+
+                    \            throw new Error(\"Unable to clear the worksheet
+                    contents.\");
+
+                    \        }
+
+
+                    \        const json = await response.json();
+
+                    \ \ 
+
+                    \ \ 
+
+                    \    return {
+
+                    \      data: {
+
+                    \        cleared: true,
+
+                    \        range: rangeToClear,
+
+                    \      },
+
+                    \    };  } catch (error) {
+
+
+                    \        logger.info(error)
+
+                    \    }
+
+                    \  };
+
+                    \  "
+              name: Clear Worksheet
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      try {
+                        const payloadList = stepResults?.generatePayloadGooglesheet?.results?.deals || [];
+                        const fieldSettings = configVars['Setting Up Google Sheets Page'];
+                        const clientName = stepResults?.crossFlow?.results?.body?.data?.clientName;
+                        const clientSettings = fieldSettings?.find(item => item?.clientName === clientName);
+
+                        const spreadsheetId = stepResults?.crossFlow?.results?.body?.data?.spreadsheetId;
+                        const sheetName = clientSettings?.worksheetTabName;
+                        const accessToken = configVars["Google Sheets Connection"]?.token?.access_token;
+
+                        const formatDate = (dateStr) => {
+                          if (!dateStr) return '';
+                          const date = new Date(dateStr);
+                          if (isNaN(date)) return dateStr; // fallback to original if invalid
+                          return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+                        };
+
+                        // Helper: normalize string for comparison
+                        const normalize = (str) => str?.toLowerCase().replace(/[\s_]/g, "") || "";
+
+                        // 1. Get the first row (header labels) from the sheet
+                        const headerRes = await fetch(
+                          `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}!1:1`,
+                          {
+                            method: "GET",
+                            headers: { Authorization: `Bearer ${accessToken}` },
+                          }
+                        );
+
+                        if (!headerRes.ok) {
+                          const err = await headerRes.text();
+                          throw new Error(`Failed to fetch headers: ${err}`);
+                        }
+
+                        const headerData = await headerRes.json();
+                        const headers = headerData?.values?.[0] || [];
+
+                        // Precompute normalized keys per deal for efficiency
+                        const normalizeKeys = (obj) =>
+                          Object.entries(obj).map(([k, v]) => [normalize(k), k, v]);
+
+                        const isLikelyDate = (str) => {
+                          if (typeof str !== "string") return false;
+                          const trimmed = str.trim();
+
+                          if (/^\d+$/.test(trimmed)) return false; // reject pure numbers
+                          const isoPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/;
+                          if (isoPattern.test(trimmed)) return true;
+                          const datePattern = /^(\d{1,4}[-/]\d{1,2}[-/]\d{1,4}|\d{1,2}[-/]\d{1,2}[-/]\d{2,4})$/;
+                          if (!datePattern.test(trimmed)) return false;
+
+                          return !isNaN(Date.parse(trimmed));
+                        };
+
+                        // 2. Map payloadList to rows based on headers order with optimized matching
+                        const sheetRows = payloadList.map((deal) => {
+                          const keys = normalizeKeys(deal);
+                          return headers.map((header) => {
+                            if (!header?.trim()) return ""; // skip blank header
+                            const normalizedHeader = normalize(header);
+
+                            // Try exact match
+                            let match = keys.find(([norm]) => norm === normalizedHeader);
+
+                            // Try strict fuzzy match (whole word)
+                            if (!match) {
+                              match = keys.find(([norm]) =>
+                                new RegExp(`\\b${normalizedHeader}\\b`).test(norm)
+                              );
+                            }
+
+                            // Fall back to loose fuzzy match
+                            if (!match) {
+                              match = keys
+                                .filter(([norm]) =>
+                                  norm.includes(normalizedHeader) || normalizedHeader.includes(norm)
+                                )
+                                .sort((a, b) => b[0].length - a[0].length)[0];
+                            }
+
+                            const value = match ? match[2] : "";
+                            return (typeof value === "string" && isLikelyDate(value))
+                              ? formatDate(value)
+                              : value;
+                          });
+                        });
+
+                        // 3. Write all rows at once using batchUpdate (single request)
+                        const batchEndpoint = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchUpdate`;
+
+                        const res = await fetch(batchEndpoint, {
+                          method: "POST",
+                          headers: {
+                            "Authorization": `Bearer ${accessToken}`,
+                            "Content-Type": "application/json"
+                          },
+                          body: JSON.stringify({
+                            valueInputOption: "USER_ENTERED",
+                            data: [{
+                              range: `${sheetName}!A2`,
+                              values: sheetRows
+                            }]
+                          })
+                        });
+
+                        if (!res.ok) {
+                          const errorText = await res.text();
+                          logger.error(`❌ Failed to batch update data: ${res.status} - ${errorText}`);
+                          throw new Error("Google Sheets batch update failed.");
+                        }
+
+                        logger.info(`✅ Successfully wrote ${sheetRows.length} row(s) to Google Sheet in one batch.`);
+                        return { appended: sheetRows.length };
+
+                      } catch (error) {
+                        logger.error(`⚠️ Error in Google Sheets export: ${error.message}`);
+                        throw error;
+                      }
+                    };
+              name: Populate Data
+        - name: Else
+          steps: []
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Hubspot Token Found
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: crossFlow.results.body.data.hubspotTokenId
+      name: Branch on Expression
+    - action:
+        key: stopExecution
+        component:
+          isPublic: true
+          key: stop-execution
+          version: LATEST
+      description: ""
+      inputs:
+        contentType:
+          type: value
+          value: application/json
+        headers:
+          type: complex
+          value: []
+        jsonBody:
+          type: value
+          value: ""
+        statusCode:
+          type: value
+          value: "200"
+      name: Stop Execution

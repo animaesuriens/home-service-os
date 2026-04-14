@@ -1,0 +1,736 @@
+sourceFile: boolean-sales-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 09 PaintScout Default Identifier
+  description: ""
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: webhook
+        component:
+          isPublic: true
+          key: webhook-triggers
+          version: LATEST
+      description: ""
+      inputs:
+        body:
+          type: value
+          value: ""
+        contentType:
+          type: value
+          value: application/json
+        headers:
+          type: complex
+          value: []
+        statusCode:
+          type: value
+          value: "200"
+      isTrigger: true
+      name: Http
+    - action:
+        key: convertToString
+        component:
+          isPublic: true
+          key: change-data-format
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: null
+        errorHandlerType: ignore
+        ignoreFinalError: null
+        maxAttempts: null
+        usesExponentialBackoff: null
+      inputs:
+        value:
+          type: reference
+          value: http.results.body.data.hs_object_id
+      name: Convert To String
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: If Doesn't Exist
+          steps:
+            - action:
+                key: stopExecution
+                component:
+                  isPublic: true
+                  key: stop-execution
+                  version: LATEST
+              description: ""
+              inputs:
+                contentType:
+                  type: value
+                  value: application/json
+                headers:
+                  type: complex
+                  value: []
+                jsonBody:
+                  type: value
+                  value: No Deal ID Received
+                statusCode:
+                  type: value
+                  value: "404"
+              name: Stop Execution
+        - name: Else
+          steps: []
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: If Doesn't Exist
+              type: complex
+              value:
+                - or
+                - - doesNotExist
+                  - name: ""
+                    type: reference
+                    value: convertToString.results
+                - - isEmpty
+                  - name: ""
+                    type: reference
+                    value: convertToString.results
+                  - name: ""
+                    type: value
+                    value: ""
+      name: Deal ID Value Branch
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: Get Deal Properties
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 2
+        usesExponentialBackoff: false
+      inputs:
+        connection:
+          type: configVar
+          value: HubSpot Private App Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: Content-Type
+              type: value
+              value: application/json
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: /crm/v3/properties/deals
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Deal Properties
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: Get Contact Properties
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 2
+        usesExponentialBackoff: false
+      inputs:
+        connection:
+          type: configVar
+          value: HubSpot Private App Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: Content-Type
+              type: value
+              value: application/json
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: /crm/v3/properties/contacts
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Contact Properties
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: Get Company Properties
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 2
+        usesExponentialBackoff: false
+      inputs:
+        connection:
+          type: configVar
+          value: HubSpot Private App Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: Content-Type
+              type: value
+              value: application/json
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: /crm/v3/properties/companies
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Company Properties
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              let properties = stepResults?.getDealProperties?.results?.results;
+              properties = properties
+              .filter(
+                (prop) =>
+                  // Exclude "deal_activity" group
+                  prop.groupName !== "deal_activity" &&
+                  // Include "dealstage" and "pipeline" properties explicitly, or exclude "dealstages" group
+                  (prop.name === "dealstage" || prop.name === "pipeline" || prop.groupName !== "dealstages")
+              )
+              .map((item) => item?.name);
+             
+              return properties.join(',')
+            };
+      name: Convert Deal Properties to array
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: true
+        maxAttempts: 2
+        usesExponentialBackoff: false
+      inputs:
+        connection:
+          type: configVar
+          value: HubSpot Private App Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: Content-Type
+              type: value
+              value: application/json
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: properties
+              type: reference
+              value: convertDealPropertiesToArray.results
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: template
+          value: /crm/v3/objects/deals/{{$http.results.body.data.hs_object_id}}
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Deal
+    - action:
+        key: readAssociations
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 2
+        usesExponentialBackoff: false
+      inputs:
+        debugRequest:
+          type: value
+          value: "false"
+        fromObjectType:
+          type: value
+          value: Deals
+        hubspotConnection:
+          type: configVar
+          value: HubSpot Private App Connection
+        timeout:
+          type: value
+          value: ""
+        toId:
+          type: reference
+          value: getDeal.results.id
+        toObjectType:
+          type: value
+          value: Contacts
+      name: Get Associated Contact
+    - action:
+        key: readAssociations
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 2
+        usesExponentialBackoff: false
+      inputs:
+        debugRequest:
+          type: value
+          value: "false"
+        fromObjectType:
+          type: value
+          value: Deals
+        hubspotConnection:
+          type: configVar
+          value: HubSpot Private App Connection
+        timeout:
+          type: value
+          value: ""
+        toId:
+          type: reference
+          value: getDeal.results.id
+        toObjectType:
+          type: value
+          value: Companies
+      name: Get Associated Company
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: true
+        maxAttempts: 2
+        usesExponentialBackoff: false
+      inputs:
+        connection:
+          type: configVar
+          value: HubSpot Private App Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: Content-Type
+              type: value
+              value: application/json
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: properties
+              type: value
+              value: firstname,lastname,email,phone,address,city,state,zip
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: template
+          value: /crm/v3/objects/contacts/{{$getAssociatedContact.results.results.0.to.0.id}}
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Contact
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: Get Company
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: true
+        maxAttempts: 2
+        usesExponentialBackoff: false
+      inputs:
+        connection:
+          type: configVar
+          value: HubSpot Private App Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: Content-Type
+              type: value
+              value: application/json
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: properties
+              type: value
+              value: name,address,city,state,zip
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: template
+          value: /crm/v3/objects/companies/{{$getAssociatedCompany.results.results.0.to.0.id}}
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Company
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Deal Found
+          steps:
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >-
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      const deal = stepResults?.getDeal?.results || {};
+                      const contact = stepResults?.getContact?.results || {};
+                      const company = stepResults?.getCompany?.results || {};
+
+                      let config = configVars["HubSpot Objects to PaintScout Quote"];
+                      if (typeof config === "string") {
+                        config = JSON.parse(config);
+                      }
+
+                      const entities = { deal, contact, company };
+                      const result = {};
+
+                      for (const [section, fields] of Object.entries(config)) {
+                        result[section] = {};
+
+                        for (const [fieldName, fallbacks] of Object.entries(fields)) {
+                          let value = "";
+
+                          for (const fallback of fallbacks) {
+                            const key = Object.values(fallback)[0]; // e.g., "email_contact" or "job_contact_email"
+                            const candidate = getFieldValue(key, entities);
+                            if (candidate && candidate.trim() !== "") {
+                              value = candidate;
+                              break;
+                            }
+                          }
+
+                          result[section][fieldName] = value;
+                        }
+                      }
+
+                      logger.log("PaintScout Payload:", result);
+                      return result;
+                    };
+
+
+                    function getFieldValue(key, { deal, contact, company }) {
+                      if (key.endsWith("_contact")) {
+                        const field = key.replace(/_contact$/, "");
+                        return contact?.properties?.[field] || "";
+                      }
+
+                      if (key.endsWith("_company")) {
+                        const field = key.replace(/_company$/, "");
+                        return company?.properties?.[field] || "";
+                      }
+
+                      // Default to deal
+                      return deal?.properties?.[key] || "";
+                    }
+              name: Response Value
+        - name: Else
+          steps:
+            - action:
+                key: writeLog
+                component:
+                  isPublic: true
+                  key: log
+                  version: LATEST
+              description: ""
+              inputs:
+                level:
+                  type: value
+                  value: info
+                message:
+                  type: reference
+                  value: getDeal.results
+              name: Write Log Message
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      return { data: 'No deal found' };
+                    };
+              name: Return no deal found
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Deal Found
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: getDeal.results.id
+      name: Branch on Expression

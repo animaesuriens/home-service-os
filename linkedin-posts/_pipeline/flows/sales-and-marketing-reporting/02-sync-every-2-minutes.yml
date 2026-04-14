@@ -1,0 +1,77 @@
+sourceFile: sales-and-marketing-reporting-export.yml
+category: Marketing and Sales System
+flow:
+  name: 02 Sync every 2 minutes
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: schedule
+        component:
+          isPublic: true
+          key: schedule-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Scheduled
+      schedule:
+        meta:
+          scheduleType: minute
+          timeZone: ""
+        type: value
+        value: "*/2 * * * *"
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              let initalConfigData  = configVars["Setting Up Google Sheets Page"]
+              let overrideData = []
+
+              for(let item of initalConfigData){
+                  overrideData.push({
+                    ...item,
+                    clientVariableName:item?.clientName?.replace(/\s+/g, "_")?.toLowerCase()
+                  })
+              }
+
+              return { data: overrideData };
+            };
+      name: Get Config Variables
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: getConfigVariables.results
+      name: Loop Over Items
+      steps:
+        - action:
+            key: invokeFlow
+            component:
+              isPublic: true
+              key: cross-flow
+              version: LATEST
+          description: ""
+          inputs:
+            data:
+              type: reference
+              value: loopOverItems.currentItem
+            flowName:
+              type: value
+              value: 02.1 Process Sync Every 5 Minutes
+          name: Invoke 02.1

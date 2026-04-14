@@ -1,0 +1,1262 @@
+sourceFile: boolean-sales-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: "[Ongoing] 11 Invoice and Work Order URL"
+  description: PaintScout > HubSpot > Invoice and work order url Sync
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: webhook
+        component:
+          isPublic: true
+          key: webhook-triggers
+          version: LATEST
+      description: ""
+      inputs:
+        body:
+          type: value
+          value: ""
+        contentType:
+          type: value
+          value: ""
+        headers:
+          type: complex
+          value: []
+        statusCode:
+          type: value
+          value: ""
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: rawRequest
+        component:
+          isPublic: false
+          key: paintScoutApi
+          version: LATEST
+      description: ""
+      inputs:
+        connection:
+          type: configVar
+          value: PaintScout Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value: []
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: sort
+              type: value
+              value: timestamp.updated
+            - name:
+                type: value
+                value: perPage
+              type: value
+              value: "20"
+            - name:
+                type: value
+                value: page
+              type: value
+              value: "1"
+            - name:
+                type: value
+                value: sortDir
+              type: value
+              value: desc
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: /invoices
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Accepted Quotes
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: getAcceptedQuotes.results.rows
+      name: Loop Over Items
+      steps:
+        - action:
+            key: getInvoice
+            component:
+              isPublic: false
+              key: paintScoutApi
+              version: LATEST
+          description: ""
+          inputs:
+            connection:
+              type: configVar
+              value: PaintScout Connection
+            id:
+              type: reference
+              value: loopOverItems.currentItem.childInvoiceId
+          name: Get Invoice
+        - action:
+            key: createObject
+            component:
+              isPublic: true
+              key: collection-tools
+              version: LATEST
+          description: ""
+          inputs:
+            keyValueInput:
+              type: complex
+              value:
+                - name:
+                    type: value
+                    value: invoice_url_internal
+                  type: template
+                  value: https://app.paintscout.com/invoices/edit/{{$loopOverItems.currentItem.childInvoiceId}}
+                - name:
+                    type: value
+                    value: invoice_work_order_url
+                  type: reference
+                  value: getInvoice.results.urls.workOrder
+          name: Create Object
+        - action:
+            key: searchDeals
+            component:
+              isPublic: true
+              key: hubspot
+              version: LATEST
+          description: ""
+          errorConfig:
+            delaySeconds: null
+            errorHandlerType: ignore
+            ignoreFinalError: null
+            maxAttempts: null
+            usesExponentialBackoff: null
+          inputs:
+            after:
+              type: value
+              value: ""
+            debugRequest:
+              type: value
+              value: "false"
+            hubspotConnection:
+              type: configVar
+              value: HubSpot Private App Connection
+            limit:
+              type: value
+              value: "1"
+            operator:
+              type: value
+              value: EQ
+            propertyName:
+              type: value
+              value: raw_paintscout_estimate_number
+            timeout:
+              type: value
+              value: ""
+            value:
+              type: reference
+              value: loopOverItems.currentItem.number
+          name: Search Deals
+    - action:
+        key: stopExecution
+        component:
+          isPublic: true
+          key: stop-execution
+          version: LATEST
+      description: ""
+      inputs:
+        contentType:
+          type: value
+          value: application/json
+        headers:
+          type: complex
+          value: []
+        jsonBody:
+          type: value
+          value: ""
+        statusCode:
+          type: value
+          value: "200"
+      name: Stop Execution 2
+    - action:
+        key: convertToEpoch
+        component:
+          isPublic: true
+          key: datetime
+          version: LATEST
+      description: ""
+      inputs:
+        dateTimeInput:
+          type: configVar
+          value: Sync Deals After X Date
+        displayEpochInSeconds:
+          type: value
+          value: "false"
+      name: Estimate Date To Sync
+    - action:
+        key: adjustDateTime
+        component:
+          isPublic: true
+          key: datetime
+          version: LATEST
+      description: ""
+      inputs:
+        dateTimeInput:
+          type: reference
+          value: trigger.results.startedAt
+        daysInput:
+          type: value
+          value: ""
+        hoursInput:
+          type: value
+          value: ""
+        minutesInput:
+          type: value
+          value: "-2"
+        secondsInput:
+          type: value
+          value: ""
+      name: Time 2 Minutes Ago
+    - action:
+        key: convertToEpoch
+        component:
+          isPublic: true
+          key: datetime
+          version: LATEST
+      description: ""
+      inputs:
+        dateTimeInput:
+          type: reference
+          value: time2MinutesAgo.results
+        displayEpochInSeconds:
+          type: value
+          value: "false"
+      name: Time 2 Minutes Ago to Epoch
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            /*
+              Access config variables by name through the configVars object. e.g.
+                const apiEndpoint = `${configVars["App Base URL"]}/api`;
+
+              Access previous steps' results through the stepResults object. Trigger
+              and step names are camelCased. If the step "Get Data from API" returned
+              {"foo": "bar", "baz": 123}, you could destructure that data with:
+                const { foo, baz } = stepResults.getDataFromApi.results;
+
+              You can return string, number or complex object data. e.g.
+                return { data: { foo: "Hello", bar: 123.45, baz: true } };
+            */
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              return { data: configVars['PaintScout Connection'] };
+            };
+      name: Code Block
+    - action:
+        key: listQuotes
+        component:
+          isPublic: false
+          key: paintScoutApi
+          version: LATEST
+      description: ""
+      inputs:
+        connection:
+          type: configVar
+          value: PaintScout Connection
+        page:
+          type: value
+          value: "1"
+        perPage:
+          type: value
+          value: "20"
+        query:
+          type: value
+          value: query=sent&query=accepted&query=viewed
+        sort:
+          type: value
+          value: updated
+        sortDir:
+          type: value
+          value: desc
+      name: List Quotes
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: listQuotes.results.rows
+      name: Loop Over Quotes
+      steps:
+        - action:
+            key: getQuote
+            component:
+              isPublic: false
+              key: paintScoutApi
+              version: LATEST
+          description: ""
+          errorConfig:
+            delaySeconds: 5
+            errorHandlerType: retry
+            ignoreFinalError: false
+            maxAttempts: 2
+            usesExponentialBackoff: false
+          inputs:
+            connection:
+              type: configVar
+              value: PaintScout Connection
+            id:
+              type: reference
+              value: loopOverQuotes.currentItem.id
+          name: Get Quote
+        - action:
+            key: stopExecution
+            component:
+              isPublic: true
+              key: stop-execution
+              version: LATEST
+          description: ""
+          inputs:
+            contentType:
+              type: value
+              value: application/json
+            headers:
+              type: complex
+              value: []
+            jsonBody:
+              type: value
+              value: ""
+            statusCode:
+              type: value
+              value: "200"
+          name: Stop Execution
+        - action:
+            key: branchOnExpression
+            component:
+              isPublic: true
+              key: branch
+              version: LATEST
+          branches:
+            - name: Past 2 Minutes
+              steps:
+                - action:
+                    key: writeLog
+                    component:
+                      isPublic: true
+                      key: log
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    level:
+                      type: value
+                      value: info
+                    message:
+                      type: reference
+                      value: getQuote.results
+                  name: Quote Data
+                - action:
+                    key: branchOnExpression
+                    component:
+                      isPublic: true
+                      key: branch
+                      version: LATEST
+                  branches:
+                    - name: If Accepted
+                      steps:
+                        - action:
+                            key: rawRequest
+                            component:
+                              isPublic: true
+                              key: hubspot
+                              version: LATEST
+                          description: Unenroll contact to the sales follow-up sequence created in
+                            HubSpot.
+                          errorConfig:
+                            delaySeconds: null
+                            errorHandlerType: ignore
+                            ignoreFinalError: null
+                            maxAttempts: null
+                            usesExponentialBackoff: null
+                          inputs:
+                            connection:
+                              type: configVar
+                              value: HubSpot Private App Connection
+                            data:
+                              type: template
+                              value: >-
+                                {
+
+                                "fields": [
+                                    {
+                                      "objectTypeId": "0-1",
+                                      "name": "email",
+                                      "value": "{{$getQuote.results.contact.email}}"
+                                    }
+                                  ]
+                                }
+                            debugRequest:
+                              type: value
+                              value: "false"
+                            fileData:
+                              type: complex
+                              value: []
+                            fileDataFileNames:
+                              type: complex
+                              value: []
+                            formData:
+                              type: complex
+                              value: []
+                            headers:
+                              type: complex
+                              value:
+                                - name:
+                                    type: value
+                                    value: Content-Type
+                                  type: value
+                                  value: application/json
+                            maxRetries:
+                              type: value
+                              value: "0"
+                            method:
+                              type: value
+                              value: POST
+                            queryParams:
+                              type: complex
+                              value: []
+                            responseType:
+                              type: value
+                              value: json
+                            retryAllErrors:
+                              type: value
+                              value: "false"
+                            retryDelayMS:
+                              type: value
+                              value: "0"
+                            timeout:
+                              type: value
+                              value: ""
+                            url:
+                              type: template
+                              value: https://api.hsforms.com/submissions/v3/integration/submit/{{#HubSpot
+                                Portal ID}}/{{#Unenroll Sequence Form ID}}
+                            useExponentialBackoff:
+                              type: value
+                              value: "false"
+                          name: Unenroll Sequence
+                    - name: If Sent
+                      steps:
+                        - action:
+                            key: rawRequest
+                            component:
+                              isPublic: true
+                              key: hubspot
+                              version: LATEST
+                          description: Enroll contact to the sales follow-up sequence created in HubSpot.
+                          errorConfig:
+                            delaySeconds: null
+                            errorHandlerType: ignore
+                            ignoreFinalError: null
+                            maxAttempts: null
+                            usesExponentialBackoff: null
+                          inputs:
+                            connection:
+                              type: configVar
+                              value: HubSpot Private App Connection
+                            data:
+                              type: template
+                              value: >-
+                                {
+
+                                "fields": [
+                                    {
+                                      "objectTypeId": "0-1",
+                                      "name": "email",
+                                      "value": "{{$getQuote.results.contact.email}}"
+                                    }
+                                  ]
+                                }
+                            debugRequest:
+                              type: value
+                              value: "false"
+                            fileData:
+                              type: complex
+                              value: []
+                            fileDataFileNames:
+                              type: complex
+                              value: []
+                            formData:
+                              type: complex
+                              value: []
+                            headers:
+                              type: complex
+                              value:
+                                - name:
+                                    type: value
+                                    value: Content-Type
+                                  type: value
+                                  value: application/json
+                            maxRetries:
+                              type: value
+                              value: "0"
+                            method:
+                              type: value
+                              value: POST
+                            queryParams:
+                              type: complex
+                              value: []
+                            responseType:
+                              type: value
+                              value: json
+                            retryAllErrors:
+                              type: value
+                              value: "false"
+                            retryDelayMS:
+                              type: value
+                              value: "0"
+                            timeout:
+                              type: value
+                              value: ""
+                            url:
+                              type: template
+                              value: https://api.hsforms.com/submissions/v3/integration/submit/{{#HubSpot
+                                Portal ID}}/{{#Enroll Sequence Form ID}}
+                            useExponentialBackoff:
+                              type: value
+                              value: "false"
+                          name: Enroll Sequence
+                    - name: Else
+                      steps: []
+                  description: ""
+                  inputs:
+                    conditions:
+                      type: complex
+                      value:
+                        - name: If Accepted
+                          type: complex
+                          value:
+                            - and
+                            - - equal
+                              - name: ""
+                                type: reference
+                                value: loopOverQuotes.currentItem.status
+                              - name: ""
+                                type: value
+                                value: accepted
+                            - - greaterThan
+                              - name: ""
+                                type: reference
+                                value: getQuote.results.dates.accepted
+                              - name: ""
+                                type: reference
+                                value: time2MinutesAgoToEpoch.results
+                        - name: If Sent
+                          type: complex
+                          value:
+                            - and
+                            - - equal
+                              - name: ""
+                                type: reference
+                                value: loopOverQuotes.currentItem.status
+                              - name: ""
+                                type: value
+                                value: sent
+                            - - greaterThan
+                              - name: ""
+                                type: reference
+                                value: getQuote.results.dates.sent
+                              - name: ""
+                                type: reference
+                                value: time2MinutesAgoToEpoch.results
+                  name: Enroll Sequence Branch
+                - action:
+                    key: branchOnExpression
+                    component:
+                      isPublic: true
+                      key: branch
+                      version: LATEST
+                  branches:
+                    - name: If Source ID Do Not Exist
+                      steps:
+                        - action:
+                            key: invokeFlow
+                            component:
+                              isPublic: true
+                              key: cross-flow
+                              version: LATEST
+                          description: 02 Create Any Missing PaintScout, HubSpot Deal & CompanyCam
+                          inputs:
+                            data:
+                              type: reference
+                              value: getQuote.results
+                            flowName:
+                              type: value
+                              value: 02 Create Any Missing PaintScout, HubSpot Deal & CompanyCam
+                          name: Invoke Flow 02
+                    - name: Else
+                      steps:
+                        - action:
+                            key: runCode
+                            component:
+                              isPublic: true
+                              key: code
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            code:
+                              type: value
+                              value: >
+                                module.exports = async ({ logger, configVars },
+                                stepResults) => {
+
+                                  let sources = stepResults.loopOverQuotes.currentItem.source.id
+
+                                  return sources.split(',') ;
+                                };
+                          name: Convert Sources to Array
+                        - action:
+                            key: loopOverItems
+                            component:
+                              isPublic: true
+                              key: loop
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            items:
+                              type: reference
+                              value: convertSourcesToArray.results
+                          name: Look Source IDs
+                          steps:
+                            - action:
+                                key: getDealById
+                                component:
+                                  isPublic: true
+                                  key: hubspot
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                additionalProperties:
+                                  type: complex
+                                  value:
+                                    - type: value
+                                      value: dealstage
+                                    - type: value
+                                      value: amount
+                                    - type: value
+                                      value: hours___contract
+                                    - type: value
+                                      value: airtable_awo_record_id
+                                    - type: value
+                                      value: airtable_job_record_id
+                                    - type: value
+                                      value: hubspot_owner_id
+                                    - type: value
+                                      value: estimate_date
+                                    - type: value
+                                      value: companycam_public_url
+                                    - type: value
+                                      value: companycam_project_url
+                                    - type: value
+                                      value: description
+                                    - type: value
+                                      value: source
+                                    - type: value
+                                      value: previous_customer
+                                    - type: value
+                                      value: scheduled_by
+                                    - type: value
+                                      value: tags
+                                    - type: value
+                                      value: house_built_before_1978
+                                    - type: value
+                                      value: deposit_amount
+                                    - type: value
+                                      value: project_type
+                                    - type: value
+                                      value: companycam_project_id
+                                    - type: value
+                                      value: gross_sales_after_discount__including_tax
+                                    - type: value
+                                      value: contract_type
+                                    - type: value
+                                      value: estimate_date_2
+                                archived:
+                                  type: value
+                                  value: "false"
+                                associationsList:
+                                  type: complex
+                                  value:
+                                    - type: value
+                                      value: Contacts
+                                dealId:
+                                  type: reference
+                                  value: lookSourceIds.currentItem
+                                dealName:
+                                  type: value
+                                  value: ""
+                                debugRequest:
+                                  type: value
+                                  value: "false"
+                                hubspotConnection:
+                                  type: configVar
+                                  value: HubSpot Private App Connection
+                                timeout:
+                                  type: value
+                                  value: ""
+                              name: Get Deal
+                            - action:
+                                key: branchOnExpression
+                                component:
+                                  isPublic: true
+                                  key: branch
+                                  version: LATEST
+                              branches:
+                                - name: If Original Deal
+                                  steps:
+                                    - action:
+                                        key: branchOnExpression
+                                        component:
+                                          isPublic: true
+                                          key: branch
+                                          version: LATEST
+                                      branches:
+                                        - name: If Not "Won"
+                                          steps:
+                                            - action:
+                                                key: listRecords
+                                                component:
+                                                  isPublic: true
+                                                  key: airtable
+                                                  version: LATEST
+                                              description: ""
+                                              errorConfig:
+                                                delaySeconds: 5
+                                                errorHandlerType: retry
+                                                ignoreFinalError: false
+                                                maxAttempts: 3
+                                                usesExponentialBackoff: false
+                                              inputs:
+                                                airtableConnection:
+                                                  type: configVar
+                                                  value: Airtable Connection
+                                                baseId:
+                                                  type: configVar
+                                                  value: Project Management Base
+                                                fields:
+                                                  type: complex
+                                                  value: []
+                                                filterByFormula:
+                                                  type: template
+                                                  value: AND({Quote Type
+                                                    Name}="{{$getQuote.results.quoteType.label}}",{Group}="Project
+                                                    Type")
+                                                tableName:
+                                                  type: configVar
+                                                  value: Lead Intake Conversion Table
+                                                view:
+                                                  type: value
+                                                  value: ""
+                                              name: Get Project Type
+                                            - action:
+                                                key: listRecords
+                                                component:
+                                                  isPublic: true
+                                                  key: airtable
+                                                  version: LATEST
+                                              description: ""
+                                              errorConfig:
+                                                delaySeconds: 5
+                                                errorHandlerType: retry
+                                                ignoreFinalError: false
+                                                maxAttempts: 3
+                                                usesExponentialBackoff: false
+                                              inputs:
+                                                airtableConnection:
+                                                  type: configVar
+                                                  value: Airtable Connection
+                                                baseId:
+                                                  type: configVar
+                                                  value: Project Management Base
+                                                fields:
+                                                  type: complex
+                                                  value: []
+                                                filterByFormula:
+                                                  type: template
+                                                  value: AND({Work Email}="{{$getQuote.results.owner.email}}",{Work Email})
+                                                tableName:
+                                                  type: configVar
+                                                  value: People Table
+                                                view:
+                                                  type: value
+                                                  value: ""
+                                              name: Get Owner
+                                            - action:
+                                                key: runCode
+                                                component:
+                                                  isPublic: true
+                                                  key: code
+                                                  version: LATEST
+                                              description: ""
+                                              inputs:
+                                                code:
+                                                  type: value
+                                                  value: >
+                                                    module.exports = async ({
+                                                    logger, configVars },
+                                                    stepResults) => {
+                                                      // Get PaintScout data from the previous step results
+                                                      const psData = stepResults.getQuote.results;
+                                                      const quoteStatus = psData.status || "";
+                                                      const quoteDate = Number(psData.dates.quote) || 0; // Ensure quoteDate is a number
+                                                      const quotePrice = psData.totals.price || 0;
+                                                      const sentStage = configVars["Bid Sent"];
+                                                      const acceptedStage = configVars["Customer Accepted Proposal"];
+                                                      const bidScheduledStage = configVars["Bid Scheduled"];
+                                                      const inProgressStage = configVars["Bid in Progress"];
+                                                      const dealData = stepResults.getDeal.results;
+                                                      const currentStage = dealData.properties.dealstage;
+
+                                                      logger.log("Current Stage: ", currentStage)
+                                                      logger.log("Current Status: ", quoteStatus)
+
+
+                                                      let status = bidScheduledStage; // Default to Bid Scheduled
+
+                                                      // Get today's date in epoch format at midnight
+                                                      const todayEpoch = new Date().setHours(0, 0, 0, 0);
+
+                                                      if (quoteStatus === "accepted") {
+                                                        status = acceptedStage;
+                                                      } else if (quoteStatus === "sent" || quoteStatus === "viewed") {
+                                                        if (currentStage ==  bidScheduledStage || currentStage ==  inProgressStage) {
+                                                          status = sentStage;
+                                                        } else {
+                                                          status = currentStage
+                                                        }
+                                                      } else {
+                                                        // Flow Implementation using Epoch Comparison
+                                                        if (quoteDate >= todayEpoch) {
+                                                          // Quote Date is today or in the future
+                                                          status = bidScheduledStage;
+                                                        } else {
+                                                          // Quote Date is before today
+                                                          if (quotePrice > 0) {
+                                                            status = inProgressStage;
+                                                          } else {
+                                                            status = bidScheduledStage;
+                                                          }
+                                                        }
+                                                      }
+
+                                                      logger.log(`Quote Date (Epoch): ${quoteDate}`);
+                                                      logger.log(`Today (Epoch): ${todayEpoch}`);
+                                                      logger.log(`Quote Price: ${quotePrice}`);
+                                                      logger.log(`Determined Status: ${status}`);
+
+                                                      // Return the status
+                                                      return status;
+                                                    };
+                                              name: Deal Stage Logic
+                                            - action:
+                                                key: runCode
+                                                component:
+                                                  isPublic: true
+                                                  key: code
+                                                  version: LATEST
+                                              description: ""
+                                              inputs:
+                                                code:
+                                                  type: value
+                                                  value: >
+                                                    module.exports = async ({
+                                                    logger, configVars },
+                                                    stepResults) => {
+                                                      // Get PaintScout data from the previous step results
+                                                      const psData = stepResults.getQuote.results;
+                                                      const dealData = stepResults.getDeal.results;
+                                                      const projectType = dealData.properties.project_type;
+                                                      const quoteId = psData.id;
+                                                      const dealStage = stepResults.dealStageLogic.results || configVars["Bid Scheduled"];
+                                                      const projectTypeData = stepResults.getProjectType.results[0]?.fields?.Code || "";
+
+                                                      // Get the mapping Config Variable
+                                                      const mapping = configVars["PS Quote Data to HS Properties Mapping"];
+
+                                                      // Helper function to retrieve nested properties safely
+                                                      function getNestedValue(obj, path) {
+                                                        return path
+                                                          .split(".")
+                                                          .reduce(
+                                                            (acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined),
+                                                            obj
+                                                          );
+                                                      }
+
+                                                      function cleanText(htmlString) {
+                                                        if (typeof htmlString !== "string") return htmlString; // Ensure input is a string
+
+                                                        return htmlString
+                                                          .replace(/<\/p>\s*<p>/g, "\n") // Replace closing & opening <p> tags with a newline
+                                                          .replace(/<br\s*\/?>/gi, "\n") // Replace <br> tags with a newline
+                                                          .replace(/<p>\s*<\/p>/g, "") // Remove empty <p> tags
+                                                          .replace(/<[^>]+>/g, "") // Remove remaining HTML tags
+                                                          .replace(/\n+/g, "\n") // Collapse multiple newlines into a single newline
+                                                          .trim(); // Trim leading/trailing spaces
+                                                      }
+
+                                                      const convertUnixToISO = (unixTime) => {
+                                                        return new Date(Math.floor(unixTime)).toISOString().split(".")[0] + "Z";
+                                                      };
+
+                                                      // Map properties of the PaintScout data to the specified field mappings
+                                                      const mappedFields = mapping.reduce((acc, { source, destination }) => {
+                                                        let value = getNestedValue(psData, source); // Get nested value
+
+                                                        if (source.includes("dates")) {
+                                                          value = convertUnixToISO(value);
+                                                        }
+
+                                                        if (source.includes("Note") && typeof value === "string") {
+                                                          value = cleanText(value); // Clean HTML tags before storing
+                                                        }
+
+                                                        // Add to accumulator if the value is not null or undefined
+                                                        if (value !== undefined && value !== null && value !== "") {
+                                                          acc[destination] = value;
+                                                        }
+
+                                                        return acc;
+                                                      }, {});
+
+                                                      // Set deal stage based on status
+                                                      mappedFields["project_type"] = projectType || projectTypeData || "";
+                                                      mappedFields["dealstage"] = dealStage;
+                                                      mappedFields[
+                                                        "paintscout_quote_url_internal"
+                                                      ] = `https://app.paintscout.com/quotes/edit/${quoteId}`;
+
+                                                      // Return the mapped fields in the required format
+                                                      return { properties: mappedFields };
+                                                    };
+                                              name: Update Deal Payload
+                                            - action:
+                                                key: rawRequest
+                                                component:
+                                                  isPublic: true
+                                                  key: hubspot
+                                                  version: LATEST
+                                              description: ""
+                                              inputs:
+                                                connection:
+                                                  type: configVar
+                                                  value: HubSpot Private App Connection
+                                                data:
+                                                  type: reference
+                                                  value: updateDealPayload.results
+                                                debugRequest:
+                                                  type: value
+                                                  value: "false"
+                                                fileData:
+                                                  type: complex
+                                                  value: []
+                                                fileDataFileNames:
+                                                  type: complex
+                                                  value: []
+                                                formData:
+                                                  type: complex
+                                                  value: []
+                                                headers:
+                                                  type: complex
+                                                  value:
+                                                    - name:
+                                                        type: value
+                                                        value: Content-Type
+                                                      type: value
+                                                      value: application/json
+                                                maxRetries:
+                                                  type: value
+                                                  value: "0"
+                                                method:
+                                                  type: value
+                                                  value: PATCH
+                                                queryParams:
+                                                  type: complex
+                                                  value: []
+                                                responseType:
+                                                  type: value
+                                                  value: json
+                                                retryAllErrors:
+                                                  type: value
+                                                  value: "false"
+                                                retryDelayMS:
+                                                  type: value
+                                                  value: "0"
+                                                timeout:
+                                                  type: value
+                                                  value: ""
+                                                url:
+                                                  type: template
+                                                  value: /crm/v3/objects/deals/{{$getDeal.results.id}}
+                                                useExponentialBackoff:
+                                                  type: value
+                                                  value: "false"
+                                              name: Update Deal
+                                            - action:
+                                                key: invokeFlow
+                                                component:
+                                                  isPublic: true
+                                                  key: cross-flow
+                                                  version: LATEST
+                                              description: Update Deal Name and CompanyCam Project Name
+                                              inputs:
+                                                data:
+                                                  type: template
+                                                  value: >-
+                                                    {
+
+                                                    "hs_object_id":
+                                                    {{$updateDeal.results.id}}
+
+                                                    }
+                                                flowName:
+                                                  type: value
+                                                  value: 90 Set/Update HS Deal Name & CompanyCam Project Name
+                                              name: Invoke Flow 90
+                                        - name: If Lost
+                                          steps:
+                                            - action:
+                                                key: writeLog
+                                                component:
+                                                  isPublic: true
+                                                  key: log
+                                                  version: LATEST
+                                              description: ""
+                                              inputs:
+                                                level:
+                                                  type: value
+                                                  value: info
+                                                message:
+                                                  type: value
+                                                  value: Deal is Lost. Nothing to do here.
+                                              name: Write Log Message
+                                        - name: Else
+                                          steps:
+                                            - action:
+                                                key: runCode
+                                                component:
+                                                  isPublic: true
+                                                  key: code
+                                                  version: LATEST
+                                              description: ""
+                                              inputs:
+                                                code:
+                                                  type: value
+                                                  value: >
+                                                    module.exports = async ({
+                                                    logger, configVars },
+                                                    stepResults) => {
+
+                                                      let quoteData = stepResults.getQuote.results
+                                                      let originalDeal = stepResults.getDeal.results.id
+
+                                                      quoteData.originalDeal = originalDeal
+
+                                                      return quoteData;
+                                                    };
+                                              name: CO Data
+                                            - action:
+                                                key: invokeFlow
+                                                component:
+                                                  isPublic: true
+                                                  key: cross-flow
+                                                  version: LATEST
+                                              description: ""
+                                              inputs:
+                                                data:
+                                                  type: reference
+                                                  value: coData.results
+                                                flowName:
+                                                  type: value
+                                                  value: 03 Change Order Process
+                                              name: Invoke Flow 03
+                                            - action:
+                                                key: writeLog
+                                                component:
+                                                  isPublic: true
+                                                  key: log
+                                                  version: LATEST
+                                              description: ""
+                                              inputs:
+                                                level:
+                                                  type: value
+                                                  value: info
+                                                message:
+                                                  type: value
+                                                  value: Invoke Change Order
+                                              name: Write Log Message 3
+                                      description: Change Order flow will trigger if the Original Contract is in Won
+                                        Stage
+                                      inputs:
+                                        conditions:
+                                          type: complex
+                                          value:
+                                            - name: If Not "Won"
+                                              type: complex
+                                              value:
+                                                - and
+                                                - - notEqual
+                                                  - name: ""
+                                                    type: reference
+                                                    value: getDeal.results.properties.dealstage
+                                                  - name: ""
+                                                    type: configVar
+                                                    value: Sales Won
+                                                - - notEqual
+                                                  - name: ""
+                                                    type: reference
+                                                    value: getDeal.results.properties.dealstage
+                                                  - name: ""
+                                                    type: configVar
+                                                    value: Sales Lost
+                                            - name: If Lost
+                                              type: complex
+                                              value:
+                                                - and
+                                                - - equal
+                                                  - name: ""
+                                                    type: reference
+                                                    value: getDeal.results.properties.dealstage
+                                                  - name: ""
+                                                    type: configVar
+                                                    value: Sales Lost
+                                      name: Deal Stage Branch
+                                - name: Else
+                                  steps: []
+                              description: This branch needs to get the Original Contract first
+                              inputs:
+                                conditions:
+                                  type: complex
+                                  value:
+                                    - name: If Original Deal
+                                      type: complex
+                                      value:
+                                        - or
+                                        - - notIn
+                                          - name: ""
+                                            type: value
+                                            value: _CO
+                                          - name: ""
+                                            type: reference
+                                            value: getDeal.results.properties.dealname
+                                        - - notEqual
+                                          - name: ""
+                                            type: reference
+                                            value: getDeal.results.properties.contract_type
+                                          - name: ""
+                                            type: value
+                                            value: Addendum - Change Order
+                              name: If Original or CO
+                  description: ""
+                  inputs:
+                    conditions:
+                      type: complex
+                      value:
+                        - name: If Source ID Do Not Exist
+                          type: complex
+                          value:
+                            - and
+                            - - doesNotExist
+                              - name: ""
+                                type: reference
+                                value: getQuote.results.source.id
+                  name: Source ID Branch
+            - name: Else
+              steps:
+                - action:
+                    key: writeLog
+                    component:
+                      isPublic: true
+                      key: log
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    level:
+                      type: value
+                      value: info
+                    message:
+                      type: value
+                      value: Not applicable for update.
+                  name: Write Log Message 2
+          description: ""
+          inputs:
+            conditions:
+              type: complex
+              value:
+                - name: Past 2 Minutes
+                  type: complex
+                  value:
+                    - and
+                    - - greaterThan
+                      - name: ""
+                        type: reference
+                        value: loopOverQuotes.currentItem.timestamp.updated
+                      - name: ""
+                        type: reference
+                        value: time2MinutesAgoToEpoch.results
+                    - - greaterThan
+                      - name: ""
+                        type: reference
+                        value: loopOverQuotes.currentItem.dates.quote
+                      - name: ""
+                        type: reference
+                        value: estimateDateToSync.results
+          name: Timestamp Branch

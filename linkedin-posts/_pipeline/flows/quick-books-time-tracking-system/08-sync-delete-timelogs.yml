@@ -1,0 +1,523 @@
+sourceFile: quick-books-time-tracking-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 08 Sync Delete Timelogs
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: schedule
+        component:
+          isPublic: true
+          key: schedule-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+      schedule:
+        meta:
+          scheduleType: hour
+          timeZone: ""
+        type: value
+        value: 0 */1 * * *
+    - action:
+        key: adjustDateTime
+        component:
+          isPublic: true
+          key: datetime
+          version: LATEST
+      description: ""
+      inputs:
+        dateTimeInput:
+          type: reference
+          value: trigger.results.startedAt
+        daysInput:
+          type: template
+          value: -{{#How Far Back to Pull Deleted Logs}}
+        hoursInput:
+          type: value
+          value: ""
+        minutesInput:
+          type: value
+          value: ""
+        secondsInput:
+          type: value
+          value: ""
+      name: Adjust Date/Time
+    - action:
+        key: formatDateTime
+        component:
+          isPublic: true
+          key: datetime
+          version: LATEST
+      description: ""
+      inputs:
+        dateTime:
+          type: reference
+          value: adjustDateTime.results
+        format:
+          type: value
+          value: YYYY-MM-DDTHH:mm:ssZ
+        timeZone:
+          type: value
+          value: Etc/UTC
+      name: Format to ISO Date
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: From QuickBooks Time
+      inputs:
+        code:
+          type: value
+          value: >-
+            const axios = require('axios');
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              // Example: ISO date string for filtering timesheets (passed as a parameter)
+              const date = stepResults.formatToIsoDate.results;  
+              // const date = "2024-01-01T00:00:00Z";
+
+              // Retrieve TSheets token from configVars (assuming it's defined)
+              const tsheetToken = configVars["QuickBooks Time Token"];
+
+              // Initialize TSheets API client.
+              const tsheetClient = axios.create({
+                baseURL: `https://rest.tsheets.com/api/v1`,
+                headers: {
+                  Authorization: `Bearer ${tsheetToken}`,
+                  'Content-Type': 'application/json'
+                },
+              });
+
+              let allTimesheets = [];
+              let page = 1;
+              const pageSize = 200; // maximum records per call
+
+              while (true) {
+                try {
+                  // Use retryOperation to call the API for this page.
+                  const timesheets = await retryOperation(
+                    () => retriveSheets(tsheetClient, '/timesheets_deleted', date, page),
+                    [3, 3, 3]
+                  );
+                  logger.log(`Retrieved ${timesheets.length} records on page ${page}`);
+                  // Append the records from this page to allTimesheets.
+                  allTimesheets = allTimesheets.concat(timesheets);
+
+                  // If the number of records returned is less than the pageSize, we assume this is the last page.
+                  if (timesheets.length < pageSize) {
+                    break;
+                  }
+                  // Otherwise, move to the next page.
+                  page++;
+                } catch (err) {
+                  logger.error(`Error retrieving Time Sheets on page ${page}:`, err.message);
+                  break;
+                }
+              }
+              
+              // Sort timesheets from earliest to latest using last_modified
+              allTimesheets.sort((a, b) => new Date(a.last_modified) - new Date(b.last_modified));
+              
+              logger.log("Total Timesheets Retrieved: ", allTimesheets.length);
+
+              return allTimesheets;
+            };
+
+
+            async function retriveSheets(client, endpoint, date, page) {
+              try {
+                // Construct query parameters.
+                // Adjust the query string parameters as required by the API.
+                const params = new URLSearchParams({ modified_since: date, page: page }).toString();    
+                const response = await client.get(`${endpoint}?${params}`);
+                
+                // Assuming your API returns a JSON object where timesheets are nested under a key (e.g. "results")
+                // and that each page returns an object with a property "timesheets"
+                const data = extractAllTimesheetIds(response.data);
+                return data || [];
+              } catch (error) {
+                console.error(`${endpoint} retrieval failed:`, error.response?.data || error.message);
+                throw error;
+              }
+            }
+
+
+            function extractAllTimesheetIds(data) {
+              // Adjust this function based on the structure of your API's response.
+              // For example, if response data looks like: { results: { timesheets: { id1: {}, id2: {} } }, more: true }
+              if (!data || !data.results || !data.results.timesheets_deleted) return [];
+              
+              return Object.values(data.results.timesheets_deleted);
+            }
+
+
+            function sleep(ms) {
+              return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+
+            /**
+             * Retry an async operation using specified delays (in seconds).
+             *
+             * @param {Function} operationFn - The async function to execute.
+             * @param {Array<number>} retryDelaysInSeconds - Array of delays (seconds) between retries.
+             * @returns {Promise<any>} - The result of the async function if successful.
+             */
+            async function retryOperation(operationFn, retryDelaysInSeconds =
+            [5, 5, 5]) {
+              let lastError;
+              for (const delayInSeconds of retryDelaysInSeconds) {
+                try {
+                  return await operationFn();
+                } catch (error) {
+                  lastError = error;
+                  console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                  await sleep(delayInSeconds * 1000);
+                }
+              }
+              throw lastError;
+            }
+      name: Retrieve All Deleted Time Sheets
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: From PaintOS Time Logs Table
+      inputs:
+        code:
+          type: value
+          value: >-
+            const axios = require('axios');
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const timeLogsTable = configVars["Time Logs Table"];
+              const base = configVars["Project Management Base"];
+              const { apiKey } = configVars["Airtable Connection"].fields;
+
+              // Initialize Airtable client.
+              const airtableClient = axios.create({
+                baseURL: `https://api.airtable.com/v0/${base}`,
+                headers: {
+                  Authorization: `Bearer ${apiKey}`,
+                  'Content-Type': 'application/json'
+                },
+              });
+
+              let allTimeLogs = [];
+              let offset = null;
+              const pageSize = 100;
+
+              do {
+                let url = `/${encodeURIComponent(timeLogsTable)}?pageSize=${pageSize}`;
+                if (offset) {
+                  url += `&offset=${encodeURIComponent(offset)}`;
+                }
+
+                try {
+                  const response = await retryOperation(
+                    () => airtableClient.get(url),
+                    [3, 3, 3]
+                  );
+
+                  const records = response.data.records || [];
+                  allTimeLogs = allTimeLogs.concat(records);
+
+                  logger.log(`Retrieved ${records.length} records; offset: ${response.data.offset || "none"}`);
+                  offset = response.data.offset;
+                } catch (error) {
+                  logger.error("Error retrieving Time Logs:", error.message);
+                  break;
+                }
+              } while (offset);
+
+              logger.log("Total Time Logs Retrieved:", allTimeLogs.length);
+
+              // Map out only the fields you care about from each time log
+              return allTimeLogs.map(record => ({
+                id: record.id,
+                fields: {
+                  "Time Entry ID": record.fields["Time Entry ID"],
+                  "QB Time Jobcode ID": record.fields["QB Time Jobcode ID"],
+                  "QB Time Jobcode Name": record.fields["QB Time Jobcode Name"]
+                }
+              }));
+            };
+
+
+            //
+
+            // --- Retry Operation Function and Sleep Helper ---
+
+            //
+
+
+            function sleep(ms) {
+              return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+
+            async function retryOperation(operationFn, retryDelaysInSeconds =
+            [5, 5, 5]) {
+              let lastError;
+              for (const delayInSeconds of retryDelaysInSeconds) {
+                try {
+                  return await operationFn();
+                } catch (error) {
+                  lastError = error;
+                  console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                  await sleep(delayInSeconds * 1000);
+                }
+              }
+              throw lastError;
+            }
+      name: Retrieve All Time Logs
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: To Timelogs Airtable
+      errorConfig:
+        delaySeconds: 2
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 1
+        usesExponentialBackoff: false
+      inputs:
+        code:
+          type: value
+          value: >-
+            const axios = require('axios');
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              try {
+                const timeEntries = stepResults.retrieveAllDeletedTimeSheets.results || [];
+                const timeLogRecords = stepResults.retrieveAllTimeLogs.results || [];
+                const timeLogsTable = configVars["Time Logs Table"];
+                const base = configVars["Project Management Base"];
+                const { apiKey } = configVars["Airtable Connection"].fields;
+
+                const airtableClient = axios.create({
+                  baseURL: `https://api.airtable.com/v0/${base}`,
+                  headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json',
+                  },
+                });
+
+                // Build a set of deleted time entry IDs for fast lookup
+                const deletedEntryIds = new Set(timeEntries.map(entry => String(entry.id)));
+
+                // Collect Airtable record IDs where "Time Entry ID" is in the deleted list
+                const recordIdsToDelete = timeLogRecords
+                  .filter(record => deletedEntryIds.has(String(record.fields?.["Time Entry ID"])))
+                  .map(record => record.id);
+
+                logger.log(`Found ${recordIdsToDelete.length} Time Logs to delete`);
+
+                const deletedChunks = [];
+                const chunked = chunkArray(recordIdsToDelete, 10);
+
+                for (const chunk of chunked) {
+                  try {
+                    const response = await retryOperation(
+                      () => deleteRecords(airtableClient, timeLogsTable, chunk),
+                      [3, 3, 3]
+                    );
+                    deletedChunks.push(response);
+                  } catch (error) {
+                    logger.error("Error during bulk delete:", error.message);
+                    deletedChunks.push({ error: error.message });
+                  }
+                }
+
+                logger.log("Time Log Delete Response Count:", deletedChunks.length);
+                return deletedChunks;
+              } catch (error) {
+                logger.error("Unhandled error in code block", error);
+                return { error: error.message };
+              }
+            };
+
+
+            function sleep(ms) {
+              return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+
+            async function retryOperation(operationFn, retryDelaysInSeconds =
+            [5, 5, 5]) {
+              let lastError;
+              for (const delayInSeconds of retryDelaysInSeconds) {
+                try {
+                  return await operationFn();
+                } catch (error) {
+                  lastError = error;
+                  console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                  await sleep(delayInSeconds * 1000);
+                }
+              }
+              throw lastError;
+            }
+
+
+            function chunkArray(array, chunkSize) {
+              const chunks = [];
+              for (let i = 0; i < array.length; i += chunkSize) {
+                chunks.push(array.slice(i, i + chunkSize));
+              }
+              return chunks;
+            }
+
+
+            async function deleteRecords(client, tableName, recordIds) {
+              const params = new URLSearchParams();
+              recordIds.forEach(id => params.append('records[]', id));
+
+              const response = await client.delete(`/${encodeURIComponent(tableName)}?${params.toString()}`);
+              return response.data || "";
+            }
+      name: Delete Timelogs
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: To Timelogs Airtable
+      errorConfig:
+        delaySeconds: 2
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 1
+        usesExponentialBackoff: false
+      inputs:
+        code:
+          type: value
+          value: >-
+            const axios = require('axios');
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              try {
+                const timeLogRecords = stepResults.retrieveAllTimeLogs.results || [];
+                const timeLogsTable = configVars["Time Logs Table"];
+                const base = configVars["Project Management Base"];
+                const { apiKey } = configVars["Airtable Connection"].fields;
+                const autoDeleteNonWorkLogs = configVars["Auto-Delete Non-Work Time Logs"]; 
+                const nonWorkJobCodes = configVars["Non-Work Job Code Mapping"] || [];
+
+                const airtableClient = axios.create({
+                  baseURL: `https://api.airtable.com/v0/${base}`,
+                  headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json',
+                  },
+                });
+
+                const nonWorkJobCodeIds = nonWorkJobCodes.map(code => Number(code.value));
+                let nonWorkRecordIdsToDelete = [];
+                if (autoDeleteNonWorkLogs) {
+                  // Pre-compute job code IDs once
+
+                  nonWorkRecordIdsToDelete = timeLogRecords
+                    .filter(record => {
+                      const jobCodeId = Number(record.fields?.["QB Time Jobcode ID"]);
+                      const jobCodeName = record.fields?.["QB Time Jobcode Name"]
+                      return nonWorkJobCodeIds.includes(jobCodeId) || jobCodeName === "Jobcode used in time entry not found. Either inactive or is unmapped break code."
+                    })
+                    .map(record => ({
+                      id: record.id,
+                      jobCodeId: Number(record.fields?.["QB Time Jobcode ID"]),
+                      jobCodeName: record.fields?.["QB Time Jobcode Name"]
+                    }));
+                }
+
+
+
+                
+                logger.log(
+                  "Unique Jobcodes:",
+                  ...Array.from(new Set(nonWorkJobCodeIds))
+                );
+
+                let recordsToDelete = nonWorkRecordIdsToDelete.map(item => item.id);
+
+
+                logger.log(`Found ${recordsToDelete.length} Time Logs to delete`);
+
+                const deletedChunks = [];
+                const chunked = chunkArray(recordsToDelete, 10);
+
+                for (const chunk of chunked) {
+                  try {
+                    const response = await retryOperation(
+                      () => deleteRecords(airtableClient, timeLogsTable, chunk),
+                      [3, 3, 3]
+                    );
+                    deletedChunks.push(response);
+                  } catch (error) {
+                    logger.error("Error during bulk delete:", error.message);
+                    deletedChunks.push({ error: error.message });
+                  }
+                }
+
+                logger.log("Time Log Delete Response Count:", deletedChunks.length);
+                return deletedChunks;
+              } catch (error) {
+                logger.error("Unhandled error in code block", error);
+                return { error: error.message };
+              }
+            };
+
+
+            function sleep(ms) {
+              return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+
+            async function retryOperation(operationFn, retryDelaysInSeconds =
+            [5, 5, 5]) {
+              let lastError;
+              for (const delayInSeconds of retryDelaysInSeconds) {
+                try {
+                  return await operationFn();
+                } catch (error) {
+                  lastError = error;
+                  console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                  await sleep(delayInSeconds * 1000);
+                }
+              }
+              throw lastError;
+            }
+
+
+            function chunkArray(array, chunkSize) {
+              const chunks = [];
+              for (let i = 0; i < array.length; i += chunkSize) {
+                chunks.push(array.slice(i, i + chunkSize));
+              }
+              return chunks;
+            }
+
+
+            async function deleteRecords(client, tableName, recordIds) {
+              const params = new URLSearchParams();
+              recordIds.forEach(id => params.append('records[]', id));
+
+              const response = await client.delete(`/${encodeURIComponent(tableName)}?${params.toString()}`);
+              return response.data || "";
+            }
+      name: Delete Non-Work Time Logs

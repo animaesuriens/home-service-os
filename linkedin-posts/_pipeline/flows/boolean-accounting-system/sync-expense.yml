@@ -1,0 +1,151 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: Sync Expense
+  description: Based on an event triggered from the deletion of an Expense in QBO.
+    Currently only treats deletions, needs to be adjust like accounts one.
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Sync Expense Deletion in Airtable Trigger
+    - action:
+        key: stopExecution
+        component:
+          isPublic: true
+          key: stop-execution
+          version: LATEST
+      description: ""
+      inputs:
+        contentType:
+          type: value
+          value: application/json
+        headers:
+          type: complex
+          value: []
+        jsonBody:
+          type: value
+          value: ""
+        statusCode:
+          type: value
+          value: "200"
+      name: Stop Execution
+    - action:
+        key: listRecords
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: By QBO Expense ID
+      errorConfig:
+        delaySeconds: 5
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 3
+        usesExponentialBackoff: false
+      inputs:
+        airtableConnection:
+          type: configVar
+          value: Airtable Connection
+        baseId:
+          type: configVar
+          value: Project Management Base
+        fields:
+          type: complex
+          value: []
+        filterByFormula:
+          type: template
+          value: "{QBO Expense ID} =
+            '{{$syncExpenseDeletionInAirtableTrigger.results.body.data.qboExpen\
+            seId}}'"
+        tableName:
+          type: configVar
+          value: Expenses Table
+        view:
+          type: value
+          value: ""
+      name: Get Expense
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Yes
+          steps:
+            - action:
+                key: loopOverItems
+                component:
+                  isPublic: true
+                  key: loop
+                  version: LATEST
+              description: ""
+              inputs:
+                items:
+                  type: reference
+                  value: getExpense.results
+              name: Loop Over Expenses
+              steps:
+                - action:
+                    key: deleteRecord
+                    component:
+                      isPublic: true
+                      key: airtable
+                      version: LATEST
+                  description: By Record Id
+                  inputs:
+                    airtableConnection:
+                      type: configVar
+                      value: Airtable Connection
+                    baseId:
+                      type: configVar
+                      value: Project Management Base
+                    recordId:
+                      type: reference
+                      value: loopOverExpenses.currentItem.id
+                    tableName:
+                      type: configVar
+                      value: Expenses Table
+                  name: Delete Expense
+        - name: Else
+          steps:
+            - action:
+                key: writeLog
+                component:
+                  isPublic: true
+                  key: log
+                  version: LATEST
+              description: No record found
+              inputs:
+                level:
+                  type: value
+                  value: info
+                message:
+                  type: template
+                  value: "No expense found with id:
+                    {{$syncExpenseDeletionInAirtableTrigger.results.body.data.q\
+                    boExpenseId}}"
+              name: Log
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Yes
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: getExpense.results.0.id
+      name: Expenses found?

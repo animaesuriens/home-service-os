@@ -1,0 +1,459 @@
+sourceFile: boolean-marketing-integration-export.yml
+category: Marketing and Sales System
+name: Boolean Marketing Integration
+description: This integration connects YouCanBook.Me, CompanyCam, HubSpot, and
+  PaintScout to create a unified workflow for booking, quoting, and follow-ups.
+  It streamlines appointment scheduling, generates detailed quotes, organizes
+  project photos, and automates follow-up tasks, enhancing efficiency and client
+  communication throughout the sales process.
+configPages:
+  - elements:
+      - type: htmlElement
+        value: <h1>Applications</h1>
+      - type: configVar
+        value: HubSpot Private App Connection
+      - type: htmlElement
+        value: |-
+          <p>
+            Include the following to the Private App scopes:
+          </p><br>
+
+          <p style="
+              font-family:'Courier New', courier;
+              font-size:12px;
+              background-color:#000;      /* try #1e1e1e for a softer dark */
+              color:#fba026;
+              display:inline-block;
+              padding:8px 12px;
+              margin:0;
+              border-radius:6px;
+              box-shadow:0 2px 6px rgba(0,0,0,0.5);
+          ">
+            <code>crm.objects.companies.read</code>&nbsp;
+            <code>crm.objects.companies.write</code>&nbsp;
+            <code>crm.objects.contacts.read</code>&nbsp;
+            <code>crm.objects.contacts.write</code>&nbsp;
+            <code>crm.objects.custom.read</code>&nbsp;
+            <code>crm.objects.deals.read</code>&nbsp;
+            <code>crm.objects.deals.write</code>&nbsp;
+            <code>crm.objects.owners.read</code>&nbsp;
+            <code>crm.objects.users.read</code>&nbsp;
+            <code>crm.schemas.companies.read</code>&nbsp;
+            <code>crm.schemas.contacts.read</code>&nbsp;
+            <code>crm.schemas.custom.read</code>&nbsp;
+            <code>crm.schemas.deals.read</code>&nbsp;
+            <code>forms</code>&nbsp;
+            <code>oauth</code>&nbsp;
+            <code>files</code>&nbsp;
+            <code>files.ui_hidden.read</code>
+          </p>
+      - type: configVar
+        value: PaintScout Connection
+      - type: configVar
+        value: CompanyCam Connection
+      - type: htmlElement
+        value: <h1>Routes Settings</h1>
+      - type: configVar
+        value: HubSpot Route Registration URL
+      - type: configVar
+        value: Email Sender Webhook URL
+      - type: configVar
+        value: Text Sender Webhook URL
+      - type: configVar
+        value: Create Calendar Event Webhook URL
+      - type: configVar
+        value: Deal Naming System Webhook URL
+      - type: configVar
+        value: PaintScout Default Identifier Webhook URL
+      - type: configVar
+        value: Update Estimate Calendar Webhook URL
+    name: Connections
+    tagline: ""
+  - elements:
+      - type: configVar
+        value: HubSpot Marketing Pipeline
+      - type: configVar
+        value: HubSpot Sales Pipeline
+      - type: configVar
+        value: HubSpot Portal ID
+      - type: configVar
+        value: Project Management Base
+      - type: configVar
+        value: Multi Project Type Deals
+      - type: configVar
+        value: Assign Company Cam to Project Owner
+      - type: configVar
+        value: Estimate Date Type
+      - type: configVar
+        value: "MQL → SQL Conversion: Sync Job Site Address to Associated Contact"
+      - type: configVar
+        value: Deal Stage for Cancelled Appointments
+      - type: configVar
+        value: Lost Reason for Cancelled Appointments
+      - type: configVar
+        value: Delete PS and CC Project
+    name: Foundation Setup
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: htmlElement
+        value: <h2>HubSpot Marketing Pipeline</h2>
+      - type: configVar
+        value: Lead - Not Contacted
+      - type: configVar
+        value: Lead - Follow-Up 1
+      - type: configVar
+        value: Lead - Follow-Up 2
+      - type: configVar
+        value: Lead - Follow-Up 3
+      - type: configVar
+        value: Lead Closed Lost
+      - type: htmlElement
+        value: <h2>HubSpot Sales Pipeline</h2>
+      - type: configVar
+        value: Bid Scheduled
+      - type: configVar
+        value: Bid Sent
+      - type: configVar
+        value: Customer Accepted Proposal
+      - type: configVar
+        value: Sales Won
+      - type: configVar
+        value: Sales Lost
+      - type: htmlElement
+        value: <h1>Base Tables</h1>
+      - type: configVar
+        value: People Table
+      - type: configVar
+        value: Project Types Table
+      - type: configVar
+        value: Sources Table
+      - type: configVar
+        value: Lead Intake Conversion Table
+      - type: configVar
+        value: Lead Follow up Templates
+      - type: htmlElement
+        value: <h1>YouCanBook.Me JSON</h1>
+      - type: htmlElement
+        value: >-
+          <details>
+            <summary><strong>Short Code Setup</strong></summary>
+            <p>
+              Defines the mapping between internal field names and YCBM short codes.<br><br>
+              <ul>
+                <li><strong>Each key</strong> should match a key used in the <em>Notification Payload</em> (e.g., <code>jobFirstName</code>).</li>
+                <li><strong>Each value</strong> should be the YCBM short code without the bracket (e.g., <code>FNAME</code>).</li>
+              </ul>
+              <strong>Example:</strong>
+              <pre><code>{
+            "jobFirstName": "FNAME",
+            "jobEmail": "EMAIL"
+          }</code></pre>
+            </p>
+          </details>
+      - type: configVar
+        value: Short Code Setup
+      - type: htmlElement
+        value: >-
+          <details>
+            <summary><strong>Notification Payload</strong></summary>
+            <p>
+              Defines the data structure used when processing YCBM bookings.<br><br>
+              <ul>
+                <li><strong>Each key</strong> is a user-friendly label (e.g., shown in a UI mapping dropdown).</li>
+                <li><strong>Each value</strong> is the internal YCBM field key (e.g., <code>jobFirstName</code>).</li>
+              </ul>
+              <strong>Example:</strong>
+              <pre><code>{
+            "Job First Name": "jobFirstName",
+            "Job Last Name": "jobLastName"
+          }</code></pre>
+            </p>
+          </details>
+      - type: configVar
+        value: Notification Payload
+      - type: htmlElement
+        value: <h1>Marketing Vendor Setup</h1>
+      - type: htmlElement
+        value: >-
+          <details>
+            <summary><strong>Multiple Lead Payload</strong></summary>
+            <p>
+              Defines the JSON structure for mapping multiple leads from a marketing vendor.<br><br>
+              <ul>
+          <li>Each key represents the vendor name, e.g.
+          <code>go_high_level</code>.</li>
+                <li>Each value is the sample data that the vendor's sent through webhook via JSON.</li>
+              </ul>
+              <strong>Example JSON data:</strong>
+              <pre><code>{
+            "firstName": "John",
+            "lastName": "Doe",
+            "ghl_source": "johndoe@example.com"
+          }</code></pre>
+            </p>
+          </details>
+      - type: configVar
+        value: Multiple Lead Payload
+      - type: htmlElement
+        value: >-
+          <details>
+            <summary><strong>Vendor Unique Identifier</strong></summary>
+            <p>
+              JSON form defining how to extract the unique identifier from the incoming marketing vendor JSON payload.<br><br>
+              This is used to match each lead submission to the correct marketing vendor setup.
+              <br><br>
+              <strong>Expected Format:</strong>
+              <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse;">
+                <thead>
+                  <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>vendor_id</code></td>
+                    <td><code>vendor_unique_key</code></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <br>
+              You would notice that in the <strong>Multiple Lead Payload</strong> field, there should be a key that represents the <code>vendor_unique_key</code> that identifies which vendor the JSON belongs to.
+
+              <br><br>
+              <strong>Example Mapping:</strong>
+              <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse;">
+                <thead>
+                  <tr>
+                    <th>Key (Vendor Name)</th>
+                    <th>Value (Unique Key in Payload)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>go_high_level</code></td>
+                    <td><code>ghl_source</code></td>
+                  </tr>
+                </tbody>
+              </table>
+            </p>
+          </details>
+      - type: configVar
+        value: Vendor Unique Identifier
+    name: Pipeline, Tables, JSON Structure
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: htmlElement
+        value: <h1>Notification Variables</h1>
+      - type: configVar
+        value: Resource Coordinator - Default Notification Email
+      - type: configVar
+        value: The "From Name" for Automation Alerts
+      - type: configVar
+        value: Company Phone Number
+      - type: configVar
+        value: The "From Name" for Customer Confirmation
+      - type: configVar
+        value: Deal Group Name
+      - type: configVar
+        value: Contact Group Name
+    name: Communicator Page
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: htmlElement
+        value: <h1>YCBM Fields to HubSpot Properties</h1>
+      - type: configVar
+        value: YCBM to HS Deal Fields
+      - type: configVar
+        value: YCBM to HS Contact Field
+    name: Software Mappings
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: htmlElement
+        value: <h1>Marketing Vendor</h1>
+      - type: configVar
+        value: Vendor JSON to HS Deal Properties
+      - type: htmlElement
+        value: <h1>HubSpot Form Submission</h1>
+      - type: configVar
+        value: Lead HS Contact to HS Deal Property
+    name: Lead To HS Deal Mapping
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: htmlElement
+        value: <h1>Marketing Vendor</h1>
+      - type: configVar
+        value: Vendor JSON to HS Contact Property
+      - type: htmlElement
+        value: <h1>HubSpot Form Submission</h1>
+      - type: configVar
+        value: Lead Contact Properties Mapping
+    name: Lead To HS Contact Mapping
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: htmlElement
+        value: >
+          <!doctype html>
+
+          <html lang="en">
+
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <title>YCBM Glossary</title>
+            <style>
+              .ycbm-glossary {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+                background: #f9fafb;
+                color: #333;
+                max-width: 700px;
+              }
+
+              .ycbm-glossary__title {
+                font-size: 20px !important;
+                 margin-bottom: 10px !important;
+            color: #000000 !important;
+            font-weight: 700 !important;
+
+              }
+
+              .ycbm-glossary__description {
+                color: #666;
+                margin-top: 0;
+                line-height: 1.5;
+              }
+
+              .ycbm-glossary__card {
+                background: #fff;
+                border-radius: 8px;
+                padding: 16px;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+              }
+
+              .ycbm-glossary__list {
+                margin: 0;
+              }
+
+              .ycbm-glossary__term {
+                font-family: monospace;
+                background: #f3f4f6;
+                padding: 6px 10px;
+                border-radius: 6px;
+                display: inline-block;
+              }
+
+              .ycbm-glossary__definition {
+                margin: 8px 0 16px;
+                color: #555;
+              }
+
+              .ycbm-glossary__example {
+                background: #f4f4f4;
+                padding: 10px;
+                border-radius: 6px;
+                overflow-x: auto;
+                white-space: pre-wrap;
+                line-height: 1.4;
+              }
+
+              .ycbm-glossary__footer {
+                margin-top: 16px;
+                color: #888;
+                font-size: 13px;
+              }
+            </style>
+          </head>
+
+          <body>
+            <main class="ycbm-glossary">
+             
+              <section class="ycbm-glossary__card" aria-label="Glossary">
+           <p class="ycbm-glossary__title">YCBM Customer Facing Feature</p>
+              <p class="ycbm-glossary__description">
+                Short reference for variables used in the YCBM customer-facing self-booking flow.
+              </p>
+
+                <dl class="ycbm-glossary__list">
+                  <dt class="ycbm-glossary__term">{CUSTOMER}</dt>
+                  <dd class="ycbm-glossary__definition">Customer First Name from HubSpot Contact Data.</dd>
+
+                  <dt class="ycbm-glossary__term">{CUSTOMER_PHONE}</dt>
+                  <dd class="ycbm-glossary__definition">Customer Phone Number from HubSpot Contact Data.</dd>
+
+                  <dt class="ycbm-glossary__term">{CONTACT_OWNER}</dt>
+                  <dd class="ycbm-glossary__definition">Reference for the customer-facing YCBM "From" name.</dd>
+
+                  <dt class="ycbm-glossary__term">{YCBM_LINK}</dt>
+                  <dd class="ycbm-glossary__definition">Short URL of the YCBM pre-filled link.</dd>
+
+                  <dt class="ycbm-glossary__term">{COMPANY_NAME}</dt>
+                  <dd class="ycbm-glossary__definition">The "From Name" for Customer Confirmation. This can be found in the Communicator page.</dd>
+                </dl>
+
+                <div>
+                  <p><strong>Example usage in a template:</strong></p>
+                  <pre class="ycbm-glossary__example">
+          Hello {CUSTOMER}, This is from {CONTACT_OWNER} at {COMPANY_NAME}. 
+
+          Your phone number is {CUSTOMER_PHONE}.
+
+          Click the link below to schedule your calendar appointment:
+          {YCBM_LINK}
+                  </pre>
+                </div>
+              </section>
+            </main>
+          </body>
+
+          </html>
+      - type: configVar
+        value: Customer Facing YCBM Text Template
+      - type: configVar
+        value: Customer Facing YCBM Booking Link
+      - type: configVar
+        value: Auto Mapped Estimator
+      - type: htmlElement
+        value: <h1>Business Hours Auto Reply</h1>
+      - type: configVar
+        value: Do you want to auto reply during business hours?
+      - type: configVar
+        value: Time Zone
+      - type: configVar
+        value: Open Hour
+      - type: configVar
+        value: Open Business Response Email Template
+      - type: configVar
+        value: Custom CC Email
+      - type: configVar
+        value: Custom BCC Email
+      - type: configVar
+        value: Open Business Response Text Template
+      - type: configVar
+        value: Do you want to auto reply after business hours?
+      - type: configVar
+        value: Close Business Response Email Template
+      - type: configVar
+        value: Close Business Response Text Template
+    name: Email and Text Confirmation
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: htmlElement
+        value: <h1>CSR Notification Template</h1>
+      - type: configVar
+        value: Error Email Template
+      - type: htmlElement
+        value: <h1>YCBM Email</h1>
+      - type: configVar
+        value: YCBM Email notification template
+    name: Email Notification Template
+    tagline: ""
+    userLevelConfigured: true

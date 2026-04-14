@@ -1,0 +1,255 @@
+sourceFile: job-management-integration-export.yml
+category: Boolean PaintOS
+name: Job Management Integration
+description: This job management integration streamlines operations by syncing
+  won jobs, managing projects, and linking contacts and companies directly from
+  HubSpot. It provides a centralized system for seamless data flow, ensuring
+  efficient tracking and organization across all job-related processes.
+configPages:
+  - elements:
+      - type: htmlElement
+        value: >
+          <!doctype html>
+
+          <html lang="en">
+
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>V35 – Job Management (BETA)</title>
+          </head>
+
+          <body style="font-family: Arial, Helvetica, sans-serif;
+          line-height:1.5; margin:24px; color:#111">
+            <header style="margin-bottom:18px;">
+              <h1 style="margin:0 0 6px 0; font-size:22px;">📣 New BETA Version Published 📣</h1>
+              <div style="font-size:14px; color:#333">
+                <strong>Version:</strong> V35 – Job Management<br>
+                <strong>Date:</strong> 10/06/2025 MDT
+              </div>
+            </header>
+
+            <main>
+              <!-- Feature 1 -->
+              <section style="margin-bottom:20px;">
+                <h2 style="margin:0 0 8px 0; font-size:18px;">Feature: Role Field Update in People Table</h2>
+
+                <h3 style="margin:12px 0 6px 0; font-size:16px;">Problem</h3>
+                <ul style="margin:0 0 0 18px; padding:0;">
+                  <li style="margin:6px 0;">
+                    🔸 During the alpha test for <strong>Contact Sync Preferences</strong>, a bug was found that was unrelated to that feature.
+                    The <strong>“Role”</strong> field in Airtable’s <strong>People Table</strong> was changed from a single select to a multi-select field,
+                    which caused an error in <strong>Flow 02</strong> that syncs people from HubSpot to Airtable.
+                  </li>
+                </ul>
+
+                <h3 style="margin:12px 0 6px 0; font-size:16px;">Solution</h3>
+                <ul style="margin:0 0 0 18px; padding:0;">
+                  <li style="margin:6px 0;">🔸 Updated the payload from a single string to an array containing a single string value.</li>
+                </ul>
+
+                <h3 style="margin:12px 0 6px 0; font-size:16px;">Test</h3>
+                <p style="margin:0;">🔸 Verified during development. The <strong>Role</strong> value now inserts and updates successfully.</p>
+
+                <h3 style="margin:12px 0 6px 0; font-size:16px;">Notes</h3>
+                <p style="margin:0;">
+                  🔸 The default option is <strong>“Always.”</strong><br>
+                  🔸 No existing clients are affected by this update.<br>
+                  🔸 This is a <strong>BETA version</strong> and is now available for testing with other clients.
+                </p>
+              </section>
+            </main>
+
+            <footer style="margin-top:20px; font-size:13px; color:#444">
+              <em>Generated: 10/06/2025 MDT</em>
+            </footer>
+          </body>
+
+          </html>
+      - type: htmlElement
+        value: <h1>Applications</h1>
+      - type: configVar
+        value: HubSpot Private App Connection
+      - type: htmlElement
+        value: |-
+          <p>
+            Include the following to the Private App scopes:
+          </p><br>
+
+          <p style="
+              font-family:'Courier New', courier;
+              font-size:12px;
+              background-color:#000;      /* try #1e1e1e for a softer dark */
+              color:#fba026;
+              display:inline-block;
+              padding:8px 12px;
+              margin:0;
+              border-radius:6px;
+              box-shadow:0 2px 6px rgba(0,0,0,0.5);
+          ">
+            <code>crm.objects.companies.read</code>&nbsp;
+            <code>crm.objects.companies.write</code>&nbsp;
+            <code>crm.objects.contacts.read</code>&nbsp;
+            <code>crm.objects.contacts.write</code>&nbsp;
+            <code>crm.objects.custom.read</code>&nbsp;
+            <code>crm.objects.deals.read</code>&nbsp;
+            <code>crm.objects.deals.write</code>&nbsp;
+            <code>crm.objects.owners.read</code>&nbsp;
+            <code>crm.objects.users.read</code>&nbsp;
+            <code>crm.schemas.companies.read</code>&nbsp;
+            <code>crm.schemas.contacts.read</code>&nbsp;
+            <code>crm.schemas.custom.read</code>&nbsp;
+            <code>crm.schemas.deals.read</code>&nbsp;
+            <code>forms</code>&nbsp;
+            <code>oauth</code>&nbsp;
+            <code>files</code>&nbsp;
+            <code>files.ui_hidden.read</code>
+          </p>
+      - type: configVar
+        value: eSignature Secret Token
+      - type: htmlElement
+        value: <h1>Routes Setting</h1>
+      - type: configVar
+        value: HubSpot Route Registration URL
+      - type: htmlElement
+        value: <h1>Default Connection</h1>
+      - type: configVar
+        value: Airtable Personal Token
+    name: Connections
+    tagline: ""
+  - elements:
+      - type: htmlElement
+        value: <h1>Hubspot</h1>
+      - type: configVar
+        value: Bid Sent Stage
+      - type: configVar
+        value: Accepted Job Stage
+      - type: configVar
+        value: Declined Job Stage
+      - type: configVar
+        value: Won Job Stage
+      - type: configVar
+        value: Sales Pipeline
+      - type: configVar
+        value: Choose the Ready to Process Property
+      - type: configVar
+        value: Choose the Contract Type Property
+      - type: htmlElement
+        value: <h1>Airtable</h1>
+      - type: configVar
+        value: Project Management Base
+      - type: configVar
+        value: Include 'Accepted' status in the Addendum filter.
+      - type: configVar
+        value: Contact Sync Preferences
+      - type: configVar
+        value: Company Sync Preferences
+      - type: htmlElement
+        value: <h1>Default Badges</h1>
+      - type: configVar
+        value: Job Detail Badge
+      - type: configVar
+        value: Job Difficulty Badge
+      - type: configVar
+        value: Job Communication Badge
+    name: Project Management
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: htmlElement
+        value: <h1>Airtable</h1>
+      - type: configVar
+        value: Jobs Table
+      - type: configVar
+        value: Projects Table
+      - type: configVar
+        value: Objects Table
+      - type: configVar
+        value: Addendums Table
+    name: Production Tables
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: htmlElement
+        value: <h1>Esignature</h1>
+      - type: configVar
+        value: Send to Employee and Customer At The Same Time
+      - type: htmlElement
+        value: <h2>Change Order Setup</h2>
+      - type: configVar
+        value: Change Order Template
+      - type: configVar
+        value: Change Order Fields
+      - type: htmlElement
+        value: <h2>Hold Harmless Agreement Setup</h2>
+      - type: configVar
+        value: Hold Harmless Agreement Template
+      - type: configVar
+        value: Hold Harmless Agreement Fields
+      - type: htmlElement
+        value: <h2>Cost Plus Setup</h2>
+      - type: configVar
+        value: Cost Plus Template
+      - type: configVar
+        value: Cost Plus Fields
+    name: eSignature Setup
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: htmlElement
+        value: <h1>Airtable</h1>
+      - type: configVar
+        value: People Table
+      - type: configVar
+        value: Contacts Table
+      - type: configVar
+        value: Company Table
+      - type: htmlElement
+        value: <h1>Hubspot Contact Properties Filter</h1>
+      - type: configVar
+        value: Contact Group Name
+      - type: configVar
+        value: Deal Group Name
+    name: Operations Table
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: htmlElement
+        value: <h2>Variables</h2>
+      - type: configVar
+        value: Estimate/Job Number Field
+      - type: configVar
+        value: Tags/Project Sub-type Property
+      - type: configVar
+        value: Airtable Job Record ID Property
+      - type: configVar
+        value: Airtable CO Record ID Property
+      - type: configVar
+        value: Job Coordinator
+      - type: htmlElement
+        value: <h2>Mapping Between HS Properties and AT Fields</h2>
+      - type: configVar
+        value: HubSpot Deal Properties to Airtable Jobs Fields Mapping
+      - type: configVar
+        value: Airtable Addendums Fields to HubSpot Deal Properties Mapping
+      - type: configVar
+        value: HubSpot Deal Properties to Airtable Addendums Fields Mapping
+      - type: configVar
+        value: HubSpot Contact to Airtable Contact Mapping
+    name: Property Mapping
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: htmlElement
+        value: <h1>Notification Variables</h1>
+      - type: configVar
+        value: Resource Coordinator - Default Notification Email
+      - type: configVar
+        value: The "From Name" for Automation Alerts
+      - type: configVar
+        value: Error Email Template
+      - type: configVar
+        value: Email Sender Webhook URL
+    name: Notifications
+    tagline: ""
+    userLevelConfigured: false

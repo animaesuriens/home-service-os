@@ -1,0 +1,103 @@
+sourceFile: gmail-and-ring-central-communicator-export.yml
+category: Marketing and Sales System
+flow:
+  name: 02 Create Available Event Calendar
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: webhook
+        component:
+          isPublic: true
+          key: webhook-triggers
+          version: LATEST
+      description: ""
+      inputs:
+        body:
+          type: value
+          value: ""
+        contentType:
+          type: value
+          value: ""
+        headers:
+          type: complex
+          value: []
+        statusCode:
+          type: value
+          value: "202"
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: google-calendar
+          version: LATEST
+      description: ""
+      inputs:
+        connection:
+          type: configVar
+          value: Google Calendar Connection
+        data:
+          type: template
+          value: |-
+            {
+              "summary": "OPEN",
+              "description": "Open Calendar",
+              "start": {
+                "dateTime": "{{$trigger.results.body.data.startsAt}}"
+              },
+              "end": {
+                "dateTime": "{{$trigger.results.body.data.endsAt}}"
+              },
+              "transparency": "transparent"
+            }
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: Content-Type
+              type: value
+              value: application/json
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: POST
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: template
+          value: /calendars/{{$trigger.results.body.data.estimatorEmail}}/events
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Create Open Calendar

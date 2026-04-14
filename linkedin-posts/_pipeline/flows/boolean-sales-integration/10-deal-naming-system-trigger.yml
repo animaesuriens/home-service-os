@@ -1,0 +1,184 @@
+sourceFile: boolean-sales-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 10 Deal Naming System Trigger
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: schedule
+        component:
+          isPublic: true
+          key: schedule-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+      schedule:
+        meta:
+          scheduleType: minute
+          timeZone: ""
+        type: value
+        value: "*/2 * * * *"
+    - action:
+        key: adjustDateTime
+        component:
+          isPublic: true
+          key: datetime
+          version: LATEST
+      description: ""
+      inputs:
+        dateTimeInput:
+          type: reference
+          value: trigger.results.startedAt
+        daysInput:
+          type: value
+          value: ""
+        hoursInput:
+          type: value
+          value: ""
+        minutesInput:
+          type: value
+          value: "-2"
+        secondsInput:
+          type: value
+          value: ""
+      name: Adjust Date/Time
+    - action:
+        key: convertToEpoch
+        component:
+          isPublic: true
+          key: datetime
+          version: LATEST
+      description: ""
+      inputs:
+        dateTimeInput:
+          type: reference
+          value: adjustDateTime.results
+        displayEpochInSeconds:
+          type: value
+          value: "false"
+      name: Time 2 Minutes Ago to Epoch
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 5
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 3
+        usesExponentialBackoff: false
+      inputs:
+        code:
+          type: value
+          value: >-
+            const axios = require("axios");
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const time = stepResults.time2MinutesAgoToEpoch?.results;
+              const marketing_pipeline = configVars["HubSpot Marketing Pipeline"];
+              const dealNameButton = configVars["Auto-Update Deal Name in Marketing Pipeline"] || "true";
+              const { accessToken } = configVars["HubSpot Private App Connection"].fields;
+
+              logger.log("Update deals in Marketing Pipeline: ", dealNameButton);
+
+              let filters = [
+                {
+                  propertyName: "hs_lastmodifieddate",
+                  operator: "GT",
+                  value: time,
+                },
+                {
+                  propertyName: "contract_type",
+                  operator: "NEQ",
+                  value: "Addendum - Change Order",
+                },
+              ];
+
+              if (dealNameButton === "false") {
+                filters.push({
+                  propertyName: "pipeline",
+                  operator: "NEQ",
+                  value: marketing_pipeline,
+                });
+              }
+
+              const baseUrl = "https://api.hubapi.com/crm/v3/objects/deals/search";
+              const headers = {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+              };
+
+              let allResults = [];
+              let hasMore = true;
+              let after = null;
+
+              while (hasMore) {
+                const payload = {
+                  filterGroups: [{ filters }],
+                  sorts: [{ propertyName: "hs_lastmodifieddate", direction: "DESCENDING" }],
+                  limit: 100,
+                  ...(after ? { after } : {}),
+                };
+
+                try {
+                  const response = await axios.post(baseUrl, payload, { headers });
+                  const data = response.data;
+
+                  if (data.results?.length) {
+                    allResults.push(...data.results);
+                    logger.log(`Fetched ${data.results.length} deals. Total so far: ${allResults.length}`);
+                  }
+
+                  if (data.paging?.next?.after) {
+                    after = data.paging.next.after;
+                  } else {
+                    hasMore = false;
+                  }
+                } catch (error) {
+                  logger.error("Error fetching deals from HubSpot:", error.response?.data || error.message);
+                  throw new Error("Failed to fetch deals from HubSpot");
+                }
+              }
+
+              return { total: allResults.length, deals: allResults };
+            };
+      name: Get Deals
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: getDeals.results.deals
+      name: Loop Over HS Deals
+      steps:
+        - action:
+            key: invokeFlow
+            component:
+              isPublic: true
+              key: cross-flow
+              version: LATEST
+          description: ""
+          inputs:
+            data:
+              type: template
+              value: |-
+                {        
+                "hs_object_id": {{$loopOverHsDeals.currentItem.id}} 
+                }
+            flowName:
+              type: value
+              value: 90 Set/Update HS Deal Name & CompanyCam Project Name
+          name: Invoke Flow 90 Naming System

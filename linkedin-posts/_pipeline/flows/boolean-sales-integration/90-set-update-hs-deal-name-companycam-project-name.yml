@@ -1,0 +1,935 @@
+sourceFile: boolean-sales-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 90 Set/Update HS Deal Name & CompanyCam Project Name
+  description: ""
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: webhook
+        component:
+          isPublic: true
+          key: webhook-triggers
+          version: LATEST
+      description: ""
+      inputs:
+        body:
+          type: value
+          value: ""
+        contentType:
+          type: value
+          value: application/json
+        headers:
+          type: complex
+          value: []
+        statusCode:
+          type: value
+          value: "200"
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Deal ID Exist
+          steps:
+            - action:
+                key: rawRequest
+                component:
+                  isPublic: true
+                  key: hubspot
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: 15
+                errorHandlerType: retry
+                ignoreFinalError: false
+                maxAttempts: 4
+                usesExponentialBackoff: false
+              inputs:
+                connection:
+                  type: configVar
+                  value: HubSpot Private App Connection
+                data:
+                  type: value
+                  value: ""
+                debugRequest:
+                  type: value
+                  value: "false"
+                fileData:
+                  type: complex
+                  value: []
+                fileDataFileNames:
+                  type: complex
+                  value: []
+                formData:
+                  type: complex
+                  value: []
+                headers:
+                  type: complex
+                  value:
+                    - name:
+                        type: value
+                        value: Content-Type
+                      type: value
+                      value: application/json
+                maxRetries:
+                  type: value
+                  value: "0"
+                method:
+                  type: value
+                  value: GET
+                queryParams:
+                  type: complex
+                  value: []
+                responseType:
+                  type: value
+                  value: json
+                retryAllErrors:
+                  type: value
+                  value: "false"
+                retryDelayMS:
+                  type: value
+                  value: "0"
+                timeout:
+                  type: value
+                  value: ""
+                url:
+                  type: value
+                  value: /crm/v3/properties/deals
+                useExponentialBackoff:
+                  type: value
+                  value: "false"
+              name: Get Deal Properties
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      let properties = stepResults?.getDealProperties?.results?.results
+                      properties = properties?.map(item => item?.name)
+                      return { data: {
+                        properties,
+                        properties_instring:properties?.toString()
+                      } };
+                    };
+              name: Convert Deal Properties to array
+            - action:
+                key: rawRequest
+                component:
+                  isPublic: true
+                  key: hubspot
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: null
+                errorHandlerType: ignore
+                ignoreFinalError: null
+                maxAttempts: null
+                usesExponentialBackoff: null
+              inputs:
+                connection:
+                  type: configVar
+                  value: HubSpot Private App Connection
+                data:
+                  type: value
+                  value: ""
+                debugRequest:
+                  type: value
+                  value: "false"
+                fileData:
+                  type: complex
+                  value: []
+                fileDataFileNames:
+                  type: complex
+                  value: []
+                formData:
+                  type: complex
+                  value: []
+                headers:
+                  type: complex
+                  value:
+                    - name:
+                        type: value
+                        value: Content-Type
+                      type: value
+                      value: application/json
+                maxRetries:
+                  type: value
+                  value: "0"
+                method:
+                  type: value
+                  value: GET
+                queryParams:
+                  type: complex
+                  value: []
+                responseType:
+                  type: value
+                  value: json
+                retryAllErrors:
+                  type: value
+                  value: "false"
+                retryDelayMS:
+                  type: value
+                  value: "0"
+                timeout:
+                  type: value
+                  value: ""
+                url:
+                  type: template
+                  value: /crm/v3/objects/deals/{{$trigger.results.body.data.hs_object_id}}?properties={{$convertDealPropertiesToArray.results.properties_instring}}
+                useExponentialBackoff:
+                  type: value
+                  value: "false"
+              name: Get Deal
+            - action:
+                key: branchOnExpression
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              branches:
+                - name: Found match
+                  steps:
+                    - action:
+                        key: branchOnExpression
+                        component:
+                          isPublic: true
+                          key: branch
+                          version: LATEST
+                      branches:
+                        - name: Owner Found
+                          steps:
+                            - action:
+                                key: rawRequest
+                                component:
+                                  isPublic: true
+                                  key: hubspot
+                                  version: LATEST
+                              description: ""
+                              errorConfig:
+                                delaySeconds: null
+                                errorHandlerType: ignore
+                                ignoreFinalError: null
+                                maxAttempts: null
+                                usesExponentialBackoff: null
+                              inputs:
+                                connection:
+                                  type: configVar
+                                  value: HubSpot Private App Connection
+                                data:
+                                  type: value
+                                  value: ""
+                                debugRequest:
+                                  type: value
+                                  value: "false"
+                                fileData:
+                                  type: complex
+                                  value: []
+                                fileDataFileNames:
+                                  type: complex
+                                  value: []
+                                formData:
+                                  type: complex
+                                  value: []
+                                headers:
+                                  type: complex
+                                  value:
+                                    - name:
+                                        type: value
+                                        value: Content-Type
+                                      type: value
+                                      value: application/json
+                                maxRetries:
+                                  type: value
+                                  value: "0"
+                                method:
+                                  type: value
+                                  value: GET
+                                queryParams:
+                                  type: complex
+                                  value: []
+                                responseType:
+                                  type: value
+                                  value: json
+                                retryAllErrors:
+                                  type: value
+                                  value: "false"
+                                retryDelayMS:
+                                  type: value
+                                  value: "0"
+                                timeout:
+                                  type: value
+                                  value: ""
+                                url:
+                                  type: template
+                                  value: /crm/v3/owners/{{$getDeal.results.properties.hubspot_owner_id}}
+                                useExponentialBackoff:
+                                  type: value
+                                  value: "false"
+                              name: Get HS Owner
+                        - name: Else
+                          steps:
+                            - action:
+                                key: branchOnExpression
+                                component:
+                                  isPublic: true
+                                  key: branch
+                                  version: LATEST
+                              branches:
+                                - name: FOUND RAW PAINTSCOUT ESTIMATE NUMBER
+                                  steps:
+                                    - action:
+                                        key: listQuotes
+                                        component:
+                                          isPublic: false
+                                          key: paintScoutApi
+                                          version: LATEST
+                                      description: ""
+                                      inputs:
+                                        connection:
+                                          type: configVar
+                                          value: PaintScout Connection
+                                        page:
+                                          type: value
+                                          value: "1"
+                                        perPage:
+                                          type: value
+                                          value: "10"
+                                        query:
+                                          type: template
+                                          value: ?number="{{$getDeal.results.properties.raw_paintscout_estimate_number}}"
+                                        sort:
+                                          type: value
+                                          value: updated
+                                        sortDir:
+                                          type: value
+                                          value: desc
+                                      name: Get Quote
+                                    - action:
+                                        key: branchOnExpression
+                                        component:
+                                          isPublic: true
+                                          key: branch
+                                          version: LATEST
+                                      branches:
+                                        - name: Quote Found
+                                          steps:
+                                            - action:
+                                                key: branchOnExpression
+                                                component:
+                                                  isPublic: true
+                                                  key: branch
+                                                  version: LATEST
+                                              branches:
+                                                - name: OWNER FOUND
+                                                  steps:
+                                                    - action:
+                                                        key: writeLog
+                                                        component:
+                                                          isPublic: true
+                                                          key: log
+                                                          version: LATEST
+                                                      description: ""
+                                                      inputs:
+                                                        level:
+                                                          type: value
+                                                          value: info
+                                                        message:
+                                                          type: value
+                                                          value: Owner Found, Proceed to code block that gets the email
+                                                      name: Owner Found, Proceed to code block that gets the email
+                                                - name: Else
+                                                  steps:
+                                                    - action:
+                                                        key: writeLog
+                                                        component:
+                                                          isPublic: true
+                                                          key: log
+                                                          version: LATEST
+                                                      description: ""
+                                                      inputs:
+                                                        level:
+                                                          type: value
+                                                          value: info
+                                                        message:
+                                                          type: value
+                                                          value: No Owner Found on Painscout Data
+                                                      name: "Log: No Owner Found on Painscout Data"
+                                              description: ""
+                                              inputs:
+                                                conditions:
+                                                  type: complex
+                                                  value:
+                                                    - name: OWNER FOUND
+                                                      type: complex
+                                                      value:
+                                                        - and
+                                                        - - exists
+                                                          - name: ""
+                                                            type: reference
+                                                            value: getQuote.results.rows.0.owner.email
+                                              name: DOES IT HAVE OWNER IN PAINTSCOUT QUOTE DATA?
+                                        - name: Else
+                                          steps:
+                                            - action:
+                                                key: writeLog
+                                                component:
+                                                  isPublic: true
+                                                  key: log
+                                                  version: LATEST
+                                              description: ""
+                                              inputs:
+                                                level:
+                                                  type: value
+                                                  value: info
+                                                message:
+                                                  type: value
+                                                  value: "Log: Quote not found"
+                                              name: "Log: Quote not found"
+                                      description: ""
+                                      inputs:
+                                        conditions:
+                                          type: complex
+                                          value:
+                                            - name: Quote Found
+                                              type: complex
+                                              value:
+                                                - and
+                                                - - isNotEmpty
+                                                  - name: ""
+                                                    type: reference
+                                                    value: getQuote.results.rows
+                                                  - name: ""
+                                                    type: value
+                                                    value: ""
+                                      name: Found Quote Match?
+                                - name: Else
+                                  steps:
+                                    - action:
+                                        key: writeLog
+                                        component:
+                                          isPublic: true
+                                          key: log
+                                          version: LATEST
+                                      description: ""
+                                      inputs:
+                                        level:
+                                          type: value
+                                          value: info
+                                        message:
+                                          type: value
+                                          value: "Log: No RAW PAINTSCOUT ESTIMATE NUMBER Found"
+                                      name: Write Log Message
+                              description: ""
+                              inputs:
+                                conditions:
+                                  type: complex
+                                  value:
+                                    - name: FOUND RAW PAINTSCOUT ESTIMATE NUMBER
+                                      type: complex
+                                      value:
+                                        - and
+                                        - - exists
+                                          - name: ""
+                                            type: reference
+                                            value: getDeal.results.properties.raw_paintscout_estimate_number
+                              name: DOES IT HAVE RAW PAINTSCOUT ESTIMATE NUMBER?
+                      description: ""
+                      inputs:
+                        conditions:
+                          type: complex
+                          value:
+                            - name: Owner Found
+                              type: complex
+                              value:
+                                - and
+                                - - exists
+                                  - name: ""
+                                    type: reference
+                                    value: getDeal.results.properties.hubspot_owner_id
+                      name: Does it have deal owner in hubspot properties?
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: null
+                        errorHandlerType: ignore
+                        ignoreFinalError: null
+                        maxAttempts: null
+                        usesExponentialBackoff: null
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+
+                              let email = stepResults?.getHsOwner?.results?.email || 
+                                          stepResults?.getQuote?.results?.rows[0]?.owner?.email
+                              
+                              return { data: email };
+                            };
+                      name: Get Owner Email
+                    - action:
+                        key: listRecords
+                        component:
+                          isPublic: true
+                          key: airtable
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 5
+                        errorHandlerType: retry
+                        ignoreFinalError: false
+                        maxAttempts: 3
+                        usesExponentialBackoff: false
+                      inputs:
+                        airtableConnection:
+                          type: configVar
+                          value: Airtable Connection
+                        baseId:
+                          type: configVar
+                          value: Project Management Base
+                        fields:
+                          type: complex
+                          value: []
+                        filterByFormula:
+                          type: template
+                          value: AND({Work Email}="{{$getOwnerEmail.results}}",{Work Email})
+                        tableName:
+                          type: configVar
+                          value: People Table
+                        view:
+                          type: value
+                          value: ""
+                      name: Get Owner Data
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >-
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              const jobNumberFormat = configVars?.["Job/Estimate Number"] || [];
+
+                              const dealData = stepResults?.getDeal?.results?.properties || {};
+                              const currentJobNumber = dealData?.["jobestimate_number"] || "";
+                              const rawEstimateNumber = dealData?.["raw_paintscout_estimate_number"] || "";
+                              const ownerATData = stepResults?.getOwnerData?.results?.[0]?.fields || {};
+
+                              // ✅ New logic: if current exists and raw is empty, return current and skip
+                              if (currentJobNumber && !rawEstimateNumber) {
+                                return currentJobNumber;
+                              }
+
+                              let job_name = "";
+
+                              const cleanStringHS = (str) => str?.replace("(hs)", "")?.trim() || "";
+                              const cleanStringAT = (str) => str?.replace("(at)", "")?.trim() || "";
+
+                              const reservedWordReplacer = (str) =>
+                                str?.replace("[space]", " ")?.replace("[no_space]", "")?.trim() || "";
+
+                              for (let item of jobNumberFormat) {
+                                logger.info(item);
+
+                                let field = item?.field || "";
+                                let separator = item?.separator || "";
+
+                                if (field?.includes("(hs)")) {
+                                  job_name += dealData?.[cleanStringHS(field)] || "";
+                                  job_name += reservedWordReplacer(separator);
+                                }
+
+                                if (field?.includes("(at)")) {
+                                  job_name += ownerATData?.[cleanStringAT(field)] || "";
+                                  job_name += reservedWordReplacer(separator);
+                                }
+                              }
+
+                              return job_name;
+                            };
+                      name: Job Number Format
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              const dealNameFormat = configVars?.["Deal Name Format"] || [];
+                              const jobNumber = stepResults?.jobNumberFormat?.results || "";
+                              const dealData = stepResults?.getDeal?.results?.properties || {};
+                              const dealId = stepResults?.getDeal?.results?.id || "";
+
+                              const formatDate = (dateStr) => {
+                                const date = new Date(dateStr);
+                                return isNaN(date) ? dateStr : `${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}${date.getFullYear().toString().slice(-2)}`;
+                              };
+
+                              const deal_name = dealNameFormat.reduce((acc, { source, destination }) => {
+                                let value = source === "jobestimate_number" ? jobNumber : dealData[source] || "";
+                                value = /\d{4}-\d{2}-\d{2}/.test(value) ? formatDate(value) : value;
+
+                                if (!value) return acc; // Skip if value is falsy
+                                
+                                return acc + value + (destination || "");
+                              }, "").replace(/\[space\]/g, " ").replace(/\[no_space\]/g, "").trim();
+
+                              return deal_name;
+                            };
+                      name: Generate Deal Name
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >-
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              const dealData = stepResults.getDeal.results?.properties || {};
+                              const jobNumber = stepResults?.jobNumberFormat?.results || "";
+                              const rawEstimateNumber = dealData?.["raw_paintscout_estimate_number"] || "";
+                              const currentJobNumber = dealData?.["jobestimate_number"] || "";
+                              const dealName = dealData?.["dealname"] || "";
+                              const newName = stepResults?.generateDealName?.results || "";
+
+                              let prop = {};
+
+                              prop.dealname = dealName
+
+                              // Update job number only if raw estimate exists and job number doesn't
+                              if (rawEstimateNumber && !currentJobNumber) {
+                                prop.jobestimate_number = jobNumber;
+                              }
+
+                              // Update name if raw estimate exists OR job number already exists
+                              if (rawEstimateNumber || currentJobNumber) {
+                                prop.dealname = newName;
+                              }
+
+                              return {
+                                payload: {
+                                  properties: prop,
+                                },
+                              };
+                            };
+                      name: Generate deal payload
+                    - action:
+                        key: rawRequest
+                        component:
+                          isPublic: true
+                          key: hubspot
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 10
+                        errorHandlerType: retry
+                        ignoreFinalError: false
+                        maxAttempts: 2
+                        usesExponentialBackoff: false
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: HubSpot Private App Connection
+                        data:
+                          type: reference
+                          value: generateDealPayload.results.payload
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        fileData:
+                          type: complex
+                          value: []
+                        fileDataFileNames:
+                          type: complex
+                          value: []
+                        formData:
+                          type: complex
+                          value: []
+                        headers:
+                          type: complex
+                          value: []
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        method:
+                          type: value
+                          value: PATCH
+                        queryParams:
+                          type: complex
+                          value: []
+                        responseType:
+                          type: value
+                          value: json
+                        retryAllErrors:
+                          type: value
+                          value: "false"
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: template
+                          value: /crm/v3/objects/deals/{{$getDeal.results.id}}
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: Update Name and Estimate/Job Number
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >+
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              try {
+                                const accessToken = configVars?.["CompanyCam API Connection"]?.token?.access_token || "";
+                                const projectId = stepResults?.getDeal?.results?.properties?.companycam_project_id || "";
+                                const newName = stepResults?.generateDealName?.results || "";
+                                const dealName = stepResults?.getDeal?.results?.properties?.dealname || "";
+
+                                const getProjectDetails = async (projectId) => {
+                                  const url = `https://api.companycam.com/v2/projects/${projectId}`;
+                                  const response = await fetch(url, {
+                                    method: "GET",
+                                    headers: {
+                                      "Authorization": `Bearer ${accessToken}`,
+                                    },
+                                  });
+
+                                  if (!response.ok) {
+                                    const errorData = await response.json();
+                                    throw new Error(`Error fetching project: ${errorData.message || "Unknown error"}`);
+                                  }
+
+                                  return await response.json();
+                                };
+
+                                let companyCamProjectName = ""
+                                let currentProject = {}
+                                if (projectId) {
+                                  currentProject = await getProjectDetails(projectId);
+                                  companyCamProjectName = currentProject.name;
+                                  logger.log("Current Name: ", currentProject.name);
+                                } else {
+                                  throw new Error("Project ID is missing.");
+                                }
+
+                                const updateCompanyCamProject = async (projectId, newName, currentProject) => {
+                                  if (!dealName || !newName) throw new Error("Missing deal name or new name.");
+                                  if (!accessToken) throw new Error("Access token is missing.");
+
+                                  // Merge name change into the existing data
+                                  const updatedData = {
+                                    ...currentProject,
+                                    name: newName,
+                                  };
+
+                                  const url = `https://api.companycam.com/v2/projects/${projectId}`;
+                                  const response = await fetch(url, {
+                                    method: "PATCH",
+                                    headers: {
+                                      "Authorization": `Bearer ${accessToken}`,
+                                      "Content-Type": "application/json"
+                                    },
+                                    body: JSON.stringify(updatedData),
+                                  });
+
+                                  if (!response.ok) {
+                                    const errorData = await response.json();
+                                    throw new Error(`Error updating project: ${errorData.message || "Unknown error"}`);
+                                  }
+
+                                  const updatedProject = await response.json();
+                                  logger.info("Project updated successfully:", updatedProject);
+                                  return updatedProject;
+                                };
+
+                              if (String(companyCamProjectName).trim().toLowerCase() === String(newName).trim().toLowerCase()) {
+                                  return "Same name: cannot be updated";
+                                } else {
+                                  const result = await updateCompanyCamProject(projectId, newName, currentProject);
+                                  logger.info("Updated project details:", result);
+                                  return result;
+                                }
+                              } catch (error) {
+                                logger.error("Error:", error.message);
+                                return error.message || "An unknown error occurred.";
+                              }
+                            };
+
+
+                      name: CompanyCam Single Field update
+                    - action:
+                        key: rawRequest
+                        component:
+                          isPublic: true
+                          key: hubspot
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: null
+                        errorHandlerType: ignore
+                        ignoreFinalError: null
+                        maxAttempts: null
+                        usesExponentialBackoff: null
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: HubSpot Private App Connection
+                        data:
+                          type: value
+                          value: ""
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        fileData:
+                          type: complex
+                          value: []
+                        fileDataFileNames:
+                          type: complex
+                          value: []
+                        formData:
+                          type: complex
+                          value: []
+                        headers:
+                          type: complex
+                          value:
+                            - name:
+                                type: value
+                                value: Content-Type
+                              type: value
+                              value: application/json
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        method:
+                          type: value
+                          value: GET
+                        queryParams:
+                          type: complex
+                          value: []
+                        responseType:
+                          type: value
+                          value: json
+                        retryAllErrors:
+                          type: value
+                          value: "false"
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: template
+                          value: /crm/v3/objects/deals/{{$trigger.results.body.data.hs_object_id}}?properties={{$convertDealPropertiesToArray.results.properties_instring}}
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: Get Deal 2
+                - name: Else
+                  steps:
+                    - action:
+                        key: writeLog
+                        component:
+                          isPublic: true
+                          key: log
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        level:
+                          type: value
+                          value: info
+                        message:
+                          type: value
+                          value: "Log: Cannot find Deal Data in Hubspot"
+                      name: "Log: Cannot find Deal Data in Hubspot"
+              description: ""
+              inputs:
+                conditions:
+                  type: complex
+                  value:
+                    - name: Found match
+                      type: complex
+                      value:
+                        - and
+                        - - exists
+                          - name: ""
+                            type: reference
+                            value: getDeal.results.id
+              name: Found HS Item?
+        - name: Else
+          steps:
+            - action:
+                key: writeLog
+                component:
+                  isPublic: true
+                  key: log
+                  version: LATEST
+              description: ""
+              inputs:
+                level:
+                  type: value
+                  value: info
+                message:
+                  type: value
+                  value: "Log: Cannot find HS Deal ID"
+              name: "Log: Cannot find HS Deal ID"
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Deal ID Exist
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: trigger.results.body.data.hs_object_id
+      name: HS Deal ID Exists

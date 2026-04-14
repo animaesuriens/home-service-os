@@ -1,0 +1,325 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 30 Save Expense's Attachments in Airtable
+  description: Early version of a subflow to upload attachments from QBO expenses to drive.
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const qboExpenseId = stepResults.trigger.results.body.data.qboExpenseId;
+              const atExpenseId = stepResults.trigger.results.body.data.atExpenseId;
+
+              const url = `/query?query=SELECT * FROM Attachable WHERE AttachableRef.EntityRef.Type = 'Expense' AND AttachableRef.EntityRef.Value = '${qboExpenseId}'
+            `;
+
+              return { data: url };
+            };
+      name: Download Attachables URL
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: quickbooks
+          version: LATEST
+      description: ""
+      inputs:
+        connection:
+          type: configVar
+          value: QuickBooks Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value: []
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: reference
+          value: downloadAttachablesUrl.results
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Attachables
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Yes
+          steps: []
+        - name: Else
+          steps:
+            - action:
+                key: stopExecution
+                component:
+                  isPublic: true
+                  key: stop-execution
+                  version: LATEST
+              description: ""
+              inputs:
+                contentType:
+                  type: value
+                  value: application/json
+                headers:
+                  type: complex
+                  value: []
+                jsonBody:
+                  type: value
+                  value: ""
+                statusCode:
+                  type: value
+                  value: "200"
+              name: Stop Execution
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Yes
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: getAttachables.results.QueryResponse.Attachable
+      name: Attachables fetched?
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: getAttachables.results.QueryResponse.Attachable
+      name: Loop Over Attachables
+      steps:
+        - action:
+            key: rawRequest
+            component:
+              isPublic: true
+              key: quickbooks
+              version: LATEST
+          description: ""
+          inputs:
+            connection:
+              type: configVar
+              value: QuickBooks Connection
+            data:
+              type: value
+              value: ""
+            debugRequest:
+              type: value
+              value: "false"
+            fileData:
+              type: complex
+              value: []
+            formData:
+              type: complex
+              value: []
+            headers:
+              type: complex
+              value: []
+            maxRetries:
+              type: value
+              value: "0"
+            method:
+              type: value
+              value: GET
+            queryParams:
+              type: complex
+              value: []
+            responseType:
+              type: value
+              value: json
+            retryAllErrors:
+              type: value
+              value: "false"
+            retryDelayMS:
+              type: value
+              value: "0"
+            timeout:
+              type: value
+              value: ""
+            url:
+              type: reference
+              value: loopOverAttachables.currentItem.FileAccessUri
+            useExponentialBackoff:
+              type: value
+              value: "false"
+          name: Get Attachable Download Url
+        - action:
+            key: appendExecutionValueToList
+            component:
+              isPublic: true
+              key: persist-data
+              version: LATEST
+          description: ""
+          inputs:
+            keyInput:
+              type: value
+              value: attachables
+            valueInput:
+              type: reference
+              value: getAttachableDownloadUrl.results
+          name: Add URL to list
+    - action:
+        key: getExecutionValue
+        component:
+          isPublic: true
+          key: persist-data
+          version: LATEST
+      description: ""
+      inputs:
+        defaultValueInput:
+          type: value
+          value: ""
+        keyInput:
+          type: value
+          value: attachables
+      name: Get Attachables URLs
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: |
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const urls = stepResults.getAttachablesUrls.results;
+              const payload = urls.map((url) => ({ url }));
+
+              return { data: payload };
+            };
+      name: Attachables Payload
+    - action:
+        key: updateRecord
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: Save/download PDF
+      errorConfig:
+        delaySeconds: null
+        errorHandlerType: ignore
+        ignoreFinalError: null
+        maxAttempts: null
+        usesExponentialBackoff: null
+      inputs:
+        airtableConnection:
+          type: configVar
+          value: Airtable Connection
+        baseId:
+          type: configVar
+          value: Project Management Base
+        dynamicFields:
+          type: value
+          value: ""
+        record:
+          type: reference
+          value: trigger.results.body.data.atExpenseId
+        recordFields:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: Attachables
+              type: reference
+              value: attachablesPayload.results
+        tableName:
+          type: configVar
+          value: Expenses Table
+      name: Update Record
+    - action:
+        key: sleep
+        component:
+          isPublic: true
+          key: sleep
+          version: LATEST
+      description: Make sure AT saved the PDF
+      inputs:
+        ms:
+          type: value
+          value: "2000"
+      name: Sleep
+    - action:
+        key: stopExecution
+        component:
+          isPublic: true
+          key: stop-execution
+          version: LATEST
+      description: ""
+      inputs:
+        contentType:
+          type: value
+          value: application/json
+        headers:
+          type: complex
+          value: []
+        jsonBody:
+          type: value
+          value: ""
+        statusCode:
+          type: value
+          value: "200"
+      name: Stop Execution (Success)

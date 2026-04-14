@@ -1,0 +1,432 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 20 Sync Modified Invoices and Transactions
+  description: Sync invoices that were modified for the last x hours
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: schedule
+        component:
+          isPublic: true
+          key: schedule-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+      schedule:
+        meta:
+          scheduleType: day
+          timeZone: America/New_York
+        type: value
+        value: 00 12 */1 * *
+    - action:
+        key: getCrossFlowValue
+        component:
+          isPublic: true
+          key: persist-data
+          version: LATEST
+      description: ""
+      inputs:
+        defaultValueInput:
+          type: value
+          value: "1"
+        keyInput:
+          type: value
+          value: invoiceCursor
+      name: Get Cursor
+    - action:
+        key: listRecords
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 3
+        usesExponentialBackoff: false
+      inputs:
+        airtableConnection:
+          type: configVar
+          value: Airtable Connection
+        baseId:
+          type: configVar
+          value: Project Management Base
+        fields:
+          type: complex
+          value: []
+        filterByFormula:
+          type: value
+          value: ""
+        tableName:
+          type: configVar
+          value: Project Type(s) Table
+        view:
+          type: value
+          value: ""
+      name: List Project Types
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: |
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const projectTypes = stepResults.listProjectTypes.results;
+
+              const map = projectTypes.map((item) => {
+                return {
+                  qboId: item.fields["QBO Object ID"],
+                  type: item.fields["QBO Object - Project Type Mapping"],
+                  atId: item.id,
+                };
+              });
+
+              return { data: map };
+            };
+      name: Map Project Types
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: Open invoices w/ balance
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const token = configVars["QuickBooks Connection"].token.access_token;
+              const realmId = configVars["QuickBooks Connection"].context.realmId;
+
+              const baseUrl = `https://quickbooks.api.intuit.com/v3/company/${realmId}/query`;
+              const maxResults = 50;
+              const openInvoicesOnly = configVars["Fetch Open Invoices Only"] === "true";
+
+              // Removing the trigger data extraction as requested.
+              // Defaulting startPosition to 1 since we are no longer reading from trigger state.
+              // Note: This assumes pagination is handled externally or only the first page is needed/expected.
+              const startPosition = 1;
+
+              try {
+                let queryConditions = [];
+
+                // Calculate the timestamp for 48 hours ago
+                const hoursBack = 48;
+                const targetDate = new Date();
+                targetDate.setHours(targetDate.getHours() - hoursBack);
+                
+                // Validate that the date is valid
+                if (isNaN(targetDate.getTime())) {
+                    throw new Error("Failed to calculate a valid target date for invoice filtering.");
+                }
+                
+                const formattedDate = targetDate.toISOString();
+
+                queryConditions.push(`MetaData.LastUpdatedTime >= '${formattedDate}'`);
+                logger.info(
+                  `Fetching invoices modified in the last ${hoursBack} hours (since ${formattedDate})`
+                );
+
+                // Only filter by balance if openInvoicesOnly is true
+                if (openInvoicesOnly) {
+                  queryConditions.push("Balance > '0'");
+                  queryConditions.push("TotalAmt > '0'");
+                  logger.info("Filtering for open invoices only (Balance > 0)");
+                }
+
+                // Build the WHERE clause only if there are conditions
+                const whereClause =
+                  queryConditions.length > 0
+                    ? `WHERE ${queryConditions.join(" AND ")} `
+                    : "";
+
+                // Add ORDERBY MetaData.LastUpdatedTime to ensure consistent ordering
+                const query = `SELECT * FROM Invoice ${whereClause}ORDERBY MetaData.LastUpdatedTime STARTPOSITION ${startPosition} MAXRESULTS ${maxResults}`;
+                const url = `${baseUrl}?query=${encodeURIComponent(query)}`;
+
+                logger.info(`Fetching invoices from position ${startPosition}`);
+
+                const response = await fetch(url, {
+                  method: "GET",
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                  },
+                });
+
+                if (!response.ok) {
+                  throw new Error(
+                    `QuickBooks API error: ${response.status} ${response.statusText}`,
+                  );
+                }
+
+                const data = await response.json();
+                const invoices = data.QueryResponse?.Invoice || [];
+
+                logger.info(`Fetched ${invoices.length} invoices`);
+
+                // Calculate the next position (null if no more results)
+                const hasMoreResults =
+                  invoices.length > 0 && invoices.length === maxResults;
+                const nextPosition = hasMoreResults
+                  ? startPosition + invoices.length
+                  : null;
+
+                return {
+                  data: {
+                    invoices: invoices,
+                    startPosition: startPosition,
+                    nextPosition: nextPosition,
+                  },
+                };
+              } catch (error) {
+                logger.error(`Error fetching invoices: ${error.message}`);
+                throw error;
+              }
+            };
+      name: Fetch QBO Invoices
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Yes
+          steps:
+            - action:
+                key: loopOverItems
+                component:
+                  isPublic: true
+                  key: loop
+                  version: LATEST
+              description: ""
+              inputs:
+                items:
+                  type: reference
+                  value: fetchQboInvoices.results.invoices
+              name: Loop Over Invoices
+              steps:
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+                          const invoice = stepResults.loopOverInvoices.currentItem;
+                          const projectTypes = stepResults.mapProjectTypes.results;
+
+                          const payload = {
+                            invoice: invoice,
+                            projectTypes: projectTypes,
+                          };
+
+                          return { data: payload };
+                        };
+                  name: Subflow Payload
+                - action:
+                    key: invokeFlow
+                    component:
+                      isPublic: true
+                      key: cross-flow
+                      version: LATEST
+                  description: ""
+                  errorConfig:
+                    delaySeconds: null
+                    errorHandlerType: ignore
+                    ignoreFinalError: null
+                    maxAttempts: null
+                    usesExponentialBackoff: null
+                  inputs:
+                    data:
+                      type: reference
+                      value: subflowPayload.results
+                    flowName:
+                      type: value
+                      value: 20.1 Process Invoice
+                  name: Process Invoice
+            - action:
+                key: branchOnExpression
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              branches:
+                - name: Yes
+                  steps:
+                    - action:
+                        key: incrementCrossFlowValue
+                        component:
+                          isPublic: true
+                          key: persist-data
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        amountInput:
+                          type: value
+                          value: "1"
+                        keyInput:
+                          type: value
+                          value: invoiceCursor
+                      name: Increment Invoice Cursor
+                    - action:
+                        key: setCursor
+                        component:
+                          isPublic: true
+                          key: recursive-flow
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        cursor:
+                          type: reference
+                          value: fetchQboInvoices.results.nextPosition
+                      name: Set Recursive Cursor
+                    - action:
+                        key: invokeRecursive
+                        component:
+                          isPublic: true
+                          key: recursive-flow
+                          version: LATEST
+                      description: ""
+                      inputs: {}
+                      name: Re-run with Next Position
+                - name: Else
+                  steps:
+                    - action:
+                        key: saveCrossFlowValue
+                        component:
+                          isPublic: true
+                          key: persist-data
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        dynamicValues:
+                          type: complex
+                          value: []
+                        keyInput:
+                          type: value
+                          value: invoiceCursor
+                        valueInput:
+                          type: value
+                          value: "1"
+                      name: Reset Invoice Cursor 2
+                    - action:
+                        key: stopExecution
+                        component:
+                          isPublic: true
+                          key: stop-execution
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        contentType:
+                          type: value
+                          value: application/json
+                        headers:
+                          type: complex
+                          value: []
+                        jsonBody:
+                          type: value
+                          value: ""
+                        statusCode:
+                          type: value
+                          value: "200"
+                      name: Stop Execution 2
+              description: ""
+              inputs:
+                conditions:
+                  type: complex
+                  value:
+                    - name: Yes
+                      type: complex
+                      value:
+                        - and
+                        - - isTrue
+                          - name: ""
+                            type: reference
+                            value: fetchQboInvoices.results.nextPosition
+              name: Has next page?
+        - name: Else
+          steps:
+            - action:
+                key: saveCrossFlowValue
+                component:
+                  isPublic: true
+                  key: persist-data
+                  version: LATEST
+              description: ""
+              inputs:
+                dynamicValues:
+                  type: complex
+                  value: []
+                keyInput:
+                  type: value
+                  value: invoiceCursor
+                valueInput:
+                  type: value
+                  value: "1"
+              name: Reset Invoice Cursor
+            - action:
+                key: stopExecution
+                component:
+                  isPublic: true
+                  key: stop-execution
+                  version: LATEST
+              description: ""
+              inputs:
+                contentType:
+                  type: value
+                  value: application/json
+                headers:
+                  type: complex
+                  value: []
+                jsonBody:
+                  type: value
+                  value: ""
+                statusCode:
+                  type: value
+                  value: "200"
+              name: Stop Execution
+      description: Stops if empty response ( or invoiceCursor > n )
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Yes
+              type: complex
+              value:
+                - and
+                - - isNotEmpty
+                  - name: ""
+                    type: reference
+                    value: fetchQboInvoices.results.invoices
+                  - name: ""
+                    type: value
+                    value: ""
+                - - lessThanOrEqual
+                  - name: ""
+                    type: reference
+                    value: getCursor.results
+                  - name: ""
+                    type: value
+                    value: "25"
+      name: Records to be processed?

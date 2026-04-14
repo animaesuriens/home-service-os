@@ -78,8 +78,61 @@ function extractConfigVars(parsedYaml) {
   return configVars;
 }
 
+/**
+ * Load and reconstruct YAML data from split flow directories
+ * @param {string} flowsDir - Path to flows directory containing integration subdirectories
+ * @returns {Promise<Object>} Object keyed by sourceFile with reconstructed YAML shape
+ */
+async function loadFromFlowDir(flowsDir) {
+  const result = {};
+
+  // Read all subdirectories (each is an integration directory)
+  const entries = await fs.readdir(flowsDir, { withFileTypes: true });
+  const integrationDirs = entries.filter(e => e.isDirectory());
+
+  for (const dir of integrationDirs) {
+    const dirPath = path.join(flowsDir, dir.name);
+
+    // Read _meta.yml
+    const metaPath = path.join(dirPath, '_meta.yml');
+    const metaContent = await fs.readFile(metaPath, 'utf8');
+    const meta = yaml.parse(metaContent);
+
+    const sourceFile = meta.sourceFile;
+
+    // Initialize the result entry with integration-level metadata
+    if (!result[sourceFile]) {
+      result[sourceFile] = {
+        category: meta.category || '',
+        name: meta.name || '',
+        description: meta.description || '',
+        configPages: meta.configPages || [],
+        flows: []
+      };
+    }
+
+    // Read all flow files (exclude _meta.yml)
+    const flowFiles = (await fs.readdir(dirPath))
+      .filter(f => f.endsWith('.yml') && f !== '_meta.yml');
+
+    for (const flowFile of flowFiles) {
+      const flowPath = path.join(dirPath, flowFile);
+      const flowContent = await fs.readFile(flowPath, 'utf8');
+      const flowData = yaml.parse(flowContent);
+
+      // Extract the flow object from the wrapper
+      if (flowData.flow) {
+        result[sourceFile].flows.push(flowData.flow);
+      }
+    }
+  }
+
+  return result;
+}
+
 module.exports = {
   loadAllYamlFiles,
   extractConfigVars,
-  getYamlFileList
+  getYamlFileList,
+  loadFromFlowDir
 };

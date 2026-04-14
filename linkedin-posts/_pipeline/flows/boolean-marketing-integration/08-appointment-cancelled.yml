@@ -1,0 +1,578 @@
+sourceFile: boolean-marketing-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 08 Appointment Cancelled
+  description: Triggers when an appointment is cancelled then update the deal and calendar
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: webhook
+        component:
+          isPublic: true
+          key: webhook-triggers
+          version: LATEST
+      description: ""
+      inputs:
+        body:
+          type: value
+          value: Data received
+        contentType:
+          type: value
+          value: ""
+        headers:
+          type: complex
+          value: []
+        statusCode:
+          type: value
+          value: "202"
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              let dealStage = configVars['Deal Stage for Cancelled Appointments']?.dealStage
+              let lostReason = configVars['Lost Reason for Cancelled Appointments']?.lostReason || 'SCH - Cancellation'
+
+              return { 
+                dealStage,
+                lostReason
+              };
+            };
+      name: Initial data
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 1
+        usesExponentialBackoff: false
+      inputs:
+        connection:
+          type: configVar
+          value: HubSpot Private App Connection
+        data:
+          type: template
+          value: |
+            {
+              "filterGroups": [
+                {
+                  "filters": [
+                    {
+                      "propertyName": "ycbm_booking_id",
+                      "value": "{{$trigger.results.body.data.ycmbBookingId}}",
+                      "operator": "EQ"
+                    },
+                  {
+                      "propertyName": "dealstage",
+                      "value": "{{#Sales Won}}",
+                      "operator": "NEQ"
+                    }
+                  ]
+                }
+              ],
+              "properties": [
+                "dealname",
+                "paintscout_quote_id",
+                "companycam_project_id",
+                "lost_reason"
+              ]
+            }
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: Content-Type
+              type: value
+              value: application/json
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: POST
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: /crm/v3/objects/deals/search
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Search
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Found deal
+          steps:
+            - action:
+                key: loopOverItems
+                component:
+                  isPublic: true
+                  key: loop
+                  version: LATEST
+              description: ""
+              inputs:
+                items:
+                  type: reference
+                  value: search.results.results
+              name: Loop Over Items
+              steps:
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+                          let item = stepResults?.loopOverItems?.currentItem
+                          return { data: item };
+                        };
+                  name: Current Item
+                - action:
+                    key: branchOnExpression
+                    component:
+                      isPublic: true
+                      key: branch
+                      version: LATEST
+                  branches:
+                    - name: Delete PS and CC Project
+                      steps:
+                        - action:
+                            key: runCode
+                            component:
+                              isPublic: true
+                              key: code
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            code:
+                              type: value
+                              value: >
+                                /*
+                                  Access config variables by name through the configVars object. e.g.
+                                    const apiEndpoint = `${configVars["App Base URL"]}/api`;
+
+                                  Access previous steps' results through the stepResults object. Trigger
+                                  and step names are camelCased. If the step "Get Data from API" returned
+                                  {"foo": "bar", "baz": 123}, you could destructure that data with:
+                                    const { foo, baz } = stepResults.getDataFromApi.results;
+
+                                  You can return string, number or complex object data. e.g.
+                                    return { data: { foo: "Hello", bar: 123.45, baz: true } };
+                                */
+
+
+                                module.exports = async ({ logger, configVars },
+                                stepResults) => {
+                                  return { data: '' };
+                                };
+                          name: "NULL"
+                        - action:
+                            key: deleteQuote
+                            component:
+                              isPublic: false
+                              key: paintScoutApi
+                              version: LATEST
+                          description: ""
+                          errorConfig:
+                            delaySeconds: null
+                            errorHandlerType: ignore
+                            ignoreFinalError: null
+                            maxAttempts: null
+                            usesExponentialBackoff: null
+                          inputs:
+                            connection:
+                              type: configVar
+                              value: PaintScout Connection
+                            id:
+                              type: reference
+                              value: currentItem.results.properties.paintscout_quote_id
+                          name: Delete Quote
+                        - action:
+                            key: deleteProject
+                            component:
+                              isPublic: false
+                              key: companyCamApi
+                              version: LATEST
+                          description: ""
+                          errorConfig:
+                            delaySeconds: null
+                            errorHandlerType: ignore
+                            ignoreFinalError: null
+                            maxAttempts: null
+                            usesExponentialBackoff: null
+                          inputs:
+                            connection:
+                              type: configVar
+                              value: CompanyCam Connection
+                            id:
+                              type: reference
+                              value: currentItem.results.properties.companycam_project_id
+                          name: Delete Project
+                        - action:
+                            key: updateDeal
+                            component:
+                              isPublic: true
+                              key: hubspot
+                              version: LATEST
+                          description: ""
+                          errorConfig:
+                            delaySeconds: 10
+                            errorHandlerType: retry
+                            ignoreFinalError: false
+                            maxAttempts: 1
+                            usesExponentialBackoff: false
+                          inputs:
+                            amount:
+                              type: value
+                              value: ""
+                            closeDate:
+                              type: value
+                              value: ""
+                            dealId:
+                              type: reference
+                              value: loopOverItems.currentItem.id
+                            dealType:
+                              type: value
+                              value: ""
+                            dynamicValues:
+                              type: value
+                              value: ""
+                            fieldValues:
+                              type: complex
+                              value:
+                                - name:
+                                    type: value
+                                    value: lost_reason
+                                  type: reference
+                                  value: initialData.results.lostReason
+                                - name:
+                                    type: value
+                                    value: lost_reason_notes
+                                  type: value
+                                  value: Auto Prismatic Cancelled
+                                - name:
+                                    type: value
+                                    value: companycam_project_url
+                                  type: reference
+                                  value: null.results
+                                - name:
+                                    type: value
+                                    value: companycam_public_url
+                                  type: reference
+                                  value: null.results
+                                - name:
+                                    type: value
+                                    value: companycam_project_id
+                                  type: reference
+                                  value: null.results
+                                - name:
+                                    type: value
+                                    value: paintscout_quote_url_internal
+                                  type: reference
+                                  value: null.results
+                                - name:
+                                    type: value
+                                    value: paintscout_quote_url_external
+                                  type: reference
+                                  value: null.results
+                                - name:
+                                    type: value
+                                    value: work_order_url
+                                  type: reference
+                                  value: null.results
+                                - name:
+                                    type: value
+                                    value: paintscout_quote_id
+                                  type: reference
+                                  value: null.results
+                                - name:
+                                    type: value
+                                    value: raw_paintscout_estimate_number
+                                  type: reference
+                                  value: null.results
+                            hubspotConnection:
+                              type: configVar
+                              value: HubSpot Private App Connection
+                            hubspotOwnerId:
+                              type: value
+                              value: ""
+                            priority:
+                              type: value
+                              value: ""
+                            timeout:
+                              type: value
+                              value: ""
+                            updateDealName:
+                              type: value
+                              value: ""
+                            updateDealStage:
+                              type: reference
+                              value: initialData.results.dealStage
+                            updatePipeline:
+                              type: value
+                              value: ""
+                          name: Update Deal
+                    - name: Else
+                      steps:
+                        - action:
+                            key: updateDeal
+                            component:
+                              isPublic: true
+                              key: hubspot
+                              version: LATEST
+                          description: ""
+                          errorConfig:
+                            delaySeconds: 10
+                            errorHandlerType: retry
+                            ignoreFinalError: false
+                            maxAttempts: 1
+                            usesExponentialBackoff: false
+                          inputs:
+                            amount:
+                              type: value
+                              value: ""
+                            closeDate:
+                              type: value
+                              value: ""
+                            dealId:
+                              type: reference
+                              value: loopOverItems.currentItem.id
+                            dealType:
+                              type: value
+                              value: ""
+                            dynamicValues:
+                              type: value
+                              value: ""
+                            fieldValues:
+                              type: complex
+                              value:
+                                - name:
+                                    type: value
+                                    value: lost_reason
+                                  type: reference
+                                  value: initialData.results.lostReason
+                                - name:
+                                    type: value
+                                    value: lost_reason_notes
+                                  type: value
+                                  value: Auto Prismatic Cancelled
+                            hubspotConnection:
+                              type: configVar
+                              value: HubSpot Private App Connection
+                            hubspotOwnerId:
+                              type: value
+                              value: ""
+                            priority:
+                              type: value
+                              value: ""
+                            timeout:
+                              type: value
+                              value: ""
+                            updateDealName:
+                              type: value
+                              value: ""
+                            updateDealStage:
+                              type: reference
+                              value: initialData.results.dealStage
+                            updatePipeline:
+                              type: value
+                              value: ""
+                          name: Update Deal 2
+                  description: ""
+                  inputs:
+                    conditions:
+                      type: complex
+                      value:
+                        - name: Delete PS and CC Project
+                          type: complex
+                          value:
+                            - and
+                            - - isTrue
+                              - name: ""
+                                type: configVar
+                                value: Delete PS and CC Project
+                  name: Branch on Expression 2
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >-
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+
+                      let ycbmData = stepResults.trigger.results.body.data;
+
+                      // Set the start and end times based on the input data
+                      let start = ycbmData["startsAt"];
+                      let end = ycbmData["endsAt"];
+                      let timeZone = ycbmData["timeZone"] || "America/New_York"; // Default if timeZone is not set
+                      let description = ycbmData["jobDescription"] || "Open for Booking";
+                      let summary = ycbmData["appointmentType"] || "OPEN-C";
+
+                      // Retrieve additional details for a more descriptive event
+                      let firstName = ycbmData["jobFirstName"] || "Unknown";
+                      let lastName = ycbmData["jobLastName"] || "";
+                      let address = `${ycbmData["jobStreet"] || ""}, ${ycbmData["jobCity"] || ""}, ${ycbmData["jobState"] || ""} ${ycbmData["jobPostal"] || ""}`.trim();
+                      let company = ycbmData["company"] || "N/A";
+                      let phone = ycbmData["jobPhone"] || "N/A";
+                      let email = ycbmData["jobEmail"] || "N/A";
+
+                      // Construct a detailed description
+                      let fullDescription = `
+                        ${description}\n\n
+                        Client: ${firstName} ${lastName}\n
+                        Company: ${company}\n
+                        Phone: ${phone}\n
+                        Email: ${email}\n
+                        Location: ${address}\n
+                        Scheduled By: ${ycbmData["appointmentScheduledBy"] || "Unknown"}
+                      `.trim();
+
+                      // Define the payload for the Google Calendar event
+                      let payload = {
+                        "summary": summary,
+                        "start": {
+                          "dateTime": start,          // Start date and time (ISO 8601 format)
+                          "timeZone": timeZone        // Time zone of the start time
+                        },
+                        "end": {
+                          "dateTime": end,            // End date and time (ISO 8601 format)
+                          "timeZone": timeZone        // Time zone of the end time
+                        },
+                        "description": fullDescription,
+                        "location": address || "TBD",  // Use provided address or placeholder
+                        "visibility": "public",        // Visibility options: "default", "public", "private"
+                        "guestsCanInviteOthers": true, // Whether guests can invite others
+                        "guestsCanModify": false,      // Whether guests can modify the event
+                        "transparency": "transparent"  // Availability: "opaque" (busy) or "transparent" (free)
+                      };
+
+                      // Log the constructed payload for debugging
+                      logger.log(`Constructed Google Calendar Event Payload: ${JSON.stringify(payload)}`);
+
+                      return payload;
+                    };
+              name: Generate Payload
+            - action:
+                key: httpPost
+                component:
+                  isPublic: true
+                  key: http
+                  version: LATEST
+              description: ""
+              inputs:
+                connection:
+                  type: configVar
+                  value: ""
+                data:
+                  type: reference
+                  value: generatePayload.results
+                debugRequest:
+                  type: value
+                  value: "false"
+                headers:
+                  type: complex
+                  value: []
+                ignoreSslErrors:
+                  type: value
+                  value: "false"
+                includeFullResponse:
+                  type: value
+                  value: "false"
+                maxRetries:
+                  type: value
+                  value: "0"
+                queryParams:
+                  type: complex
+                  value: []
+                responseType:
+                  type: value
+                  value: json
+                retryDelayMS:
+                  type: value
+                  value: "0"
+                retryOnAllErrors:
+                  type: value
+                  value: "false"
+                timeout:
+                  type: value
+                  value: ""
+                url:
+                  type: configVar
+                  value: Create Calendar Event Webhook URL
+                useExponentialBackoff:
+                  type: value
+                  value: "false"
+              name: Create OPEN Calendar Event
+        - name: Else
+          steps: []
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Found deal
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: search.results.results.0.id
+      name: Branch on Expression

@@ -1,0 +1,528 @@
+sourceFile: boolean-marketing-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 05 MQL HubSpot Webform Submission
+  description: New contact created in HubSpot with associated deal
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: webhook
+        component:
+          isPublic: true
+          key: webhook-triggers
+          version: LATEST
+      description: ""
+      inputs:
+        body:
+          type: value
+          value: Data received
+        contentType:
+          type: value
+          value: ""
+        headers:
+          type: complex
+          value: []
+        statusCode:
+          type: value
+          value: "202"
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 1
+        usesExponentialBackoff: false
+      inputs:
+        connection:
+          type: configVar
+          value: HubSpot Private App Connection
+        data:
+          type: value
+          value: ""
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value: []
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: /crm/v3/properties/contacts?archived=false
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Contact Properties
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: |
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              let properties = stepResults.getContactProperties.results.results;
+
+              // Filter properties
+              let propNames = properties
+                .filter((property) => 
+                  property.groupName !== "emailinformation" 
+                  && property.groupName !== "contactlcs" 
+                  && property.groupName !== "analyticsinformation")
+                .map((prop) => prop.name);
+
+              return propNames;
+            };
+      name: List Contact Properties
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: trigger.results.body.data
+      name: Loop Over Deals
+      steps:
+        - action:
+            key: rawRequest
+            component:
+              isPublic: true
+              key: hubspot
+              version: LATEST
+          description: ""
+          errorConfig:
+            delaySeconds: 10
+            errorHandlerType: retry
+            ignoreFinalError: false
+            maxAttempts: 1
+            usesExponentialBackoff: false
+          inputs:
+            connection:
+              type: configVar
+              value: HubSpot Private App Connection
+            data:
+              type: template
+              value: |
+                {
+                  "limit": 1,
+                  "properties": {{$listContactProperties.results}},
+                  "filterGroups": [
+                    {
+                      "filters": [
+                        {
+                          "propertyName": "hs_object_id",
+                          "value": "{{$loopOverDeals.currentItem.objectId}}",
+                          "operator": "EQ"
+                        }
+                      ]
+                    }
+                  ]
+                }
+            fileData:
+              type: complex
+              value: []
+            fileDataFileNames:
+              type: complex
+              value: []
+            formData:
+              type: complex
+              value: []
+            headers:
+              type: complex
+              value:
+                - name:
+                    type: value
+                    value: Content-Type
+                  type: value
+                  value: application/json
+            maxRetries:
+              type: value
+              value: "0"
+            method:
+              type: value
+              value: POST
+            queryParams:
+              type: complex
+              value: []
+            responseType:
+              type: value
+              value: json
+            retryAllErrors:
+              type: value
+              value: "false"
+            retryDelayMS:
+              type: value
+              value: "0"
+            timeout:
+              type: value
+              value: ""
+            url:
+              type: value
+              value: /crm/v3/objects/contacts/search
+            useExponentialBackoff:
+              type: value
+              value: "false"
+          name: Get Contact
+        - action:
+            key: branchOnExpression
+            component:
+              isPublic: true
+              key: branch
+              version: LATEST
+          branches:
+            - name: Contact Found
+              steps:
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+                          // Get Company properties object from previous step results
+                          const contactData = stepResults.getContact.results.results?.[0] || {}
+                          const contactId = contactData.id
+
+                          // Get the mapping Config Variable
+                          const mapping = configVars["Lead HS Contact to HS Deal Property"];
+
+                          // Map properties of the company to the HubSpot Company Field mapping Config Var
+                          const mappedFields = mapping.reduce((acc, { source, destination }) => {
+                            let value = contactData.properties[source] || null;
+
+                            return {
+                              [destination]: value,
+                              ...acc,
+                            };
+                          }, {});
+                          
+                          // Return the mapped fields
+                          return { 
+                            "properties": mappedFields,
+                            "associations": [
+                            {
+                              "types": [
+                                {
+                                  "associationCategory": "HUBSPOT_DEFINED",
+                                  "associationTypeId": 3
+                                }
+                              ],
+                              "to": {
+                                "id": contactId
+                              }
+                            }
+                          ]
+                          };
+                        };
+                  name: Map Contact To Deal Payload
+                - action:
+                    key: invokeFlow
+                    component:
+                      isPublic: true
+                      key: cross-flow
+                      version: LATEST
+                  description: Invoke Flow 03.1
+                  inputs:
+                    data:
+                      type: reference
+                      value: mapContactToDealPayload.results
+                    flowName:
+                      type: value
+                      value: 03.1 Customer-Selected Project Type -> Project Type Conversion
+                  name: Get Project Type
+                - action:
+                    key: invokeFlow
+                    component:
+                      isPublic: true
+                      key: cross-flow
+                      version: LATEST
+                  description: Invoke Flow 03.2
+                  inputs:
+                    data:
+                      type: reference
+                      value: mapContactToDealPayload.results
+                    flowName:
+                      type: value
+                      value: 03.2 Customer-Selected Marketing Source -> Multi-Source Conversion
+                  name: Get Source
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+                          let payload = stepResults?.mapContactToDealPayload?.results || {};
+                          let project_type = stepResults?.getProjectType?.results || "";
+                          let marketing_source = stepResults?.getSource?.results || "";
+                          let primary = marketing_source?.primary;
+                          let multiAttribution = marketing_source?.multiAttribution;
+                          let dealStage = configVars?.["Lead - Not Contacted"];
+                          
+                          function transformProjectType(project_type) {
+                            if (!project_type) return "";
+                            const parts = project_type.split(";");
+                            if (parts.length === 0) return "";
+
+                            parts[0] = "_" + parts[0]; // Prefix only the first item
+                            return parts.join(";");
+                          }
+
+                          
+                          const projectTypeTransformed = transformProjectType(project_type);  
+
+                          let firstname = payload?.properties?.job_contact_first_name || payload?.properties?.billing_contact_first_name|| "";
+                          let lastname = payload?.properties?.job_contact_last_name || payload?.properties?.billing_contact_last_name || "";
+
+                          payload.properties = payload?.properties || {};
+                          payload.properties.project_type = project_type;
+                          payload.properties.primary_marketing_source = primary;
+                          payload.properties.multi_source_attribution = multiAttribution;
+                          payload.properties.dealstage = dealStage;
+                          payload.properties.contract_type = "Original Contract";
+                          payload.properties.dealname = firstname + " " + lastname + projectTypeTransformed;
+
+                          let reformatPayloay = {
+                              dealPayload: {
+                                  ...payload,
+                              },
+                              id: "",
+                          };
+
+                          return reformatPayloay;
+                        };
+                  name: Add Other Properties
+                - action:
+                    key: invokeFlow
+                    component:
+                      isPublic: true
+                      key: cross-flow
+                      version: LATEST
+                  description: Invoke Flow 03.4
+                  inputs:
+                    data:
+                      type: reference
+                      value: addOtherProperties.results
+                    flowName:
+                      type: value
+                      value: 03.4 Update/Create HubSpot Deal
+                  name: Process Deal
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+                          let contactData = stepResults.getContact.results.results?.[0] || {}
+                          let contactId = contactData.id
+                          let marketing_source = stepResults?.getSource?.results || "";
+                          let primary = marketing_source?.primary;
+                          let mapping = configVars["Lead Contact Properties Mapping"];
+                          let existing_primary_contact_source = contactData?.properties?.primary_contact_marketing_source
+                          const mappedFields = mapping.reduce((acc, { source, destination }) => {
+                            let value = contactData.properties[source] || null;
+
+                            return {
+                              [destination]: value,
+                              ...acc,
+                            };
+                          }, {});
+
+                          let payload = {
+                                id: contactId,
+                                properties: {
+                                  ...mappedFields,
+                                  hubspot_form_submission_status: "Processed",
+                                  ...(!existing_primary_contact_source && { primary_contact_marketing_source: primary })
+                                }
+                            }
+                          
+                          // Return the mapped fields
+                          return payload
+                        };
+                  name: Generate Contact Payload
+                - action:
+                    key: invokeFlow
+                    component:
+                      isPublic: true
+                      key: cross-flow
+                      version: LATEST
+                  description: Invoke Flow 03.3
+                  inputs:
+                    data:
+                      type: reference
+                      value: generateContactPayload.results
+                    flowName:
+                      type: value
+                      value: 03.3 Update/Create HubSpot Contact
+                  name: Process Contact
+                - action:
+                    key: httpPost
+                    component:
+                      isPublic: true
+                      key: http
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    connection:
+                      type: configVar
+                      value: ""
+                    data:
+                      type: template
+                      value: |-
+                        {
+                        "hs_object_id": {{$processDeal.results.id}} 
+                        }
+                    debugRequest:
+                      type: value
+                      value: "false"
+                    headers:
+                      type: complex
+                      value:
+                        - name:
+                            type: value
+                            value: Content-Type
+                          type: value
+                          value: application/json
+                    ignoreSslErrors:
+                      type: value
+                      value: "false"
+                    includeFullResponse:
+                      type: value
+                      value: "false"
+                    maxRetries:
+                      type: value
+                      value: "0"
+                    queryParams:
+                      type: complex
+                      value: []
+                    responseType:
+                      type: value
+                      value: json
+                    retryDelayMS:
+                      type: value
+                      value: "0"
+                    retryOnAllErrors:
+                      type: value
+                      value: "false"
+                    timeout:
+                      type: value
+                      value: ""
+                    url:
+                      type: configVar
+                      value: Deal Naming System Webhook URL
+                    useExponentialBackoff:
+                      type: value
+                      value: "false"
+                  name: Process Deal Name
+                - action:
+                    key: invokeFlow
+                    component:
+                      isPublic: true
+                      key: cross-flow
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    data:
+                      type: template
+                      value: |-
+                        {
+                        "contact_id":"{{$getContact.results.results.0.id}}"
+                        }
+                    flowName:
+                      type: value
+                      value: 14 Auto Reply Business Hours
+                  name: Auto Reply Processor
+            - name: Else
+              steps:
+                - action:
+                    key: writeLog
+                    component:
+                      isPublic: true
+                      key: log
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    level:
+                      type: value
+                      value: info
+                    message:
+                      type: value
+                      value: No contact found
+                  name: Write Log Message
+          description: ""
+          inputs:
+            conditions:
+              type: complex
+              value:
+                - name: Contact Found
+                  type: complex
+                  value:
+                    - and
+                    - - exists
+                      - name: ""
+                        type: reference
+                        value: getContact.results.results.0.id
+          name: Branch on Expression

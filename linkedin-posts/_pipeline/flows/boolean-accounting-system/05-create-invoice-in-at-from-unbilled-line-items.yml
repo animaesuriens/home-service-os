@@ -1,0 +1,1269 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 05 Create Invoice in AT from Unbilled Line Items
+  description: ""
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: webhook
+        component:
+          isPublic: true
+          key: webhook-triggers
+          version: LATEST
+      description: ""
+      inputs:
+        body:
+          type: value
+          value: ""
+        contentType:
+          type: value
+          value: ""
+        headers:
+          type: complex
+          value: []
+        statusCode:
+          type: value
+          value: ""
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: getRecord
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 3
+        usesExponentialBackoff: false
+      inputs:
+        airtableConnection:
+          type: configVar
+          value: Airtable Connection
+        baseId:
+          type: configVar
+          value: Project Management Base
+        record:
+          type: reference
+          value: trigger.results.body.data.jobRecordId
+        tableName:
+          type: configVar
+          value: Jobs Table
+      name: Get Job
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Yes
+          steps:
+            - action:
+                key: listRecords
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: 10
+                errorHandlerType: retry
+                ignoreFinalError: false
+                maxAttempts: 3
+                usesExponentialBackoff: false
+              inputs:
+                airtableConnection:
+                  type: configVar
+                  value: Airtable Connection
+                baseId:
+                  type: configVar
+                  value: Project Management Base
+                fields:
+                  type: complex
+                  value: []
+                filterByFormula:
+                  type: value
+                  value: AND(SEARCH(LOWER("dePosit"), LOWER({Record Name})), {QBO Object - Project
+                    Type Mapping} = "Item")
+                tableName:
+                  type: configVar
+                  value: Project Type(s) Table
+                view:
+                  type: value
+                  value: ""
+              name: Get Customer Deposit Object
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: Still needs to be done.
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      const job = stepResults.getJob.results.fields;
+                      const companyName = job["Company Name"];
+                      const billFirstName = job["Billing Contact First Name"];
+                      const billLastName = job["Billing Contact Last Name"];
+                      const billStreetAddress = job["Billing Street Address"];
+                      const billCity = job["Billing City"];
+                      const billState = job["Billing State"];
+                      const billPostalCode = job["Billing Postal Code"];
+
+                      const jobStreet = job["Job Site Street Address"];
+                      const jobCity = job["Job Site City"];
+                      const jobState = job["Job Site State"];
+                      const jobPostal = job["Job Site Postal Code"];
+
+                      const billTo = [
+                        companyName && companyName,
+                        `${billFirstName} ${billLastName}`,
+                        billStreetAddress,
+                        `${billCity}, ${billState} ${billPostalCode}`,
+                      ]
+                        .filter(Boolean)
+                        .join("\n");
+
+                      const shipTo = [jobStreet, `${jobCity}, ${jobState} ${jobPostal}`]
+                        .filter(Boolean)
+                        .join("\n");
+
+                      return { data: { billTo, shipTo } };
+                    };
+              name: Format Bill To String
+            - action:
+                key: listRecords
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: 10
+                errorHandlerType: retry
+                ignoreFinalError: false
+                maxAttempts: 3
+                usesExponentialBackoff: false
+              inputs:
+                airtableConnection:
+                  type: configVar
+                  value: Airtable Connection
+                baseId:
+                  type: configVar
+                  value: Project Management Base
+                fields:
+                  type: complex
+                  value: []
+                filterByFormula:
+                  type: template
+                  value: AND({Job Record ID}='{{$getJob.results.fields.Job Record ID}}', {Include
+                    on Next Invoice}, {Invoice}='')
+                tableName:
+                  type: configVar
+                  value: Invoice Lines Table
+                view:
+                  type: value
+                  value: ""
+              name: Get Invoice Line Items
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      const lineItems = stepResults.getInvoiceLineItems.results;
+                      const validation = lineItems
+                        .map((data) => {
+                          let line = data.fields;
+
+                          if (line["Line Item Required Fields"].toLowerCase() !== "complete") {
+                            return {
+                              lineId: line["Record ID"],
+                              error: line["Line Item Required Fields"],
+                            };
+                          }
+                        })
+                        .filter(Boolean);
+
+                      return { data: { validation: validation, json: JSON.stringify(validation) } };
+                    };
+              name: Validate Line Items
+            - action:
+                key: branchOnExpression
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              branches:
+                - name: Yes
+                  steps:
+                    - action:
+                        key: updateRecord
+                        component:
+                          isPublic: true
+                          key: airtable
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 10
+                        errorHandlerType: retry
+                        ignoreFinalError: false
+                        maxAttempts: 3
+                        usesExponentialBackoff: false
+                      inputs:
+                        airtableConnection:
+                          type: configVar
+                          value: Airtable Connection
+                        baseId:
+                          type: configVar
+                          value: Project Management Base
+                        dynamicFields:
+                          type: value
+                          value: ""
+                        record:
+                          type: reference
+                          value: getJob.results.id
+                        recordFields:
+                          type: complex
+                          value:
+                            - name:
+                                type: value
+                                value: Invoice Automation Status
+                              type: reference
+                              value: validateLineItems.results.json
+                        tableName:
+                          type: configVar
+                          value: Jobs Table
+                      name: Update Record
+                    - action:
+                        key: stopExecution
+                        component:
+                          isPublic: true
+                          key: stop-execution
+                          version: LATEST
+                      description: Errors detected in Validation
+                      inputs:
+                        contentType:
+                          type: value
+                          value: application/json
+                        headers:
+                          type: complex
+                          value: []
+                        jsonBody:
+                          type: reference
+                          value: validateLineItems.results.json
+                        statusCode:
+                          type: value
+                          value: "400"
+                      name: Stop Execution
+                - name: Else
+                  steps: []
+              description: ""
+              inputs:
+                conditions:
+                  type: complex
+                  value:
+                    - name: Yes
+                      type: complex
+                      value:
+                        - and
+                        - - isNotEmpty
+                          - name: ""
+                            type: reference
+                            value: validateLineItems.results.validation
+                          - name: ""
+                            type: value
+                            value: ""
+              name: Validation has errors?
+            - action:
+                key: branchOnExpression
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              branches:
+                - name: Yes
+                  steps:
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              const job = stepResults.getJob.results.fields;
+                              const lines = stepResults.getInvoiceLineItems.results;
+
+                              const remainingLiability = job["Customer Deposit Liability Total"];
+                              const totalJobAmount = job["Total Job Amount"] || 0;
+
+                              // Calculate invoice total excluding customer deposit lines
+                              const invoiceTotalAmount = lines.reduce((sum, line) => {
+                                const lineFields = line.fields;
+
+                                // Skip lines where Product/Service Name is "Customer Deposit"
+                                if (lineFields["Product/Service Name"]?.[0] === "Customer Deposit") {
+                                  return sum;
+                                }
+
+                                return sum + (lineFields["Line Item Total Before Tax"] || 0);
+                              }, 0);
+
+                              let amountForNewLine = 0;
+
+                              // Only add a deposit credit line if the invoice total equals
+                              // the full job amount (deposit not already deducted).
+                              // If the invoice total is already reduced by the deposit
+                              // (i.e. it equals totalJobAmount - remainingLiability),
+                              // the deposit is already baked into the line items.
+                              const depositAlreadyDeducted =
+                                remainingLiability > 0 &&
+                                Math.abs(invoiceTotalAmount - (totalJobAmount - remainingLiability)) < 0.01;
+
+                              if (!depositAlreadyDeducted) {
+                                if (remainingLiability < invoiceTotalAmount) {
+                                  amountForNewLine = -remainingLiability;
+                                } else {
+                                  amountForNewLine = -invoiceTotalAmount;
+                                }
+                              }
+
+                              return {
+                                data: {
+                                  remainingLiability: remainingLiability,
+                                  invoiceTotalAmount: invoiceTotalAmount,
+                                  amountForNewLine: amountForNewLine,
+                                },
+                              };
+                            };
+                      name: Amount for Liability Deposit Line
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              const job = stepResults.getJob.results;
+                              const lines = stepResults.getInvoiceLineItems.results.length;
+                              const amount =
+                                stepResults.amountForLiabilityDepositLine.results.amountForNewLine;
+                              const productService = stepResults.getCustomerDepositObject.results[0].id;
+                              const today = new Date().toLocaleDateString("en-US");
+
+                              const taxIds = job.fields["Tax IDs From Previous Invoice Lines"];
+                              const taxId = taxIds && taxIds.length > 0 ? taxIds[0] : null;
+
+                              const payload = {
+                                fields: {
+                                  Description: "Previously Invoiced Deposit",
+                                  "Line Item Rate": amount,
+                                  "Line Item Qty": 1,
+                                  Job: [job.id],
+                                  "Product/Service": [productService],
+                                  "Line Item Service Date": today,
+                                  "Include on Next Invoice": true,
+                                  "Line Item Number": "1",
+                                  ...(taxId && { "Line Item Sales Tax ID": taxId }),
+                                  // Always use 1 for the liability, check if it'd break in case we have to line numbers 1?
+                                },
+                              };
+
+                              return { data: payload };
+                            };
+                      name: Liability Deposit Line Payload
+                    - action:
+                        key: branchOnExpression
+                        component:
+                          isPublic: true
+                          key: branch
+                          version: LATEST
+                      branches:
+                        - name: Yes
+                          steps:
+                            - action:
+                                key: rawRequest
+                                component:
+                                  isPublic: true
+                                  key: airtable
+                                  version: LATEST
+                              description: ""
+                              errorConfig:
+                                delaySeconds: 10
+                                errorHandlerType: retry
+                                ignoreFinalError: false
+                                maxAttempts: 3
+                                usesExponentialBackoff: false
+                              inputs:
+                                connection:
+                                  type: configVar
+                                  value: Airtable Connection
+                                data:
+                                  type: reference
+                                  value: liabilityDepositLinePayload.results
+                                debugRequest:
+                                  type: value
+                                  value: "false"
+                                fileData:
+                                  type: complex
+                                  value: []
+                                fileDataFileNames:
+                                  type: complex
+                                  value: []
+                                formData:
+                                  type: complex
+                                  value: []
+                                headers:
+                                  type: complex
+                                  value:
+                                    - name:
+                                        type: value
+                                        value: Content-Type
+                                      type: value
+                                      value: application/json
+                                maxRetries:
+                                  type: value
+                                  value: "0"
+                                method:
+                                  type: value
+                                  value: POST
+                                queryParams:
+                                  type: complex
+                                  value: []
+                                responseType:
+                                  type: value
+                                  value: json
+                                retryAllErrors:
+                                  type: value
+                                  value: "false"
+                                retryDelayMS:
+                                  type: value
+                                  value: "0"
+                                timeout:
+                                  type: value
+                                  value: ""
+                                url:
+                                  type: template
+                                  value: /v0/{{#Project Management Base}}/{{#Invoice Lines Table}}
+                                useExponentialBackoff:
+                                  type: value
+                                  value: "false"
+                              name: Create Liability Deposit Line
+                        - name: Else
+                          steps: []
+                      description: ""
+                      inputs:
+                        conditions:
+                          type: complex
+                          value:
+                            - name: Yes
+                              type: complex
+                              value:
+                                - and
+                                - - notEqual
+                                  - name: ""
+                                    type: reference
+                                    value: amountForLiabilityDepositLine.results.amountForNewLine
+                                  - name: ""
+                                    type: value
+                                    value: "0"
+                      name: Amount for new line is not 0?
+                - name: Else
+                  steps: []
+              description: ""
+              inputs:
+                conditions:
+                  type: complex
+                  value:
+                    - name: Yes
+                      type: complex
+                      value:
+                        - and
+                        - - greaterThan
+                          - name: ""
+                            type: reference
+                            value: getJob.results.fields.Customer Deposit Liability Total
+                          - name: ""
+                            type: value
+                            value: "0"
+              name: Is there Liability left?
+            - action:
+                key: branchOnExpression
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              branches:
+                - name: Yes
+                  steps:
+                    - action:
+                        key: listRecords
+                        component:
+                          isPublic: true
+                          key: airtable
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 10
+                        errorHandlerType: retry
+                        ignoreFinalError: false
+                        maxAttempts: 3
+                        usesExponentialBackoff: false
+                      inputs:
+                        airtableConnection:
+                          type: configVar
+                          value: Airtable Connection
+                        baseId:
+                          type: configVar
+                          value: Project Management Base
+                        fields:
+                          type: complex
+                          value: []
+                        filterByFormula:
+                          type: template
+                          value: AND({Job Record ID}='{{$getJob.results.fields.Job Record ID}}', {Include
+                            on Next Invoice}, {Invoice}='')
+                        tableName:
+                          type: configVar
+                          value: Invoice Lines Table
+                        view:
+                          type: value
+                          value: ""
+                      name: Get Invoice Line Items 2
+                    - action:
+                        key: loopOverItems
+                        component:
+                          isPublic: true
+                          key: loop
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        items:
+                          type: reference
+                          value: getInvoiceLineItems2.results
+                      name: Loop Over Line Items
+                      steps:
+                        - action:
+                            key: trim
+                            component:
+                              isPublic: true
+                              key: text-manipulation
+                              version: LATEST
+                          description: ""
+                          errorConfig:
+                            delaySeconds: 3
+                            errorHandlerType: retry
+                            ignoreFinalError: true
+                            maxAttempts: 3
+                            usesExponentialBackoff: false
+                          inputs:
+                            text:
+                              type: reference
+                              value: loopOverLineItems.currentItem.fields.Description
+                          name: Remove Whitespace
+                        - action:
+                            key: updateRecord
+                            component:
+                              isPublic: true
+                              key: airtable
+                              version: LATEST
+                          description: ""
+                          errorConfig:
+                            delaySeconds: 5
+                            errorHandlerType: retry
+                            ignoreFinalError: true
+                            maxAttempts: 3
+                            usesExponentialBackoff: false
+                          inputs:
+                            airtableConnection:
+                              type: configVar
+                              value: Airtable Connection
+                            baseId:
+                              type: configVar
+                              value: Project Management Base
+                            dynamicFields:
+                              type: value
+                              value: ""
+                            record:
+                              type: reference
+                              value: loopOverLineItems.currentItem.id
+                            recordFields:
+                              type: complex
+                              value:
+                                - name:
+                                    type: value
+                                    value: Description
+                                  type: reference
+                                  value: removeWhitespace.results
+                            tableName:
+                              type: configVar
+                              value: Invoice Lines Table
+                          name: Update Description
+                    - action:
+                        key: listRecords
+                        component:
+                          isPublic: true
+                          key: airtable
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 10
+                        errorHandlerType: retry
+                        ignoreFinalError: false
+                        maxAttempts: 3
+                        usesExponentialBackoff: false
+                      inputs:
+                        airtableConnection:
+                          type: configVar
+                          value: Airtable Connection
+                        baseId:
+                          type: configVar
+                          value: Project Management Base
+                        fields:
+                          type: complex
+                          value: []
+                        filterByFormula:
+                          type: template
+                          value: "{Job Record ID}='{{$getJob.results.fields.Job Record ID}}'"
+                        tableName:
+                          type: configVar
+                          value: Invoices Table
+                        view:
+                          type: value
+                          value: ""
+                      name: List Invoices Linked to Job
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              const job = stepResults.getJob.results;
+                              const existingInvoices = stepResults.listInvoicesLinkedToJob.results;
+                              const invoiceSuffix = existingInvoices.length + 1;
+
+                              return { data: `${job.fields["Estimate/Job Number"]}-INV-${invoiceSuffix}` };
+                            };
+                      name: Generate Invoice Number
+                    - action:
+                        key: rawRequest
+                        component:
+                          isPublic: true
+                          key: quickbooks
+                          version: LATEST
+                      description: By DocNumber
+                      errorConfig:
+                        delaySeconds: 20
+                        errorHandlerType: retry
+                        ignoreFinalError: false
+                        maxAttempts: 5
+                        usesExponentialBackoff: false
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: QuickBooks Connection
+                        data:
+                          type: value
+                          value: ""
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        fileData:
+                          type: complex
+                          value: []
+                        formData:
+                          type: complex
+                          value: []
+                        headers:
+                          type: complex
+                          value: []
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        method:
+                          type: value
+                          value: GET
+                        queryParams:
+                          type: complex
+                          value:
+                            - name:
+                                type: value
+                                value: query
+                              type: template
+                              value: SELECT * FROM Invoice WHERE DocNumber =
+                                '{{$generateInvoiceNumber.results}}' AND
+                                CustomerRef = '{{$getJob.results.fields.QBO
+                                Parent Customer ID}}'
+                        responseType:
+                          type: value
+                          value: json
+                        retryAllErrors:
+                          type: value
+                          value: "false"
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: value
+                          value: /query
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: QBO Get Invoice
+                    - action:
+                        key: branchOnExpression
+                        component:
+                          isPublic: true
+                          key: branch
+                          version: LATEST
+                      branches:
+                        - name: Yes
+                          steps:
+                            - action:
+                                key: runCode
+                                component:
+                                  isPublic: true
+                                  key: code
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                code:
+                                  type: value
+                                  value: >
+                                    module.exports = async ({ logger, configVars
+                                    }, stepResults) => {
+                                      const invoiceNumber = stepResults.generateInvoiceNumber.results;
+                                      const lastChar = invoiceNumber.slice(-1);
+
+                                      let newInvoiceNumber;
+
+                                      // If last character is a letter we replace it with the following one.
+                                      if (/[A-Z]/i.test(lastChar)) {
+                                        const prefix = invoiceNumber.slice(0, -1);
+                                        const nextChar = String.fromCharCode(
+                                          lastChar.toUpperCase().charCodeAt(0) + 1,
+                                        );
+
+                                        if (nextChar > "Z") {
+                                          throw new Error("Suffix exceeds 'Z'");
+                                        }
+
+                                        newInvoiceNumber = prefix + nextChar;
+                                      }
+
+                                      // If last character is not a letter, we start by adding an 'A'
+                                      newInvoiceNumber = invoiceNumber + "A";
+
+                                      return { data: newInvoiceNumber };
+                                    };
+                              name: Update Invoice Number
+                        - name: Error
+                          steps:
+                            - action:
+                                key: runCode
+                                component:
+                                  isPublic: true
+                                  key: code
+                                  version: LATEST
+                              description: Throw an error for the monitor
+                              inputs:
+                                code:
+                                  type: value
+                                  value: >
+                                    module.exports = async ({ logger, configVars
+                                    }, stepResults) => {
+                                      const error = stepResults.qboGetInvoice.results.Fault.Error[0].Detail;
+
+                                      throw new Error(`Error on QBO's API. Detailed message: ${error}`);
+                                    };
+                              name: Throw Error
+                            - action:
+                                key: stopExecution
+                                component:
+                                  isPublic: true
+                                  key: stop-execution
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                contentType:
+                                  type: value
+                                  value: application/json
+                                headers:
+                                  type: complex
+                                  value: []
+                                jsonBody:
+                                  type: value
+                                  value: QBO's API error
+                                statusCode:
+                                  type: value
+                                  value: "500"
+                              name: Stop Execution 3
+                        - name: Else
+                          steps:
+                            - action:
+                                key: runCode
+                                component:
+                                  isPublic: true
+                                  key: code
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                code:
+                                  type: value
+                                  value: >
+                                    module.exports = async ({ logger, configVars
+                                    }, stepResults) => {
+                                      return { data: stepResults.generateInvoiceNumber.results };
+                                    };
+                              name: Forward Invoice Number
+                      description: ""
+                      inputs:
+                        conditions:
+                          type: complex
+                          value:
+                            - name: Yes
+                              type: complex
+                              value:
+                                - and
+                                - - exists
+                                  - name: ""
+                                    type: reference
+                                    value: qboGetInvoice.results.QueryResponse.Invoice.0.Id
+                            - name: Error
+                              type: complex
+                              value:
+                                - and
+                                - - exists
+                                  - name: ""
+                                    type: reference
+                                    value: qboGetInvoice.results.Fault
+                      name: Invoice found in QBO?
+                    - action:
+                        key: selectExecutedStepResult
+                        component:
+                          isPublic: true
+                          key: branch
+                          version: LATEST
+                      description: From Branch results
+                      inputs:
+                        stepResults:
+                          type: complex
+                          value:
+                            - type: reference
+                              value: updateInvoiceNumber.results
+                            - type: reference
+                              value: forwardInvoiceNumber.results
+                      name: Get Invoice Number
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              const job = stepResults.getJob.results;
+                              const lines = stepResults.getInvoiceLineItems2.results;
+                              const { billTo, shipTo } = stepResults.formatBillToString.results;
+                              const invoiceNumber = stepResults.getInvoiceNumber.results;
+
+                              const linesIds = lines.map((line) => line.id);
+
+                              const payload = {
+                                records: [
+                                  {
+                                    fields: {
+                                      Job: [job.id],
+                                      "Invoice Line Items": linesIds,
+                                      "Bill To": billTo,
+                                      "Ship To": shipTo,
+                                      "Invoice Number": invoiceNumber,
+                                      "⚙️ Automation Status": "Invoice Record Created",
+                                      // Status: "Draft", //default to this?
+                                    },
+                                  },
+                                ],
+                              };
+
+                              return { data: payload };
+                            };
+                      name: Generate Invoice Payload
+                    - action:
+                        key: rawRequest
+                        component:
+                          isPublic: true
+                          key: airtable
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 10
+                        errorHandlerType: retry
+                        ignoreFinalError: false
+                        maxAttempts: 3
+                        usesExponentialBackoff: false
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: Airtable Connection
+                        data:
+                          type: reference
+                          value: generateInvoicePayload.results
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        fileData:
+                          type: complex
+                          value: []
+                        fileDataFileNames:
+                          type: complex
+                          value: []
+                        formData:
+                          type: complex
+                          value: []
+                        headers:
+                          type: complex
+                          value:
+                            - name:
+                                type: value
+                                value: Content-Type
+                              type: value
+                              value: application/json
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        method:
+                          type: value
+                          value: POST
+                        queryParams:
+                          type: complex
+                          value: []
+                        responseType:
+                          type: value
+                          value: json
+                        retryAllErrors:
+                          type: value
+                          value: "false"
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: template
+                          value: /v0/{{#Project Management Base}}/{{#Invoices Table}}
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: AT Create Invoice
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              const invoiceId = stepResults.atCreateInvoice.results.data.records[0].id;
+                              return { data: { invoiceId: invoiceId } };
+                            };
+                      name: Invoice Record Id
+                    - action:
+                        key: invokeFlow
+                        component:
+                          isPublic: true
+                          key: cross-flow
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: null
+                        errorHandlerType: ignore
+                        ignoreFinalError: null
+                        maxAttempts: null
+                        usesExponentialBackoff: null
+                      inputs:
+                        data:
+                          type: reference
+                          value: invoiceRecordId.results
+                        flowName:
+                          type: value
+                          value: 05.1 Create Invoice in QBO
+                      name: Create Invoice in QBO
+                    - action:
+                        key: branchOnExpression
+                        component:
+                          isPublic: true
+                          key: branch
+                          version: LATEST
+                      branches:
+                        - name: Yes
+                          steps:
+                            - action:
+                                key: deleteRecord
+                                component:
+                                  isPublic: true
+                                  key: airtable
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                airtableConnection:
+                                  type: configVar
+                                  value: Airtable Connection
+                                baseId:
+                                  type: configVar
+                                  value: Project Management Base
+                                recordId:
+                                  type: reference
+                                  value: atCreateInvoice.results.data.records.0.id
+                                tableName:
+                                  type: configVar
+                                  value: Invoices Table
+                              name: Delete Record
+                            - action:
+                                key: updateRecord
+                                component:
+                                  isPublic: true
+                                  key: airtable
+                                  version: LATEST
+                              description: In Job record
+                              errorConfig:
+                                delaySeconds: 10
+                                errorHandlerType: retry
+                                ignoreFinalError: false
+                                maxAttempts: 3
+                                usesExponentialBackoff: false
+                              inputs:
+                                airtableConnection:
+                                  type: configVar
+                                  value: Airtable Connection
+                                baseId:
+                                  type: configVar
+                                  value: Project Management Base
+                                dynamicFields:
+                                  type: value
+                                  value: ""
+                                record:
+                                  type: reference
+                                  value: trigger.results.body.data.jobRecordId
+                                recordFields:
+                                  type: complex
+                                  value:
+                                    - name:
+                                        type: value
+                                        value: Invoice Automation Status
+                                      type: value
+                                      value: Failed at creating QBO Invoice
+                                tableName:
+                                  type: configVar
+                                  value: Jobs Table
+                              name: Update Invoice Automation Status
+                            - action:
+                                key: stopExecution
+                                component:
+                                  isPublic: true
+                                  key: stop-execution
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                contentType:
+                                  type: value
+                                  value: application/json
+                                headers:
+                                  type: complex
+                                  value: []
+                                jsonBody:
+                                  type: reference
+                                  value: createInvoiceInQbo.results.error.message
+                                statusCode:
+                                  type: value
+                                  value: "400"
+                              name: Stop Execution (Error)
+                        - name: Else
+                          steps:
+                            - action:
+                                key: branchOnExpression
+                                component:
+                                  isPublic: true
+                                  key: branch
+                                  version: LATEST
+                              branches:
+                                - name: Yes
+                                  steps:
+                                    - action:
+                                        key: stopExecution
+                                        component:
+                                          isPublic: true
+                                          key: stop-execution
+                                          version: LATEST
+                                      description: ""
+                                      inputs:
+                                        contentType:
+                                          type: value
+                                          value: application/json
+                                        headers:
+                                          type: complex
+                                          value: []
+                                        jsonBody:
+                                          type: value
+                                          value: Invoice created, but lines id syncing failed. Description and Amount is
+                                            probably duplicated along the lines.
+                                        statusCode:
+                                          type: value
+                                          value: "400"
+                                      name: Stop Execution 2
+                                - name: Else
+                                  steps: []
+                              description: ""
+                              inputs:
+                                conditions:
+                                  type: complex
+                                  value:
+                                    - name: Yes
+                                      type: complex
+                                      value:
+                                        - and
+                                        - - in
+                                          - name: ""
+                                            type: value
+                                            value: duplicate
+                                          - name: ""
+                                            type: reference
+                                            value: qboInvoiceCreationFailed.results
+                              name: Duplicate lines?
+                      description: ""
+                      inputs:
+                        conditions:
+                          type: complex
+                          value:
+                            - name: Yes
+                              type: complex
+                              value:
+                                - and
+                                - - exists
+                                  - name: ""
+                                    type: reference
+                                    value: createInvoiceInQbo.results.error
+                      name: QBO Invoice Creation Failed?
+                - name: Else
+                  steps:
+                    - action:
+                        key: updateRecord
+                        component:
+                          isPublic: true
+                          key: airtable
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 10
+                        errorHandlerType: retry
+                        ignoreFinalError: false
+                        maxAttempts: 3
+                        usesExponentialBackoff: false
+                      inputs:
+                        airtableConnection:
+                          type: configVar
+                          value: Airtable Connection
+                        baseId:
+                          type: configVar
+                          value: Project Management Base
+                        dynamicFields:
+                          type: value
+                          value: ""
+                        record:
+                          type: reference
+                          value: trigger.results.body.data.jobRecordId
+                        recordFields:
+                          type: complex
+                          value:
+                            - name:
+                                type: value
+                                value: Invoice Automation Status
+                              type: value
+                              value: Automation Complete. No invoice line items were included. Please select
+                                invoice line item(s) and try again.
+                        tableName:
+                          type: configVar
+                          value: Jobs Table
+                      name: Update Record 2
+              description: ""
+              inputs:
+                conditions:
+                  type: complex
+                  value:
+                    - name: Yes
+                      type: complex
+                      value:
+                        - and
+                        - - isNotEmpty
+                          - name: ""
+                            type: reference
+                            value: getInvoiceLineItems.results
+                          - name: ""
+                            type: value
+                            value: ""
+              name: Fetched Invoice Line Items?
+        - name: Else
+          steps: []
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Yes
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: getJob.results.id
+      name: Job Found?

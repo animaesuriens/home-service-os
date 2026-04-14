@@ -1,0 +1,118 @@
+sourceFile: job-management-integration-export.yml
+category: Boolean PaintOS
+flow:
+  name: 10 Error Notification Sender
+  description: ""
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Cross
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              let errorDetails = stepResults?.cross?.results?.body?.data
+              
+              let subject = configVars["Error Email Template"].filter(item => {
+                if (item.key == "subject") {
+                  return item
+                }
+              })[0].value
+
+              let bodyTemplate = configVars["Error Email Template"].filter(item => {
+                if (item.key == "body") {
+                  return item
+                }
+              })[0].value
+              
+              subject = subject?.replace('{subject}','Esignature Error')
+              bodyTemplate = bodyTemplate?.replace('{title}',errorDetails?.message)
+              bodyTemplate = bodyTemplate?.replace('{message}',errorDetails?.data?.data?.error_message)
+
+
+
+              let emailPayload = {
+
+                from: configVars['The "From Name" for Automation Alerts'],
+                to: configVars['Resource Coordinator - Default Notification Email'],
+                cc: "",
+                bcc: '',
+                subject: subject,
+                body: bodyTemplate
+              };
+
+              logger.info("Generated Email Payload:", emailPayload);
+
+              return { data: emailPayload };
+            };
+
+
+      name: Error Payload
+    - action:
+        key: httpPost
+        component:
+          isPublic: true
+          key: http
+          version: LATEST
+      description: ""
+      inputs:
+        connection:
+          type: configVar
+          value: ""
+        data:
+          type: reference
+          value: errorPayload.results
+        debugRequest:
+          type: value
+          value: "false"
+        headers:
+          type: complex
+          value: []
+        ignoreSslErrors:
+          type: value
+          value: "false"
+        includeFullResponse:
+          type: value
+          value: "false"
+        maxRetries:
+          type: value
+          value: "0"
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryDelayMS:
+          type: value
+          value: "0"
+        retryOnAllErrors:
+          type: value
+          value: "false"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: configVar
+          value: Email Sender Webhook URL
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: POST Request

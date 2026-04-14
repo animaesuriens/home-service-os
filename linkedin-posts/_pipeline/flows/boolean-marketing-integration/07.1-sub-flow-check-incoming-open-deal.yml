@@ -1,0 +1,63 @@
+sourceFile: boolean-marketing-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 07.1 Sub Flow - Check Incoming Open Deal
+  description: ""
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: HTTP
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const dealStage = stepResults?.http?.results?.body?.data?.dealStage;
+              const hubspotToken = configVars["HubSpot Private App Connection"]?.fields?.accessToken;
+              const marketingPipelineId = configVars['HubSpot Marketing Pipeline'];
+
+              // Fetch pipeline stages dynamically from HubSpot
+              const res = await fetch(`https://api.hubapi.com/crm/v3/pipelines/deals/${marketingPipelineId}`, {
+                headers: {
+                  Authorization: `Bearer ${hubspotToken}`,
+                  "Content-Type": "application/json",
+                },
+              });
+
+              if (!res.ok) {
+                throw new Error(`Failed to fetch pipeline: ${res.status} ${res.statusText}`);
+              }
+
+              const pipelineData = await res.json();
+              const stages = pipelineData?.stages?.map(stage => stage.id) || [];
+
+              const isMarketingPipelineStage = stages.includes(dealStage);
+
+              return {
+                data: {
+                  dealStage,
+                  marketingPipelineId,
+                  isMarketingPipelineStage,
+                  pipelineData
+                },
+              };
+            };
+      name: Check Deal Stage

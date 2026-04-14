@@ -1,0 +1,253 @@
+sourceFile: job-management-integration-export.yml
+category: Boolean PaintOS
+flow:
+  name: 08 Contact Sync
+  description: Sync Contacts between HubSpot and Airtable
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: schedule
+        component:
+          isPublic: true
+          key: schedule-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Cron
+      schedule:
+        meta:
+          scheduleType: minute
+          timeZone: ""
+        type: value
+        value: "*/5 * * * *"
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Enabled Feature
+          steps:
+            - action:
+                key: adjustDateTime
+                component:
+                  isPublic: true
+                  key: datetime
+                  version: LATEST
+              description: ""
+              inputs:
+                dateTimeInput:
+                  type: reference
+                  value: cron.results.startedAt
+                daysInput:
+                  type: value
+                  value: ""
+                hoursInput:
+                  type: value
+                  value: ""
+                minutesInput:
+                  type: value
+                  value: "-5"
+                secondsInput:
+                  type: value
+                  value: ""
+              name: Adjust Date/Time
+            - action:
+                key: convertToEpoch
+                component:
+                  isPublic: true
+                  key: datetime
+                  version: LATEST
+              description: ""
+              inputs:
+                dateTimeInput:
+                  type: reference
+                  value: adjustDateTime.results
+                displayEpochInSeconds:
+                  type: value
+                  value: "false"
+              name: Time 5 Minutes Ago to Epoch
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >-
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+
+                      let time = stepResults.time5MinutesAgoToEpoch?.results;
+
+                      let payload = {
+                        "filterGroups": [
+                          {
+                            "filters": [
+                              {
+                                "propertyName": "lastmodifieddate",
+                                "operator": "GT",
+                                "value": time
+                              }
+                            ]
+                          }
+                        ],
+                        "properties": [
+                          "firstname",
+                          "lastname",
+                          "email",
+                          "phone",
+                          "mobilephone",
+                          "jobtitle",
+                          "company",
+                          "website",
+                          "hs_lead_status",
+                          "lifecyclestage",
+                          "hs_createdate",
+                          "address",
+                          "city",
+                          "state",
+                          "zip",
+                          "country",
+                          "industry",
+                          "annualrevenue",
+                          "numemployees",
+                          "paintscout_contact_id",
+                          "associatedcompanyid"
+                        ]
+                      };
+
+                      return payload;
+                    };
+              name: Generate Search Contact Payload
+            - action:
+                key: rawRequest
+                component:
+                  isPublic: true
+                  key: hubspot
+                  version: LATEST
+              description: ""
+              inputs:
+                connection:
+                  type: configVar
+                  value: HubSpot Private App Connection
+                data:
+                  type: reference
+                  value: generateSearchContactPayload.results
+                debugRequest:
+                  type: value
+                  value: "false"
+                fileData:
+                  type: complex
+                  value: []
+                fileDataFileNames:
+                  type: complex
+                  value: []
+                formData:
+                  type: complex
+                  value: []
+                headers:
+                  type: complex
+                  value: []
+                maxRetries:
+                  type: value
+                  value: "0"
+                method:
+                  type: value
+                  value: POST
+                queryParams:
+                  type: complex
+                  value: []
+                responseType:
+                  type: value
+                  value: json
+                retryAllErrors:
+                  type: value
+                  value: "false"
+                retryDelayMS:
+                  type: value
+                  value: "0"
+                timeout:
+                  type: value
+                  value: ""
+                url:
+                  type: value
+                  value: /crm/v3/objects/contacts/search
+                useExponentialBackoff:
+                  type: value
+                  value: "false"
+              name: List Contacts
+            - action:
+                key: loopOverItems
+                component:
+                  isPublic: true
+                  key: loop
+                  version: LATEST
+              description: ""
+              inputs:
+                items:
+                  type: reference
+                  value: listContacts.results.results
+              name: Loop Over Items
+              steps:
+                - action:
+                    key: invokeFlow
+                    component:
+                      isPublic: true
+                      key: cross-flow
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    data:
+                      type: reference
+                      value: loopOverItems.currentItem
+                    flowName:
+                      type: value
+                      value: 08 Subflow Contact Sync
+                  name: Invoke Flow
+        - name: Else
+          steps:
+            - action:
+                key: stopExecution
+                component:
+                  isPublic: true
+                  key: stop-execution
+                  version: LATEST
+              description: ""
+              inputs:
+                contentType:
+                  type: value
+                  value: application/json
+                headers:
+                  type: complex
+                  value: []
+                jsonBody:
+                  type: value
+                  value: ""
+                statusCode:
+                  type: value
+                  value: "200"
+              name: Stop Execution
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Enabled Feature
+              type: complex
+              value:
+                - and
+                - - equal
+                  - name: ""
+                    type: configVar
+                    value: Contact Sync Preferences
+                  - name: ""
+                    type: value
+                    value: Always
+      name: Branch on Expression

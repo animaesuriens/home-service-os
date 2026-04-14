@@ -1,0 +1,326 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 04 Sync QBO Customer
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Job
+          steps:
+            - action:
+                key: getRecord
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: 10
+                errorHandlerType: retry
+                ignoreFinalError: false
+                maxAttempts: 2
+                usesExponentialBackoff: false
+              inputs:
+                airtableConnection:
+                  type: configVar
+                  value: Airtable Connection
+                baseId:
+                  type: configVar
+                  value: Project Management Base
+                record:
+                  type: reference
+                  value: trigger.results.body.data.id
+                tableName:
+                  type: configVar
+                  value: Jobs Table
+              name: Get Job
+            - action:
+                key: getCustomerById
+                component:
+                  isPublic: true
+                  key: quickbooks
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: 5
+                errorHandlerType: retry
+                ignoreFinalError: false
+                maxAttempts: 2
+                usesExponentialBackoff: false
+              inputs:
+                debug:
+                  type: value
+                  value: "false"
+                id:
+                  type: reference
+                  value: getJob.results.fields.QBO Parent Customer ID
+                quickbooksConnection:
+                  type: configVar
+                  value: QuickBooks Connection
+              name: Get Customer By Id
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      const customPrintEnabled =
+                        configVars["Use Customer names for PrintOnCheckName"];
+                      let qboData = stepResults.getCustomerById.results;
+                      let jobData = stepResults.getJob.results;
+                      let customerStatus = jobData.fields["QBO Customer Active Status"] || false;
+                      let companyName = jobData?.fields?.["Company Name"] ?? "";
+
+                      // Define the customer data for creation
+                      const customerData = {
+                        SyncToken: qboData["SyncToken"] || 0,
+                        Id: jobData.fields["QBO Parent Customer ID"],
+                        Active: customerStatus,
+                        sparse: true,
+                        DisplayName: jobData.fields["QBO Parent Customer Name"],
+                        GivenName: jobData.fields["Billing Contact First Name"],
+                        FamilyName: jobData.fields["Billing Contact Last Name"],
+                        CompanyName: companyName,
+                        PrimaryPhone: {
+                          FreeFormNumber: jobData.fields["Billing Contact Phone"],
+                        },
+                        PrimaryEmailAddr: {
+                          Address: jobData.fields["Billing Contact Email"],
+                        },
+                        BillAddr: {
+                          Line1: `${jobData.fields["Billing Contact First Name"] || ''} ${jobData.fields["Billing Contact Last Name"] || ''}`,
+                          Line2: jobData.fields["Company Name"] || '',
+                          Line3: jobData.fields["Billing Street Address"] || '',
+                          Line4: `${jobData.fields["Billing City"] || ''}, ${jobData.fields["Billing State"] || ''} ${jobData.fields["Billing Postal Code"] || ''}`,
+                          Line5: "USA",
+                        },
+                        PrintOnCheckName: ""
+                      };
+
+                      // if (customPrintEnabled === "true") {
+                      //   customerData.PrintOnCheckName = `${jobData.fields["Job Contact First Name"]} ${jobData.fields["Job Contact Last Name"]}`;
+                      // }
+
+                      return customerData;
+                    };
+              name: (Job) Customer Payload
+        - name: Else
+          steps:
+            - action:
+                key: getRecord
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: 10
+                errorHandlerType: retry
+                ignoreFinalError: false
+                maxAttempts: 2
+                usesExponentialBackoff: false
+              inputs:
+                airtableConnection:
+                  type: configVar
+                  value: Airtable Connection
+                baseId:
+                  type: configVar
+                  value: Project Management Base
+                record:
+                  type: reference
+                  value: trigger.results.body.data.id
+                tableName:
+                  type: configVar
+                  value: Projects Table
+              name: Get Project
+            - action:
+                key: getCustomerById
+                component:
+                  isPublic: true
+                  key: quickbooks
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: 5
+                errorHandlerType: retry
+                ignoreFinalError: false
+                maxAttempts: 2
+                usesExponentialBackoff: false
+              inputs:
+                debug:
+                  type: value
+                  value: "false"
+                id:
+                  type: reference
+                  value: getProject.results.fields.QBO Sub-Customer ID
+                quickbooksConnection:
+                  type: configVar
+                  value: QuickBooks Connection
+              name: Get Customer By Id 2
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      let qboData = stepResults.getCustomerById2.results;
+                      let projectData = stepResults.getProject.results;
+                      let customerStatus =
+                        projectData.fields["QBO Customer Active Status"] || false;
+
+                      // Define if this fields are correctly mapped to AT w/ Chris or Rod.
+                      const customerData = {
+                        SyncToken: qboData["SyncToken"] || 0,
+                        Id: projectData.fields["QBO Sub-Customer ID"],
+                        Active: customerStatus,
+                        sparse: true,
+                        DisplayName: projectData.fields["QBO Sub-Customer Name"],
+                        GivenName: projectData.fields["Project Contact First Name"],
+                        FamilyName: projectData.fields["Project Contact Last Name"],
+                        PrimaryPhone: {
+                          FreeFormNumber: projectData?.fields?.["Project Contact Phone"] ?? "",
+                        },
+                        PrimaryEmailAddr: {
+                          Address: projectData?.fields?.["Project Contact Email"] ?? "",
+                        },
+                        BillAddr: {
+                          Line1: projectData?.fields?.["Job Site Street Address"]?.[0] ?? "",
+                          City: projectData?.fields?.["Job Site City"]?.[0] ?? "",
+                          CountrySubDivisionCode:
+                            projectData?.fields?.["Job Site State"]?.[0] ?? "",
+                          PostalCode: projectData?.fields?.["Job Site Postal Code"]?.[0] ?? "",
+                        },
+                        ParentRef: {
+                          value: projectData.fields?.["QBO Parent Customer ID"]?.[0] ?? "",
+                        },
+                        Job: true,
+                      };
+
+                      return customerData;
+                    };
+              name: (Project) Customer Payload
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Job
+              type: complex
+              value:
+                - and
+                - - equal
+                  - name: ""
+                    type: reference
+                    value: trigger.results.body.data.recordType
+                  - name: ""
+                    type: value
+                    value: Job
+      name: Is this a Job or Project?
+    - action:
+        key: selectExecutedStepResult
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      description: Fetches the payload generated in the branch
+      inputs:
+        stepResults:
+          type: complex
+          value:
+            - type: reference
+              value: projectCustomerPayload.results
+            - type: reference
+              value: jobCustomerPayload.results
+      name: Customer Payload
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: quickbooks
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: null
+        errorHandlerType: fail
+        ignoreFinalError: null
+        maxAttempts: null
+        usesExponentialBackoff: null
+      inputs:
+        connection:
+          type: configVar
+          value: QuickBooks Connection
+        data:
+          type: reference
+          value: customerPayload.results
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value: []
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: POST
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: customer
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Update Parent Customer

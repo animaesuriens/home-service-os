@@ -1,0 +1,547 @@
+sourceFile: boolean-sales-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 91 Hubspot SMS Sent Logger
+  description: ""
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: webhook
+        component:
+          isPublic: true
+          key: webhook-triggers
+          version: LATEST
+      description: ""
+      inputs:
+        body:
+          type: value
+          value: ""
+        contentType:
+          type: value
+          value: ""
+        headers:
+          type: complex
+          value: []
+        statusCode:
+          type: value
+          value: ""
+      isTrigger: true
+      name: HTTP
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              let phone = stepResults?.http?.results?.body?.data?.to || "";
+
+              function formatPhoneNumber(phone) {
+                if (!phone) return "Invalid phone number";
+
+                // Trim and normalize input
+                phone = phone.trim();
+
+                // Extract country code and number using regex
+                let match = phone.match(/^\+?(\d{1,3})?[\s\-\.]?\(?(\d{3})\)?[\s\-\.]?(\d{3})[\s\-\.]?(\d{4})$/);
+
+                if (!match) {
+                  // Try to strip non-digit characters and see if it's 10+ digits
+                  let digitsOnly = phone.replace(/\D/g, "");
+                  if (digitsOnly.length < 10) return "Invalid phone number";
+                  return `+1${digitsOnly}`;
+                }
+
+                // Build cleaned number
+                let countryCode = match[1] || "1"; // Default to US
+                let area = match[2];
+                let mid = match[3];
+                let last = match[4];
+
+                return `+${countryCode}${area}${mid}${last}`;
+              }
+
+              return { data: formatPhoneNumber(phone) };
+            };
+      name: Hubspot Phone Formatter
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              let phone = stepResults?.http?.results?.body?.data?.from || "";
+
+              function formatPhoneNumber(phone) {
+                if (!phone) return "Invalid phone number";
+
+                // Trim and normalize input
+                phone = phone.trim();
+
+                // Extract country code and number using regex
+                let match = phone.match(/^\+?(\d{1,3})?[\s\-\.]?\(?(\d{3})\)?[\s\-\.]?(\d{3})[\s\-\.]?(\d{4})$/);
+
+                if (!match) {
+                  // Try to strip non-digit characters and see if it's 10+ digits
+                  let digitsOnly = phone.replace(/\D/g, "");
+                  if (digitsOnly.length < 10) return "Invalid phone number";
+                  return `+1${digitsOnly}`;
+                }
+
+                // Build cleaned number
+                let countryCode = match[1] || "1"; // Default to US
+                let area = match[2];
+                let mid = match[3];
+                let last = match[4];
+
+                return `+${countryCode}${area}${mid}${last}`;
+              }
+
+              return { data: formatPhoneNumber(phone) };
+            };
+      name: Hubspot Phone Formatter From
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Payload has contact id
+          steps:
+            - action:
+                key: rawRequest
+                component:
+                  isPublic: true
+                  key: hubspot
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: null
+                errorHandlerType: ignore
+                ignoreFinalError: null
+                maxAttempts: null
+                usesExponentialBackoff: null
+              inputs:
+                connection:
+                  type: configVar
+                  value: HubSpot Private App Connection
+                data:
+                  type: template
+                  value: >
+                    {
+                      "filterGroups": [
+                        {
+                          "filters": [
+                        
+                            {
+                              "propertyName": "hs_object_id",
+                              "operator": "EQ",
+                              "value": "{{$http.results.body.data.contactId}}"
+                            }
+                          ]
+                        }
+                      ],
+                      "properties": ["id", "firstname", "lastname", "email", "phone"]
+                    }
+                debugRequest:
+                  type: value
+                  value: "false"
+                fileData:
+                  type: complex
+                  value: []
+                fileDataFileNames:
+                  type: complex
+                  value: []
+                formData:
+                  type: complex
+                  value: []
+                headers:
+                  type: complex
+                  value:
+                    - name:
+                        type: value
+                        value: Content-Type
+                      type: value
+                      value: application/json
+                maxRetries:
+                  type: value
+                  value: "0"
+                method:
+                  type: value
+                  value: POST
+                queryParams:
+                  type: complex
+                  value: []
+                responseType:
+                  type: value
+                  value: json
+                retryAllErrors:
+                  type: value
+                  value: "false"
+                retryDelayMS:
+                  type: value
+                  value: "0"
+                timeout:
+                  type: value
+                  value: ""
+                url:
+                  type: value
+                  value: /crm/v3/objects/contacts/search
+                useExponentialBackoff:
+                  type: value
+                  value: "false"
+              name: Get Contact by id
+        - name: Payload has email
+          steps:
+            - action:
+                key: rawRequest
+                component:
+                  isPublic: true
+                  key: hubspot
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: null
+                errorHandlerType: ignore
+                ignoreFinalError: null
+                maxAttempts: null
+                usesExponentialBackoff: null
+              inputs:
+                connection:
+                  type: configVar
+                  value: HubSpot Private App Connection
+                data:
+                  type: template
+                  value: >
+                    {
+                      "filterGroups": [
+                        {
+                          "filters": [
+                        
+                            {
+                              "propertyName": "email",
+                              "operator": "EQ",
+                              "value": "{{$http.results.body.data.email}}"
+                            }
+                          ]
+                        }
+                      ],
+                      "properties": ["id", "firstname", "lastname", "email", "phone"]
+                    }
+                debugRequest:
+                  type: value
+                  value: "false"
+                fileData:
+                  type: complex
+                  value: []
+                fileDataFileNames:
+                  type: complex
+                  value: []
+                formData:
+                  type: complex
+                  value: []
+                headers:
+                  type: complex
+                  value:
+                    - name:
+                        type: value
+                        value: Content-Type
+                      type: value
+                      value: application/json
+                maxRetries:
+                  type: value
+                  value: "0"
+                method:
+                  type: value
+                  value: POST
+                queryParams:
+                  type: complex
+                  value: []
+                responseType:
+                  type: value
+                  value: json
+                retryAllErrors:
+                  type: value
+                  value: "false"
+                retryDelayMS:
+                  type: value
+                  value: "0"
+                timeout:
+                  type: value
+                  value: ""
+                url:
+                  type: value
+                  value: /crm/v3/objects/contacts/search
+                useExponentialBackoff:
+                  type: value
+                  value: "false"
+              name: Get Contact by email
+        - name: Else
+          steps:
+            - action:
+                key: rawRequest
+                component:
+                  isPublic: true
+                  key: hubspot
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: null
+                errorHandlerType: ignore
+                ignoreFinalError: null
+                maxAttempts: null
+                usesExponentialBackoff: null
+              inputs:
+                connection:
+                  type: configVar
+                  value: HubSpot Private App Connection
+                data:
+                  type: template
+                  value: >
+                    {
+                      "filterGroups": [
+                        {
+                          "filters": [
+                            {
+                              "propertyName": "phone",
+                              "operator": "EQ",
+                              "value": "{{$hubspotPhoneFormatter.results}}"
+                            }
+                          ]
+                        }
+                      ],
+                      "properties": ["id", "firstname", "lastname", "email", "phone"]
+                    }
+                debugRequest:
+                  type: value
+                  value: "false"
+                fileData:
+                  type: complex
+                  value: []
+                fileDataFileNames:
+                  type: complex
+                  value: []
+                formData:
+                  type: complex
+                  value: []
+                headers:
+                  type: complex
+                  value:
+                    - name:
+                        type: value
+                        value: Content-Type
+                      type: value
+                      value: application/json
+                maxRetries:
+                  type: value
+                  value: "0"
+                method:
+                  type: value
+                  value: POST
+                queryParams:
+                  type: complex
+                  value: []
+                responseType:
+                  type: value
+                  value: json
+                retryAllErrors:
+                  type: value
+                  value: "false"
+                retryDelayMS:
+                  type: value
+                  value: "0"
+                timeout:
+                  type: value
+                  value: ""
+                url:
+                  type: value
+                  value: /crm/v3/objects/contacts/search
+                useExponentialBackoff:
+                  type: value
+                  value: "false"
+              name: Get Contact by phone
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Payload has contact id
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: http.results.body.data.contactId
+            - name: Payload has email
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: http.results.body.data.email
+      name: Branch on Expression
+    - action:
+        key: selectExecutedStepResult
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      description: ""
+      inputs:
+        stepResults:
+          type: complex
+          value:
+            - type: reference
+              value: getContactById.results
+            - type: reference
+              value: getContactByEmail.results
+            - type: reference
+              value: getContactByPhone.results
+      name: Get Contact
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Contact found
+          steps:
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: Contact hubspot note activity
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      try {
+                        let body = stepResults?.http?.results?.body?.data;
+                        let from_phone = stepResults?.hubspotPhoneFormatterFrom?.results;
+                        let accessKey = configVars["HubSpot Private App Connection"].fields.accessToken;
+                        let contact = stepResults?.getContact?.results?.results[0];
+                        let contactId = contact?.id;
+
+                        if (!accessKey) throw new Error("Missing HubSpot access token.");
+                        if (!contactId) throw new Error("Contact ID not found.");
+
+                        let noteContent = `From: ${from_phone|| "Unknown Sender"}<br/>To: ${body?.to || "Unknown Recipient"}<br/>Message: ${body?.text || "No message provided"}`;
+
+                        const unixTimestamp = Math.floor(Date.now()); // ✅ UNIX timestamp in milliseconds
+
+                        // 🔹 Step 1: Create a NOTE in HubSpot for Contact
+                        const noteResponse = await fetch("https://api.hubapi.com/crm/v3/objects/notes", {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${accessKey}`,
+                          },
+                          body: JSON.stringify({
+                            properties: {
+                              hs_note_body: noteContent, // ✅ Corrected: Use hs_note_body
+                              hs_timestamp: unixTimestamp, // ✅ Required: UNIX timestamp
+                            },
+                          }),
+                        });
+
+                        const noteData = await noteResponse.json();
+                        if (!noteResponse.ok) {
+                          throw new Error(`HubSpot API Error (NOTE Creation): ${noteData.message || "Unknown error"}`);
+                        }
+
+                        let noteId = noteData.id;
+                        logger.info("✅ Note Created Successfully", noteData);
+
+                        // 🔹 Step 2: Associate NOTE with CONTACT
+                        const associateResponse = await fetch(
+                          `https://api.hubapi.com/crm/v3/associations/note/contact/batch/create`,
+                          {
+                            method: "POST",
+                            headers: {
+                              "Content-Type": "application/json",
+                              Authorization: `Bearer ${accessKey}`,
+                            },
+                            body: JSON.stringify({
+                              inputs: [
+                                {
+                                  from: { id: noteId },
+                                  to: { id: contactId },
+                                  type: "note_to_contact", // ✅ Corrected: Association Type to contact
+                                },
+                              ],
+                            }),
+                          }
+                        );
+
+                        const associateData = await associateResponse.json();
+                        if (!associateResponse.ok) {
+                          throw new Error(`HubSpot API Error (Association): ${associateData.message || "Unknown error"}`);
+                        }
+
+                        logger.info("✅ Note Successfully Associated with Contact", associateData);
+
+                        return {
+                          data: {
+                            note: noteData,
+                            association: associateData,
+                          },
+                        };
+
+                      } catch (error) {
+                        logger.error("❌ Error:", error.message);
+                        return { error: error.message };
+                      }
+                    };
+              name: Contact hubspot note activity
+        - name: Else
+          steps:
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      return { data: 'No contact found' };
+                    };
+              name: Return no contact found
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Contact found
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: getContact.results.results.0.id
+      name: Does contact exist

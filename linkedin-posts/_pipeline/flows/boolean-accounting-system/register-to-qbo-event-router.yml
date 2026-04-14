@@ -1,0 +1,109 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: Register to QBO Event Router
+  description: Work in progress - Ready to test in an Alpha
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: instanceDeploy
+        component:
+          isPublic: true
+          key: management-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: From QBO Connection
+      inputs:
+        code:
+          type: value
+          value: |
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const connection = configVars["QuickBooks Connection"];
+
+              return { data: connection.context.realmId };
+            };
+      name: Get Realm Id
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const webhookUrl = stepResults.trigger.results.webhookUrls["Event Router"];
+              const realmId = stepResults.getRealmId.results;
+
+              const payload = {
+                webhookUrl: webhookUrl,
+                realmId: realmId,
+              };
+
+              return { data: payload };
+            };
+      name: Generate Payload
+    - action:
+        key: httpPost
+        component:
+          isPublic: true
+          key: http
+          version: LATEST
+      description: ""
+      inputs:
+        connection:
+          type: configVar
+          value: ""
+        data:
+          type: reference
+          value: generatePayload.results
+        debugRequest:
+          type: value
+          value: "false"
+        headers:
+          type: complex
+          value: []
+        ignoreSslErrors:
+          type: value
+          value: "false"
+        includeFullResponse:
+          type: value
+          value: "false"
+        maxRetries:
+          type: value
+          value: "0"
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryDelayMS:
+          type: value
+          value: "0"
+        retryOnAllErrors:
+          type: value
+          value: "false"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: https://hooks.prismatic.io/trigger/SW5zdGFuY2VGbG93Q29uZmlnOjkyMzI2Y2MyLTY1NjgtNDU0NC1iYTA4LTY4YWI0N2Y4MWMzMA==
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Register to Router

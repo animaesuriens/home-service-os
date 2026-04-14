@@ -1,0 +1,156 @@
+sourceFile: gmail-and-ring-central-communicator-export.yml
+category: Marketing and Sales System
+flow:
+  name: 03 RC Text Sender
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: webhook
+        component:
+          isPublic: true
+          key: webhook-triggers
+          version: LATEST
+      description: ""
+      inputs:
+        body:
+          type: value
+          value: ""
+        contentType:
+          type: value
+          value: application/json
+        headers:
+          type: complex
+          value: []
+        statusCode:
+          type: value
+          value: "200"
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: This will check the required object keys {from}, {to} and {message}
+      inputs:
+        code:
+          type: value
+          value: >
+            /*
+              Access config variables by name through the configVars object. e.g.
+                const apiEndpoint = `${configVars["App Base URL"]}/api`;
+
+              Access previous steps' results through the stepResults object. Trigger
+              and step names are camelCased. If the step "Get Data from API" returned
+              {"foo": "bar", "baz": 123}, you could destructure that data with:
+                const { foo, baz } = stepResults.getDataFromApi.results;
+
+              You can return string, number or complex object data. e.g.
+                return { data: { foo: "Hello", bar: 123.45, baz: true } };
+            */
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+
+              const requiredKeys = ["from", "to", "text"];
+              const jsonObject = stepResults.trigger.results.body.data
+              function hasAllKeys(obj, requiredKeys) {
+                return requiredKeys.every(key => obj.hasOwnProperty(key));
+              }
+              return { data: hasAllKeys(jsonObject, requiredKeys) };
+            };
+      name: Json Format Checker
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Has all required object
+          steps:
+            - action:
+                key: formatPhoneAction
+                component:
+                  isPublic: false
+                  key: phoneFormatter
+                  version: LATEST
+              description: ""
+              inputs:
+                phone:
+                  type: reference
+                  value: trigger.results.body.data.from
+              name: Format Sender Number
+            - action:
+                key: formatPhoneAction
+                component:
+                  isPublic: false
+                  key: phoneFormatter
+                  version: LATEST
+              description: ""
+              inputs:
+                phone:
+                  type: reference
+                  value: trigger.results.body.data.to
+              name: Format Recipient Number
+            - action:
+                key: createSmsMessage
+                component:
+                  isPublic: false
+                  key: ringCentral
+                  version: LATEST
+              description: ""
+              inputs:
+                accountId:
+                  type: value
+                  value: "~"
+                connection:
+                  type: configVar
+                  value: RingCentral Connect Platform API Connection
+                extensionId:
+                  type: value
+                  value: "~"
+                from:
+                  type: reference
+                  value: formatSenderNumber.results.phone
+                text:
+                  type: reference
+                  value: trigger.results.body.data.text
+                to:
+                  type: reference
+                  value: formatRecipientNumber.results.phone
+              name: Create Sms Message
+        - name: Else
+          steps:
+            - action:
+                key: writeLog
+                component:
+                  isPublic: true
+                  key: log
+                  version: LATEST
+              description: Log Wrong Json Format
+              inputs:
+                level:
+                  type: value
+                  value: info
+                message:
+                  type: value
+                  value: Wrong Json Format
+              name: Wrong Json Format
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Has all required object
+              type: complex
+              value:
+                - and
+                - - isTrue
+                  - name: ""
+                    type: reference
+                    value: jsonFormatChecker.results
+      name: Branch on Expression

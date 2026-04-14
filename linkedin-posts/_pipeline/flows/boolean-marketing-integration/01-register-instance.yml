@@ -1,0 +1,158 @@
+sourceFile: boolean-marketing-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 01 Register Instance
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: instanceDeploy
+        component:
+          isPublic: true
+          key: management-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Instance Deploy
+    - action:
+        key: createObject
+        component:
+          isPublic: true
+          key: collection-tools
+          version: LATEST
+      description: ""
+      inputs:
+        keyValueInput:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: event
+              type: value
+              value: register
+            - name:
+                type: value
+                value: uniqueId
+              type: value
+              value: New
+            - name:
+                type: value
+                value: instanceWebhookUrl
+              type: reference
+              value: instanceDeploy.results.webhookUrls.05 MQL HubSpot Webform Submission
+      name: New Form Submission
+    - action:
+        key: createObject
+        component:
+          isPublic: true
+          key: collection-tools
+          version: LATEST
+      description: ""
+      inputs:
+        keyValueInput:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: event
+              type: value
+              value: register
+            - name:
+                type: value
+                value: uniqueId
+              type: value
+              value: Outreach
+            - name:
+                type: value
+                value: instanceWebhookUrl
+              type: reference
+              value: instanceDeploy.results.webhookUrls.06 Lead Follow Up flow
+      name: New Engagement
+    - action:
+        key: create
+        component:
+          isPublic: true
+          key: collection-tools
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: complex
+          value:
+            - type: reference
+              value: newFormSubmission.results
+            - type: reference
+              value: newEngagement.results
+      name: Create List
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: createList.results
+      name: Loop Over Items
+      steps:
+        - action:
+            key: httpPost
+            component:
+              isPublic: true
+              key: http
+              version: LATEST
+          description: ""
+          errorConfig:
+            delaySeconds: 10
+            errorHandlerType: retry
+            ignoreFinalError: false
+            maxAttempts: 1
+            usesExponentialBackoff: false
+          inputs:
+            connection:
+              type: configVar
+              value: ""
+            data:
+              type: reference
+              value: loopOverItems.currentItem
+            debugRequest:
+              type: value
+              value: "false"
+            headers:
+              type: complex
+              value: []
+            ignoreSslErrors:
+              type: value
+              value: "false"
+            includeFullResponse:
+              type: value
+              value: "false"
+            maxRetries:
+              type: value
+              value: "0"
+            queryParams:
+              type: complex
+              value: []
+            responseType:
+              type: value
+              value: json
+            retryDelayMS:
+              type: value
+              value: "0"
+            retryOnAllErrors:
+              type: value
+              value: "false"
+            timeout:
+              type: value
+              value: ""
+            url:
+              type: configVar
+              value: HubSpot Route Registration URL
+            useExponentialBackoff:
+              type: value
+              value: "false"
+          name: Register Endpoint

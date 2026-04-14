@@ -1,0 +1,100 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+name: Boolean Accounting System
+description: This integrates with QuickBooks Online to simplify invoicing, track
+  expenses, and manage subcontractor payments. By connecting job and project
+  data to financial processes, it ensures accurate billing, expense allocation,
+  and streamlined payment workflows for efficient business operations.
+configPages:
+  - elements:
+      - type: configVar
+        value: QuickBooks Connection
+    name: Connections
+    tagline: ""
+  - elements:
+      - type: configVar
+        value: Project Management Base
+      - type: configVar
+        value: Invoice Example ID
+    name: Project Management
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: configVar
+        value: Jobs Table
+      - type: configVar
+        value: Projects Table
+      - type: configVar
+        value: Project Type(s) Table
+      - type: configVar
+        value: Invoices Table
+      - type: configVar
+        value: Invoice Lines Table
+      - type: configVar
+        value: Customer Transactions Table
+      - type: configVar
+        value: Existing QBO Customers
+    name: Production Tables
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: configVar
+        value: Allow Online ACH Payment
+      - type: configVar
+        value: Allow Online Credit Card Payment
+      - type: configVar
+        value: Include TaxCodeRef
+      - type: configVar
+        value: QBO to AT Custom Fields Mapper
+      - type: configVar
+        value: Include Ship To
+      - type: configVar
+        value: Choose Payment Term
+      - type: configVar
+        value: Active Customers Only
+      - type: configVar
+        value: Use Customer names for PrintOnCheckName
+      - type: htmlElement
+        value: "<h5>Loom video on how to setup Webhook Urls for Void and Resend flows in
+          Airtable's automation:
+          https://www.loom.com/share/bbbc4eb4407042808ec92452d665585c?sid=3469f\
+          681-2dc8-4d21-b395-2ddd7ffc4194</h5>"
+      - type: configVar
+        value: Days back to fetch Invoices
+      - type: configVar
+        value: Fetch Open Invoices Only
+      - type: configVar
+        value: Tracking Number
+    name: Invoicing Setup
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: configVar
+        value: Vendors Table
+      - type: configVar
+        value: Expenses Table
+      - type: configVar
+        value: Sync Bills and Vendor Credits
+      - type: configVar
+        value: Associate Customer/Project on Initial Sync
+      - type: configVar
+        value: Days Ago (Deployment)
+    name: Expenses Setup
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: htmlElement
+        value: <h1>Jobs Table Fields</h1>
+      - type: configVar
+        value: ⚙️ Update Customer QBO Field - Jobs
+      - type: configVar
+        value: ⚙️Include in QBO Customer Customer Upsert Automation Field - Jobs
+      - type: htmlElement
+        value: <h1>Projects Table Fields</h1>
+      - type: configVar
+        value: ⚙️ Update Customer QBO field - Project
+      - type: configVar
+        value: ⚙️Include in QBO Sub Customer Upsert Automation Field - Project
+    name: Airtable Fields Lookup
+    tagline: ""
+    userLevelConfigured: false

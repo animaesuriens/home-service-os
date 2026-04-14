@@ -1,0 +1,222 @@
+sourceFile: boolean-sales-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 15.1 Sub PaintScout All Data Sync to HubSpot - Contact Association
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: HTTP
+    - action:
+        key: listDeals
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: ""
+      inputs:
+        additionalProperties:
+          type: complex
+          value:
+            - type: value
+              value: job_contact_email
+            - type: value
+              value: num_associated_contacts
+        after:
+          type: value
+          value: ""
+        archived:
+          type: value
+          value: "false"
+        associationsList:
+          type: complex
+          value: []
+        debugRequest:
+          type: value
+          value: "false"
+        fetchAll:
+          type: value
+          value: "true"
+        hubspotConnection:
+          type: configVar
+          value: HubSpot Private App Connection
+        limit:
+          type: value
+          value: ""
+        timeout:
+          type: value
+          value: ""
+      name: List Deals
+    - action:
+        key: listContacts
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: ""
+      inputs:
+        additionalProperties:
+          type: complex
+          value: []
+        after:
+          type: value
+          value: ""
+        archived:
+          type: value
+          value: "false"
+        associationsList:
+          type: complex
+          value: []
+        debugRequest:
+          type: value
+          value: "false"
+        fetchAll:
+          type: value
+          value: "true"
+        hubspotConnection:
+          type: configVar
+          value: HubSpot Private App Connection
+        limit:
+          type: value
+          value: ""
+        timeout:
+          type: value
+          value: ""
+      name: List Contacts
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            const axios = require("axios");
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              try {
+                const hsToken = configVars["HubSpot Private App Connection"]?.fields?.accessToken;
+                if (!hsToken) throw new Error("Missing HubSpot access token");
+
+                let listDeals = stepResults?.listDeals?.results?.results || [];
+                let listContacts = stepResults?.listContacts?.results?.results || [];
+
+                // ----------------------------
+                // Create bulk association payload
+                // ----------------------------
+
+                const associationPairs = [];
+
+                for (const deal of listDeals) {
+                  // Skip if deal already has associated contacts
+                  const numAssociated = Number(deal?.properties?.num_associated_contacts || 0);
+                  if (numAssociated > 0) {
+                    continue; // Already associated — skip
+                  }
+
+                  // Get deal's contact email
+                  const email = deal?.properties?.job_contact_email;
+                  if (!email) continue;
+
+                  // Find matching contact by email
+                  const matchedContact = listContacts.find(
+                    (c) =>
+                      c?.properties?.email?.toLowerCase() === email?.toLowerCase()
+                  );
+
+                  if (!matchedContact) continue;
+
+                  // Build association payload
+                  associationPairs.push({
+                    from: { id: deal.id },         // Deal ID
+                    to: { id: matchedContact.id }, // Contact ID
+                    "types": [
+                    {
+                      "associationCategory": "HUBSPOT_DEFINED",
+                      "associationTypeId": 3
+                    }
+                    ]
+                  });
+                }
+
+                // Final bulk payload for logging or debugging
+                const bulkAssociationPayload = {
+                  inputs: associationPairs
+                };
+                // ------------------------------------
+                // BULK ASSOCIATION (100 per batch)
+                // ------------------------------------
+
+                const BATCH_SIZE = 100;
+
+                for (let i = 0; i < associationPairs.length; i += BATCH_SIZE) {
+                  const chunk = associationPairs.slice(i, i + BATCH_SIZE);
+
+                  try {
+                    await axios.post(
+                      "https://api.hubapi.com/crm/v4/associations/deals/contacts/batch/create",
+                      { inputs: chunk },
+                      {
+                        headers: {
+                          Authorization: `Bearer ${hsToken}`,
+                          "Content-Type": "application/json"
+                        }
+                      }
+                    );
+
+                    logger.info(`Associated batch ${Math.floor(i / BATCH_SIZE) + 1}`);
+                  } catch (err) {
+                    logger.error(`Failed to associate batch ${Math.floor(i / BATCH_SIZE) + 1}`);
+                    logger.error(err?.response?.data || err.message);
+                    throw err; // stop execution so Prismatic marks failure
+                  }
+                }
+
+                return {
+                  listDeals: listDeals.length,
+                  listContacts: listContacts.length,
+                  associationsCreated: associationPairs.length,
+                  bulkAssociationPayload
+                };
+
+              } catch (error) {
+                logger.error("Error during deal-contact association:");
+                logger.error(error?.response?.data || error.message);
+                throw error; // rethrow to signal failure
+              }
+            };
+      name: Bulk Contact Association
+    - action:
+        key: stopExecution
+        component:
+          isPublic: true
+          key: stop-execution
+          version: LATEST
+      description: ""
+      inputs:
+        contentType:
+          type: value
+          value: application/json
+        headers:
+          type: complex
+          value: []
+        jsonBody:
+          type: value
+          value: ""
+        statusCode:
+          type: value
+          value: "200"
+      name: Stop Execution

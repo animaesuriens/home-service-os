@@ -1,0 +1,526 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 09.1 Quickbooks Bills - Subflow
+  description: ""
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const currentLine = stepResults.trigger.results.body.data.currentLine;
+
+              const customerRef =
+                currentLine.ItemBasedExpenseLineDetail?.CustomerRef?.value ??
+                currentLine.AccountBasedExpenseLineDetail?.CustomerRef?.value ??
+                null;
+
+              return { data: customerRef };
+            };
+      name: Find Customer Ref
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Yes
+          steps:
+            - action:
+                key: listRecords
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: 10
+                errorHandlerType: retry
+                ignoreFinalError: true
+                maxAttempts: 3
+                usesExponentialBackoff: false
+              inputs:
+                airtableConnection:
+                  type: configVar
+                  value: Airtable Connection
+                baseId:
+                  type: configVar
+                  value: Project Management Base
+                fields:
+                  type: complex
+                  value: []
+                filterByFormula:
+                  type: template
+                  value: '{QBO Sub-Customer ID} =
+                    "{{$trigger.results.body.data.currentLine.AccountBasedExpenseLineDetail.CustomerRef.value}}"'
+                tableName:
+                  type: configVar
+                  value: Projects Table
+                view:
+                  type: value
+                  value: ""
+              name: Get Project Record
+            - action:
+                key: writeLog
+                component:
+                  isPublic: true
+                  key: log
+                  version: LATEST
+              description: ""
+              inputs:
+                level:
+                  type: value
+                  value: info
+                message:
+                  type: reference
+                  value: getProjectRecord.results
+              name: Current Project Log
+        - name: Else
+          steps:
+            - action:
+                key: writeLog
+                component:
+                  isPublic: true
+                  key: log
+                  version: LATEST
+              description: ""
+              inputs:
+                level:
+                  type: value
+                  value: info
+                message:
+                  type: value
+                  value: No project found / Expense not found.
+              name: Write Log Message 4
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Yes
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: findCustomerRef.results
+      name: Customer Ref exists?
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Yes
+          steps:
+            - action:
+                key: listRecords
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: ""
+              inputs:
+                airtableConnection:
+                  type: configVar
+                  value: Airtable Connection
+                baseId:
+                  type: configVar
+                  value: Project Management Base
+                fields:
+                  type: complex
+                  value: []
+                filterByFormula:
+                  type: template
+                  value: "{QBO Object ID} =
+                    {{$trigger.results.body.data.currentLine.ItemBasedExpenseLi\
+                    neDetail.ItemRef.value}}"
+                tableName:
+                  type: configVar
+                  value: Project Type(s) Table
+                view:
+                  type: value
+                  value: ""
+              name: Get Item
+            - action:
+                key: listRecords
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: ""
+              inputs:
+                airtableConnection:
+                  type: configVar
+                  value: Airtable Connection
+                baseId:
+                  type: configVar
+                  value: Project Management Base
+                fields:
+                  type: complex
+                  value: []
+                filterByFormula:
+                  type: template
+                  value: "{QBO Object ID} = {{$getItem.results.0.fields.Item Income Account Ref
+                    Value}}"
+                tableName:
+                  type: configVar
+                  value: Project Type(s) Table
+                view:
+                  type: value
+                  value: ""
+              name: Get Income Account
+        - name: Else
+          steps:
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      let lineItemData = stepResults.trigger.results.body.data.currentLine;
+                      let accountName =
+                        lineItemData?.AccountBasedExpenseLineDetail?.AccountRef.name || "";
+                      let accountId =
+                        lineItemData?.AccountBasedExpenseLineDetail?.AccountRef.value || "";
+
+                      let payload = {
+                        performUpsert: {
+                          fieldsToMergeOn: ["QBO Object ID", "QBO Object - Project Type Mapping"],
+                        },
+                        records: [
+                          {
+                            fields: {
+                              "QBO Object Name": accountName,
+                              "QBO Object - Project Type Mapping": "Account",
+                              "QBO Object ID": accountId,
+                            },
+                          },
+                        ],
+                      };
+
+                      return payload;
+                    };
+              name: Account Payload
+            - action:
+                key: rawRequest
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: 10
+                errorHandlerType: retry
+                ignoreFinalError: true
+                maxAttempts: 3
+                usesExponentialBackoff: false
+              inputs:
+                connection:
+                  type: configVar
+                  value: Airtable Connection
+                data:
+                  type: reference
+                  value: accountPayload.results
+                debugRequest:
+                  type: value
+                  value: "false"
+                fileData:
+                  type: complex
+                  value: []
+                fileDataFileNames:
+                  type: complex
+                  value: []
+                formData:
+                  type: complex
+                  value: []
+                headers:
+                  type: complex
+                  value:
+                    - name:
+                        type: value
+                        value: Content-Type
+                      type: value
+                      value: application/json
+                maxRetries:
+                  type: value
+                  value: "0"
+                method:
+                  type: value
+                  value: PATCH
+                queryParams:
+                  type: complex
+                  value: []
+                responseType:
+                  type: value
+                  value: json
+                retryAllErrors:
+                  type: value
+                  value: "false"
+                retryDelayMS:
+                  type: value
+                  value: "0"
+                timeout:
+                  type: value
+                  value: ""
+                url:
+                  type: template
+                  value: /v0/{{#Project Management Base}}/{{#Project Type(s) Table}}
+                useExponentialBackoff:
+                  type: value
+                  value: "false"
+              name: Upsert Accounts
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Yes
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: trigger.results.body.data.currentLine.ItemBasedExpenseLineDetail.ItemRef.value
+      name: Is an Item?
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const vendor = stepResults?.trigger?.results?.body?.data?.vendor;
+              const bill = stepResults.trigger.results.body.data.bill;
+              const currentLine = stepResults.trigger.results.body.data.currentLine;
+
+              const accountData =
+                stepResults.upsertAccounts?.results?.data?.records[0] || {};
+              const projectRecord = stepResults?.getProjectRecord?.results?.[0] || {};
+              const incomeAccountId = stepResults?.getIncomeAccount?.results[0]?.id ?? [];
+
+              const itemId = [stepResults?.getItem?.results[0]?.id] ?? [];
+              const isItemBased = !!currentLine.ItemBasedExpenseLineDetail;
+              const lineItemDetail = isItemBased
+                ? currentLine.ItemBasedExpenseLineDetail
+                : currentLine.AccountBasedExpenseLineDetail;
+
+              const customerRef = lineItemDetail?.CustomerRef || null;
+
+              const payload = {
+                performUpsert: {
+                  fieldsToMergeOn: ["QBO Expense ID", "Line ID", "Type"],
+                },
+                records: [
+                  {
+                    fields: {
+                      Date: bill.TxnDate,
+                      Vendor: vendor ? [vendor.id] : [],
+                      "Vendor Notes": vendor.fields?.["Display Name"] || "",
+                      Amount: currentLine.Amount || 0,
+                      "QBO Expense ID": bill.Id,
+                      Item: isItemBased ? itemId : [],
+                      Account: isItemBased ? [incomeAccountId] : [accountData.id],
+                      "QBO Document Number": bill.DocNumber,
+                      "QBO Last Modified Time": bill.MetaData?.LastUpdatedTime,
+                      Notes: bill.PrivateNote,
+                      "QBO Expense Detail Type": isItemBased
+                        ? "ItemBasedExpenseLineDetail"
+                        : "AccountBasedExpenseLineDetail",
+                      "⚙️ Deduplicate Unique Lookup ID": `${customerRef?.value || 0}:${currentLine.Amount || 0}`,
+                      "Assigned QBO Customer Name": customerRef?.name || "",
+                      "Assigned QBO Customer ID": customerRef?.value || "",
+                      "Line ID": currentLine.Id,
+                      "Line Type": isItemBased ? "Item" : "Category",
+                      Type: "Bill",
+                      ...(lineItemDetail?.ClassRef && {
+                        "QBO Expense Class ID": lineItemDetail.ClassRef.value,
+                      }),
+                      ...(lineItemDetail?.TaxCodeRef && {
+                        "QBO Expense Tax Code ID": lineItemDetail.TaxCodeRef.value,
+                      }),
+                      ...(projectRecord.id &&
+                        customerRef?.value && {
+                          Project: [projectRecord.id],
+                        }),
+                    },
+                  },
+                ],
+              };
+
+              logger.log("Project ID:", projectRecord.id);
+              logger.log(payload);
+
+              return payload;
+            };
+      name: Expense Payload
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 3
+        usesExponentialBackoff: false
+      inputs:
+        connection:
+          type: configVar
+          value: Airtable Connection
+        data:
+          type: reference
+          value: expensePayload.results
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: Content-Type
+              type: value
+              value: application/json
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: PATCH
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: template
+          value: /v0/{{#Project Management Base}}/{{#Expenses Table}}
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Upsert Expense Record
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const qboExpenseId = stepResults.trigger.results.body.data.bill.Id;
+              const atExpenseId =
+                stepResults.upsertExpenseRecord.results.data.records[0].id;
+
+              const payload = {
+                qboExpenseId: qboExpenseId,
+                atExpenseId: atExpenseId,
+              };
+
+              return { data: payload };
+            };
+      name: Crossflow Payload
+    - action:
+        key: invokeFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: null
+        errorHandlerType: ignore
+        ignoreFinalError: null
+        maxAttempts: null
+        usesExponentialBackoff: null
+      inputs:
+        data:
+          type: reference
+          value: crossflowPayload.results
+        flowName:
+          type: value
+          value: 30 Save Expense's Attachments in Airtable
+      name: Save Attachments
+    - action:
+        key: stopExecution
+        component:
+          isPublic: true
+          key: stop-execution
+          version: LATEST
+      description: ""
+      inputs:
+        contentType:
+          type: value
+          value: application/json
+        headers:
+          type: complex
+          value: []
+        jsonBody:
+          type: value
+          value: ""
+        statusCode:
+          type: value
+          value: "200"
+      name: Stop Execution (Success)

@@ -1,0 +1,2062 @@
+sourceFile: boolean-marketing-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 06 Lead Follow Up flow
+  description: New Call/Meeting Engagement in HubSpot deal
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: webhook
+        component:
+          isPublic: true
+          key: webhook-triggers
+          version: LATEST
+      description: Expects an array of object, see test payload in Test Configuration
+      inputs:
+        body:
+          type: value
+          value: Data received
+        contentType:
+          type: value
+          value: ""
+        headers:
+          type: complex
+          value: []
+        statusCode:
+          type: value
+          value: "202"
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: sleep
+        component:
+          isPublic: true
+          key: sleep
+          version: LATEST
+      description: ""
+      inputs:
+        ms:
+          type: value
+          value: "30000"
+      name: Sleep
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: A simple loop over of object items given by the trigger module
+      inputs:
+        items:
+          type: reference
+          value: trigger.results.body.data
+      name: Loop Over Engagements
+      steps:
+        - action:
+            key: runCode
+            component:
+              isPublic: true
+              key: code
+              version: LATEST
+          description: ""
+          inputs:
+            code:
+              type: value
+              value: >-
+                module.exports = async ({ logger, configVars }, stepResults) =>
+                {
+                  let propertyValue = stepResults?.loopOverEngagements?.currentItem?.propertyValue;
+                  return { data: !isNaN(propertyValue) && propertyValue !== null && propertyValue !== '' };
+                };
+          name: Number Checker
+        - action:
+            key: branchOnExpression
+            component:
+              isPublic: true
+              key: branch
+              version: LATEST
+          branches:
+            - name: Outreach value is sa string
+              steps:
+                - action:
+                    key: writeLog
+                    component:
+                      isPublic: true
+                      key: log
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    level:
+                      type: value
+                      value: info
+                    message:
+                      type: value
+                      value: Outreach contains a string
+                  name: Outreach contains a string
+                - action:
+                    key: branchOnExpression
+                    component:
+                      isPublic: true
+                      key: branch
+                      version: LATEST
+                  branches:
+                    - name: If Outreach
+                      steps:
+                        - action:
+                            key: rawRequest
+                            component:
+                              isPublic: true
+                              key: hubspot
+                              version: LATEST
+                          description: Retrieves raw engagement data from HubSpot. This includes detailed
+                            information about customer interactions, such as
+                            emails, calls, meetings, tasks, or other engagement
+                            activities. The data is typically used to analyze
+                            customer behavior, track progress, and improve
+                            relationship management by providing insights into
+                            the most recent or ongoing engagements within the
+                            HubSpot CRM.
+                          errorConfig:
+                            delaySeconds: 10
+                            errorHandlerType: retry
+                            ignoreFinalError: false
+                            maxAttempts: 1
+                            usesExponentialBackoff: false
+                          inputs:
+                            connection:
+                              type: configVar
+                              value: HubSpot Private App Connection
+                            data:
+                              type: value
+                              value: ""
+                            fileData:
+                              type: complex
+                              value: []
+                            fileDataFileNames:
+                              type: complex
+                              value: []
+                            formData:
+                              type: complex
+                              value: []
+                            headers:
+                              type: complex
+                              value:
+                                - name:
+                                    type: value
+                                    value: Content-Type
+                                  type: value
+                                  value: application/json
+                            maxRetries:
+                              type: value
+                              value: "0"
+                            method:
+                              type: value
+                              value: GET
+                            queryParams:
+                              type: complex
+                              value: []
+                            responseType:
+                              type: value
+                              value: json
+                            retryAllErrors:
+                              type: value
+                              value: "false"
+                            retryDelayMS:
+                              type: value
+                              value: "0"
+                            timeout:
+                              type: value
+                              value: ""
+                            url:
+                              type: template
+                              value: /engagements/v1/engagements/{{$loopOverEngagements.currentItem.objectId}}
+                            useExponentialBackoff:
+                              type: value
+                              value: "false"
+                          name: Get Engagement
+                        - action:
+                            key: rawRequest
+                            component:
+                              isPublic: true
+                              key: hubspot
+                              version: LATEST
+                          description: Get Deal Properties process fetches detailed property data
+                            associated with deals in HubSpot. This includes key
+                            attributes such as deal name, amount, stage, close
+                            date, pipeline, and other custom or default
+                            properties.
+                          errorConfig:
+                            delaySeconds: 10
+                            errorHandlerType: retry
+                            ignoreFinalError: false
+                            maxAttempts: 1
+                            usesExponentialBackoff: false
+                          inputs:
+                            connection:
+                              type: configVar
+                              value: HubSpot Private App Connection
+                            data:
+                              type: value
+                              value: ""
+                            fileData:
+                              type: complex
+                              value: []
+                            fileDataFileNames:
+                              type: complex
+                              value: []
+                            formData:
+                              type: complex
+                              value: []
+                            headers:
+                              type: complex
+                              value: []
+                            maxRetries:
+                              type: value
+                              value: "0"
+                            method:
+                              type: value
+                              value: GET
+                            queryParams:
+                              type: complex
+                              value: []
+                            responseType:
+                              type: value
+                              value: json
+                            retryAllErrors:
+                              type: value
+                              value: "false"
+                            retryDelayMS:
+                              type: value
+                              value: "0"
+                            timeout:
+                              type: value
+                              value: ""
+                            url:
+                              type: value
+                              value: /crm/v3/properties/deals?archived=false
+                            useExponentialBackoff:
+                              type: value
+                              value: "false"
+                          name: Get Deal Properties
+                        - action:
+                            key: runCode
+                            component:
+                              isPublic: true
+                              key: code
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            code:
+                              type: value
+                              value: >
+                                module.exports = async ({ logger, configVars },
+                                stepResults) => {
+                                  let properties = stepResults.getDealProperties.results.results;
+
+                                  // Filter properties, excluding those in the "dealstages" group except for "dealstage" and "pipeline"
+                                    let propNames = []
+                                    for(let prop of properties){
+                                      if(prop.name === "hubspot_owner_id"){
+                                          propNames.push(prop.name)
+                                      }
+                                      if(prop.name === "hs_internal_user_id"){
+                                        logger.info(prop)
+                                         propNames.push(prop.name)
+                                      }
+
+                                      if(prop.name === "dealstage" || prop.name === "pipeline"){
+                                        propNames.push(prop.name)
+                                      }else if(prop.groupName !== "deal_activity" || prop.groupName !== "dealstages"){
+                                        propNames.push(prop.name)
+                                      }else{
+                                        
+                                      }
+                                    }
+
+                                  return propNames;
+
+
+                                };
+                          name: List Deal Properties Label
+                        - action:
+                            key: rawRequest
+                            component:
+                              isPublic: true
+                              key: hubspot
+                              version: LATEST
+                          description: "Retrieves detailed information about a specific deal in HubSpot.
+                            This includes core deal data such as deal ID, name,
+                            amount, stage, pipeline, associated contacts,
+                            companies, and any custom properties. "
+                          errorConfig:
+                            delaySeconds: 10
+                            errorHandlerType: retry
+                            ignoreFinalError: true
+                            maxAttempts: 1
+                            usesExponentialBackoff: false
+                          inputs:
+                            connection:
+                              type: configVar
+                              value: HubSpot Private App Connection
+                            data:
+                              type: template
+                              value: >
+                                {
+                                  "limit": 1,
+                                  "properties": {{$listDealPropertiesLabel.results}},
+                                  "filterGroups": [
+                                    {
+                                      "filters": [
+                                        {
+                                          "propertyName": "hs_object_id",
+                                          "value": "{{$getEngagement.results.associations.dealIds.0}}",
+                                          "operator": "EQ"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                            fileData:
+                              type: complex
+                              value: []
+                            fileDataFileNames:
+                              type: complex
+                              value: []
+                            formData:
+                              type: complex
+                              value: []
+                            headers:
+                              type: complex
+                              value:
+                                - name:
+                                    type: value
+                                    value: Content-Type
+                                  type: value
+                                  value: application/json
+                            maxRetries:
+                              type: value
+                              value: "0"
+                            method:
+                              type: value
+                              value: POST
+                            queryParams:
+                              type: complex
+                              value: []
+                            responseType:
+                              type: value
+                              value: json
+                            retryAllErrors:
+                              type: value
+                              value: "false"
+                            retryDelayMS:
+                              type: value
+                              value: "0"
+                            timeout:
+                              type: value
+                              value: ""
+                            url:
+                              type: value
+                              value: /crm/v3/objects/deals/search
+                            useExponentialBackoff:
+                              type: value
+                              value: "false"
+                          name: Get Deal by ID
+                        - action:
+                            key: getContact
+                            component:
+                              isPublic: true
+                              key: hubspot
+                              version: LATEST
+                          description: Retrieves detailed information about a specific contact in HubSpot.
+                            This includes core contact properties such as name,
+                            email, phone number, company association, lifecycle
+                            stage, and any custom fields. It is commonly used to
+                            manage and analyze individual contacts, track
+                            interactions, and personalize communication
+                            strategies within the HubSpot CRM.
+                          errorConfig:
+                            delaySeconds: 10
+                            errorHandlerType: retry
+                            ignoreFinalError: true
+                            maxAttempts: 1
+                            usesExponentialBackoff: false
+                          inputs:
+                            additionalProperties:
+                              type: complex
+                              value:
+                                - type: value
+                                  value: email
+                                - type: value
+                                  value: firstname
+                                - type: value
+                                  value: lastname
+                                - type: value
+                                  value: how_did_you_find_us
+                                - type: value
+                                  value: phone
+                                - type: value
+                                  value: address
+                                - type: value
+                                  value: city
+                                - type: value
+                                  value: state
+                                - type: value
+                                  value: zip
+                                - type: value
+                                  value: what_can_we_do_for_you
+                                - type: value
+                                  value: job_description
+                                - type: value
+                                  value: hubspot_owner_id
+                            archived:
+                              type: value
+                              value: "false"
+                            associationsList:
+                              type: complex
+                              value: []
+                            contactEmail:
+                              type: value
+                              value: ""
+                            contactId:
+                              type: reference
+                              value: getEngagement.results.associations.contactIds.0
+                            hubspotConnection:
+                              type: configVar
+                              value: HubSpot Private App Connection
+                            timeout:
+                              type: value
+                              value: ""
+                          name: Get Contact
+                        - action:
+                            key: runCode
+                            component:
+                              isPublic: true
+                              key: code
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            code:
+                              type: value
+                              value: >-
+                                module.exports = async ({ logger, configVars },
+                                stepResults) => {
+                                  const accessToken = configVars?.['HubSpot Private App Connection']?.fields?.accessToken;
+                                  const contactData = stepResults?.getContact?.results;
+                                  const dealProperties = stepResults?.listDealProperties?.label;
+                                  const contactId = contactData?.id;
+                                  const marketingPipeline = configVars?.['HubSpot Marketing Pipeline'];
+                                  const getDealById = stepResults?.getDealById?.results;
+
+                                  if (!accessToken) {
+                                    logger.error('No access token found');
+                                    return { data: { deal: null, error: 'No access token found' } };
+                                  }
+
+                                  if (!contactId) {
+                                    logger.error('No contact ID found in step results');
+                                    return { data: { deal: null, error: 'No contact ID found' } };
+                                  }
+
+                                  // Step 1: Get associated deal IDs for the contact
+                                  const assocResponse = await fetch(
+                                    `https://api.hubapi.com/crm/v3/objects/contacts/${contactId}/associations/deals`,
+                                    {
+                                      headers: {
+                                        Authorization: `Bearer ${accessToken}`,
+                                        'Content-Type': 'application/json',
+                                      },
+                                    }
+                                  );
+
+                                  if (!assocResponse?.ok) {
+                                    const err = await assocResponse?.text();
+                                    logger.error('Failed to fetch associations:', err);
+                                    return { data: { deal: null, error: err } };
+                                  }
+
+                                  const assocData = await assocResponse?.json();
+                                  const dealResults = assocData?.results;
+
+                                  if (!dealResults || dealResults?.length === 0) {
+                                    logger.info('No deals associated with this contact');
+                                    return { data: { deal: null, contactData } };
+                                  }
+
+                                  // Step 2: Fetch all associated deals to filter and sort
+                                  const allDealIds = dealResults?.map(d => d?.id);
+
+                                  const propertiesParam = Array.isArray(dealProperties)
+                                    ? dealProperties?.join(',')
+                                    : dealProperties ?? 'dealname,amount,dealstage,closedate,pipeline';
+
+                                  // Ensure pipeline and hs_lastmodifieddate are always present for filtering/sorting
+                                  const finalProperties = [...new Set([...propertiesParam?.split(','), 'pipeline', 'hs_lastmodifieddate'])].join(',');
+
+                                  const dealFetches = allDealIds?.map(id =>
+                                    fetch(`https://api.hubapi.com/crm/v3/objects/deals/${id}?properties=${finalProperties}`, {
+                                      headers: {
+                                        Authorization: `Bearer ${accessToken}`,
+                                        'Content-Type': 'application/json',
+                                      },
+                                    }).then(r => r?.json())
+                                  );
+
+                                  const allDeals = await Promise.all(dealFetches);
+
+                                  // Step 3: Filter to deals in the marketing pipeline, then pick the most recently modified
+                                  const marketingDeals = allDeals?.filter(d => d?.properties?.pipeline === marketingPipeline);
+
+                                  if (!marketingDeals || marketingDeals?.length === 0) {
+                                    logger.info(`No deals found in marketing pipeline "${marketingPipeline}" for contact ${contactId}`);
+                                    return { data: { deal: null, contactData } };
+                                  }
+
+                                  marketingDeals?.sort((a, b) =>
+                                    new Date(a?.properties?.hs_lastmodifieddate ?? 0) - new Date(b?.properties?.hs_lastmodifieddate ?? 0)
+                                  );
+
+                                  const deal = marketingDeals?.[0];
+
+                                  logger.info(`Selected deal ${deal?.id} from marketing pipeline (last modified: ${deal?.properties?.hs_lastmodifieddate})`);
+
+                                  // Step 4: Check if getDealById exists and is in the marketing pipeline — if so, prefer it
+                                  const getDealByIdRecord = getDealById?.results?.[0];
+                                  const getDealByIdPipeline = getDealByIdRecord?.properties?.pipeline;
+
+                                  if (getDealByIdRecord?.id && getDealByIdPipeline === marketingPipeline) {
+                                    logger.info(`getDealById deal ${getDealByIdRecord.id} is in marketing pipeline — returning it`);
+                                    return getDealById;
+                                  }
+
+                                  if (getDealByIdRecord?.id && getDealByIdPipeline !== marketingPipeline) {
+                                    logger.info(`getDealById deal ${getDealByIdRecord.id} is NOT in marketing pipeline ("${getDealByIdPipeline}") — falling back to latest marketing deal`);
+                                  }
+
+                                  return {
+                                    data: {
+                                      results: [deal],
+                                    },
+                                  };
+                                };
+                          name: Get Deal
+                        - action:
+                            key: rawRequest
+                            component:
+                              isPublic: true
+                              key: hubspot
+                              version: LATEST
+                          description: Get User Details
+                          errorConfig:
+                            delaySeconds: 10
+                            errorHandlerType: retry
+                            ignoreFinalError: true
+                            maxAttempts: 1
+                            usesExponentialBackoff: false
+                          inputs:
+                            connection:
+                              type: configVar
+                              value: HubSpot Private App Connection
+                            data:
+                              type: value
+                              value: ""
+                            fileData:
+                              type: complex
+                              value: []
+                            fileDataFileNames:
+                              type: complex
+                              value: []
+                            formData:
+                              type: complex
+                              value: []
+                            headers:
+                              type: complex
+                              value:
+                                - name:
+                                    type: value
+                                    value: Content-Type
+                                  type: value
+                                  value: application/json
+                            maxRetries:
+                              type: value
+                              value: "0"
+                            method:
+                              type: value
+                              value: GET
+                            queryParams:
+                              type: complex
+                              value: []
+                            responseType:
+                              type: value
+                              value: json
+                            retryAllErrors:
+                              type: value
+                              value: "false"
+                            retryDelayMS:
+                              type: value
+                              value: "0"
+                            timeout:
+                              type: value
+                              value: ""
+                            url:
+                              type: template
+                              value: /settings/v3/users/{{$getEngagement.results.engagement.modifiedBy}}
+                            useExponentialBackoff:
+                              type: value
+                              value: "false"
+                          name: Get User
+                        - action:
+                            key: runCode
+                            component:
+                              isPublic: true
+                              key: code
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            code:
+                              type: value
+                              value: >
+                                const axios = require("axios");
+
+
+                                module.exports = async ({ logger, configVars },
+                                stepResults) => {
+                                  try {
+                                    const userWorkEmail = stepResults.getUser?.results?.email;
+                                    const dealOwnerId = stepResults.getDeal.results.results?.[0].properties.hubspot_owner_id || ""
+                                    const contactOwnerId = stepResults.getContact.results?.properties?.hubspot_owner_id || ""
+                                    const engagementOwnerId = stepResults.getEngagement.results.engagement?.ownerId || ""
+                                    const atToken = configVars['Airtable Connection Token']?.fields?.apiKey;
+                                    const baseId = configVars['Project Management Base'];    // must be a string
+                                    const tableName = configVars['People Table'];            // must be a string
+
+                                    logger.info("Deal Owner ID: ", dealOwnerId)
+                                    logger.info("Contact Owner ID: ", contactOwnerId)
+
+                                    if (!atToken || !baseId || !tableName) {
+                                      return []
+                                    }
+
+                                    const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}`;
+                                    const headers = {
+                                      Authorization: `Bearer ${atToken}`,
+                                      "Content-Type": "application/json"
+                                    };
+
+                                    const searchAirtable = async (formula) => {
+                                      const response = await axios.get(url, {
+                                        headers,
+                                        params: {
+                                          filterByFormula: formula,
+                                          maxRecords: 1
+                                        }
+                                      });
+                                      return response.data.records;
+                                    };
+
+                                    let records = [];
+
+                                    if (userWorkEmail) {
+                                      records = await searchAirtable(`AND({Work Email}="${userWorkEmail}", {Work Email})`);
+                                    }
+
+                                    if (records.length === 0 && engagementOwnerId) {
+                                      records = await searchAirtable(`AND({HS User ID}="${engagementOwnerId}", {HS User ID})`);
+                                    }
+
+                                    return records;
+
+                                  } catch (error) {
+                                    logger.error(`Failed to get item from Airtable: ${error.message}`);
+                                    return { 
+                                      results: [],
+                                      error: error.message 
+                                    };
+                                  }
+                                };
+                          name: Get Owner
+                        - action:
+                            key: branchOnExpression
+                            component:
+                              isPublic: true
+                              key: branch
+                              version: LATEST
+                          branches:
+                            - name: If Owner is empty
+                              steps:
+                                - action:
+                                    key: writeLog
+                                    component:
+                                      isPublic: true
+                                      key: log
+                                      version: LATEST
+                                  description: ""
+                                  inputs:
+                                    level:
+                                      type: value
+                                      value: info
+                                    message:
+                                      type: value
+                                      value: Owner has no value
+                                  name: Owner has no value
+                                - action:
+                                    key: runCode
+                                    component:
+                                      isPublic: true
+                                      key: code
+                                      version: LATEST
+                                  description: Generate email payload for error notification
+                                  inputs:
+                                    code:
+                                      type: value
+                                      value: >
+                                        module.exports = async ({ logger,
+                                        configVars }, stepResults) => {
+                                          
+                                          const message = stepResults.trigger.results.body.data;
+                                          const contactUrl = stepResults.getContact.results?.url || "Not Found."
+                                          const dealUrl = stepResults.getDeal.results.results?.[0].url || "Not Found."
+
+                                          logger.info("Generated Email Payload:", message);
+
+                                          const subject = 'Error on outreach - Missing Owner Data';
+                                          const emailTemplate = `
+                                                Hello! <br/><br/>
+
+                                                An error has been encountered during the lead outreach process. The issue has been identified as missing owner data for the lead in question.<br/><br/>
+
+                                                <strong>Details:</strong><br/>
+                                                - <strong>Issue:</strong> Missing owner data<br/>
+                                                - <strong>Occurrence:</strong> Lead outreach<br/>
+                                                - <strong>Contact URL:</strong> ${contactUrl}<br/>
+                                                - <strong>Deal URL:</strong> ${dealUrl}<br/><br/>
+                                                Please assign an owner to the lead or update the necessary data to ensure smooth processing of further lead outreach.<br/><br/>
+
+                                                If you need assistance, please contact the support team or review the lead's details in the system.<br/><br/>
+
+                                                Best regards,<br/>
+                                                Boolean AI<br/>
+                                              `;
+
+
+                                          const emailPayload = {
+                                            from: configVars['The "From Name" for Automation Alerts'],
+                                            to: configVars['Resource Coordinator - Default Notification Email'],
+                                            cc: "",
+                                            bcc: configVars['HubSpot Portal ID']+'@bcc.hubspot.com',
+                                            subject: subject,
+                                            body: emailTemplate
+                                          };
+
+                                          logger.info("Generated Email Payload:", emailPayload);
+
+                                          return { data: emailPayload };
+                                        };
+                                  name: Generate Payload
+                                - action:
+                                    key: httpPost
+                                    component:
+                                      isPublic: true
+                                      key: http
+                                      version: LATEST
+                                  description: ""
+                                  inputs:
+                                    connection:
+                                      type: configVar
+                                      value: ""
+                                    data:
+                                      type: reference
+                                      value: generatePayload.results
+                                    debugRequest:
+                                      type: value
+                                      value: "false"
+                                    headers:
+                                      type: complex
+                                      value: []
+                                    ignoreSslErrors:
+                                      type: value
+                                      value: "false"
+                                    includeFullResponse:
+                                      type: value
+                                      value: "false"
+                                    maxRetries:
+                                      type: value
+                                      value: "0"
+                                    queryParams:
+                                      type: complex
+                                      value: []
+                                    responseType:
+                                      type: value
+                                      value: json
+                                    retryDelayMS:
+                                      type: value
+                                      value: "0"
+                                    retryOnAllErrors:
+                                      type: value
+                                      value: "false"
+                                    timeout:
+                                      type: value
+                                      value: ""
+                                    url:
+                                      type: configVar
+                                      value: Email Sender Webhook URL
+                                    useExponentialBackoff:
+                                      type: value
+                                      value: "false"
+                                  name: Send no owner data notification
+                            - name: Else
+                              steps:
+                                - action:
+                                    key: writeLog
+                                    component:
+                                      isPublic: true
+                                      key: log
+                                      version: LATEST
+                                  description: Log Owner has value
+                                  inputs:
+                                    level:
+                                      type: value
+                                      value: info
+                                    message:
+                                      type: value
+                                      value: Owner has value
+                                  name: Owner has value
+                                - action:
+                                    key: runCode
+                                    component:
+                                      isPublic: true
+                                      key: code
+                                      version: LATEST
+                                  description: Get customer info and owner
+                                  inputs:
+                                    code:
+                                      type: value
+                                      value: >
+                                        module.exports = async ({ logger,
+                                        configVars }, stepResults) => {
+
+                                          let contactData = stepResults.getContact.results || ""
+                                          let contactEmail = contactData.properties?.email || ""
+                                          let contactFirstName = contactData.properties?.firstname || ""
+                                          let dealData = stepResults.getDeal.results?.results?.[0] || ""
+                                          let dealEmail = dealData.properties?.job_contact_email || contactEmail
+                                          let dealFirstName = dealData.properties?.job_contact_first_name || contactFirstName
+                                          let contactPhone = contactData?.properties?.phone || ''
+
+                                          let outreach = stepResults.trigger.results.body.data[0].propertyValue?.split('-')[0] || ''
+                                          
+                                          let customerEmail = dealEmail
+                                          let customerFirstName = dealFirstName
+
+                                          if (!customerEmail) {
+                                            customerEmail = contactEmail
+                                          }
+
+                                          if (!customerFirstName) {
+                                            customerFirstName = contactFirstName
+                                          }
+
+                                          return { 
+                                            customerEmail: customerEmail,
+                                            customerFirstName: customerFirstName,
+                                            contactPhone,
+                                            outreach
+                                          };
+                                        };
+                                  name: Utilities
+                                - action:
+                                    key: listRecords
+                                    component:
+                                      isPublic: true
+                                      key: airtable
+                                      version: LATEST
+                                  description: This will find the specific template needed
+                                  errorConfig:
+                                    delaySeconds: 10
+                                    errorHandlerType: retry
+                                    ignoreFinalError: false
+                                    maxAttempts: 1
+                                    usesExponentialBackoff: false
+                                  inputs:
+                                    airtableConnection:
+                                      type: configVar
+                                      value: Airtable Connection Token
+                                    baseId:
+                                      type: configVar
+                                      value: Project Management Base
+                                    fields:
+                                      type: complex
+                                      value: []
+                                    filterByFormula:
+                                      type: template
+                                      value: FIND("{{$utilities.results.outreach}}",{HubSpot Call Type Name})>0
+                                    tableName:
+                                      type: configVar
+                                      value: Lead Follow up Templates
+                                    view:
+                                      type: value
+                                      value: ""
+                                  name: Find Template
+                                - action:
+                                    key: branchOnExpression
+                                    component:
+                                      isPublic: true
+                                      key: branch
+                                      version: LATEST
+                                  branches:
+                                    - name: Template is empty
+                                      steps:
+                                        - action:
+                                            key: writeLog
+                                            component:
+                                              isPublic: true
+                                              key: log
+                                              version: LATEST
+                                          description: Log template not found
+                                          inputs:
+                                            level:
+                                              type: value
+                                              value: info
+                                            message:
+                                              type: value
+                                              value: Template not found
+                                          name: Template not found
+                                        - action:
+                                            key: runCode
+                                            component:
+                                              isPublic: true
+                                              key: code
+                                              version: LATEST
+                                          description: Genrate no template notification payload
+                                          inputs:
+                                            code:
+                                              type: value
+                                              value: >
+                                                module.exports = async ({
+                                                logger, configVars },
+                                                stepResults) => {
+                                                  
+                                                  const message = stepResults.trigger.results.body.data;
+
+                                                  logger.info("Generated Email Payload:", message);
+
+                                                  const subject = 'Error on outreach - Missing Lead Template Data';
+                                                  const emailTemplate = `
+                                                        Hello! <br/><br/>
+
+                                                        An error has been encountered during the lead outreach process. The issue has been identified as missing lead template data for the lead in question.<br/><br/>
+
+                                                        <strong>Details:</strong><br/>
+                                                        - <strong>Issue:</strong> Missing lead template data<br/> 
+                                                        - <strong>Occurrence:</strong> Lead outreach<br/><br/>
+
+                                                        Please create a template or update the necessary data to ensure smooth processing of further lead outreach.<br/><br/>
+
+                                                        If you need assistance, please contact the support team or review the lead's details in the system.<br/><br/>
+
+                                                        Best regards,<br/>
+                                                        Boolean AI<br/>
+                                                      `;
+
+
+                                                  const emailPayload = {
+                                                    from: configVars['The "From Name" for Automation Alerts'],
+                                                    to: configVars['Resource Coordinator - Default Notification Email'],
+                                                    cc: "",
+                                                    bcc: configVars['HubSpot Portal ID']+'@bcc.hubspot.com',
+                                                    subject: subject,
+                                                    body: emailTemplate
+                                                  };
+
+                                                  logger.info("Generated Email Payload:", emailPayload);
+
+                                                  return { data: emailPayload };
+                                                };
+                                          name: Create email payload
+                                        - action:
+                                            key: httpPost
+                                            component:
+                                              isPublic: true
+                                              key: http
+                                              version: LATEST
+                                          description: ""
+                                          inputs:
+                                            connection:
+                                              type: configVar
+                                              value: ""
+                                            data:
+                                              type: reference
+                                              value: createEmailPayload.results
+                                            debugRequest:
+                                              type: value
+                                              value: "false"
+                                            headers:
+                                              type: complex
+                                              value: []
+                                            ignoreSslErrors:
+                                              type: value
+                                              value: "false"
+                                            includeFullResponse:
+                                              type: value
+                                              value: "false"
+                                            maxRetries:
+                                              type: value
+                                              value: "0"
+                                            queryParams:
+                                              type: complex
+                                              value: []
+                                            responseType:
+                                              type: value
+                                              value: json
+                                            retryDelayMS:
+                                              type: value
+                                              value: "0"
+                                            retryOnAllErrors:
+                                              type: value
+                                              value: "false"
+                                            timeout:
+                                              type: value
+                                              value: ""
+                                            url:
+                                              type: configVar
+                                              value: Email Sender Webhook URL
+                                            useExponentialBackoff:
+                                              type: value
+                                              value: "false"
+                                          name: Send no template data notification
+                                    - name: Else
+                                      steps:
+                                        - action:
+                                            key: runCode
+                                            component:
+                                              isPublic: true
+                                              key: code
+                                              version: LATEST
+                                          description: Extract key information from your messages, like names, emails,
+                                            phone numbers, and more.
+                                          inputs:
+                                            code:
+                                              type: value
+                                              value: "module.exports = async ({ logger, configVars }, stepResults) => {
+
+                                                \    let smsContent =
+                                                stepResults.findTemplate?.resul\
+                                                ts[0]?.fields['SMS Content'];
+
+                                                \    let emailContent =
+                                                stepResults.findTemplate?.resul\
+                                                ts[0]?.fields['Email Content'];
+
+                                                \    let emailSubject =
+                                                stepResults.findTemplate?.resul\
+                                                ts[0]?.fields['Email Subject'];
+
+                                                \    let portalId =
+                                                stepResults.loopOverEngagements\
+                                                .currentItem.portalId;
+
+                                                \    let leadData =
+                                                stepResults.utilities.results;
+
+                                                \    let ownerData =
+                                                stepResults.getOwner.results[0];
+
+                                                \    let customerEmail =
+                                                leadData.customerEmail;
+
+                                                \    let contactPhone =
+                                                leadData.contactPhone;
+
+                                                \    let customerFirstName =
+                                                leadData.customerFirstName;
+
+                                                \    let ownerFirstName =
+                                                ownerData.fields[\"First
+                                                Name\"];
+
+                                                \    let ownerLastName =
+                                                ownerData.fields[\"Last Name\"];
+
+                                                \    let ownerFullName =
+                                                `${ownerFirstName}
+                                                ${ownerLastName}`;
+
+                                                \    let ownerEmail =
+                                                ownerData.fields[\"Work Email\"]
+                                                || configVars[\"Resource
+                                                Coordinator - Default
+                                                Notification Email\"];
+
+                                                \    let jobTitle =
+                                                ownerData.fields[\"Job Title\"]
+                                                || \"\";
+
+                                                \    let companyName =
+                                                ownerData.fields[\"Company\"] ||
+                                                \"\";
+
+                                                \    let companyAddressLine1 =
+                                                ownerData.fields[\"Company
+                                                Address Line 1\"] || \"\";
+
+                                                \    let companyAddressLine2 =
+                                                ownerData.fields[\"Company
+                                                Address Line 2\"] || \"\";
+
+                                                \    //let phoneNumber =
+                                                ownerData.fields[\"Phone
+                                                Number\"] || \"\";
+
+                                                \    let phoneNumber =
+                                                configVars['Company Phone
+                                                Number']
+
+                                                \    let bcc =
+                                                `${portalId}@bcc.hubspot.com`;
+
+                                                \    let from =
+                                                `${ownerFirstName} @
+                                                ${companyName}`;
+
+                                                \    let cc = ownerEmail;
+
+                                                \    // let contactData =
+                                                stepResults.getContact.results
+
+                                                \ \ 
+
+                                                \    // Replace variables in
+                                                templates and handle newlines
+                                                for HTML
+
+                                                \    const variables = {
+
+                                                \        \"{customerFirstName}\
+                                                \": customerFirstName,
+
+                                                \        \"{emailSubject}\":
+                                                emailSubject,
+
+                                                \        \"{smsContent}\":
+                                                smsContent,
+
+                                                \        \"{emailContent}\":
+                                                emailContent,
+
+                                                \        \"{portalId}\":
+                                                portalId,
+
+                                                \        \"{customerEmail}\":
+                                                customerEmail,
+
+                                                \        \"{ownerFirstName}\":
+                                                ownerFirstName,
+
+                                                \        \"{ownerLastName}\":
+                                                ownerLastName,
+
+                                                \        \"{ownerFullName}\":
+                                                ownerFullName,
+
+                                                \        \"{ownerEmail}\":
+                                                ownerEmail,
+
+                                                \        \"{jobTitle}\":
+                                                jobTitle,
+
+                                                \        \"{companyName}\":
+                                                companyName,
+
+                                                \        \"{companyAddressLine1}\
+                                                \": companyAddressLine1,
+
+                                                \        \"{companyAddressLine2}\
+                                                \": companyAddressLine2,
+
+                                                \        \"{phoneNumber}\":
+                                                phoneNumber,
+
+                                                \        \"{bcc}\": bcc,
+
+                                                \        \"{from}\": from,
+
+                                                \        \"{cc}\": cc,
+
+                                                \        \"{signature}\": [
+
+                                                \          ownerFullName,
+
+                                                \          jobTitle,
+
+                                                \          companyName,
+
+                                                \          companyAddressLine1,
+
+                                                \          companyAddressLine2,
+
+                                                \          phoneNumber,
+
+                                                \        ]
+
+                                                \          .filter((part) =>
+                                                part.trim() !== \"\")
+
+                                                \          .join(\"<br>\"),
+
+                                                \      };
+
+                                                \     \ 
+
+                                                \ \ 
+
+                                                \    const replacePlaceholders =
+                                                (template) => {
+
+                                                \    if (!template) return \"\";
+
+                                                \    return template
+
+                                                \        .replace(/\\n/g,
+                                                \"<br>\")\ 
+
+                                                \        .replace(/\\{(.*?)\\}/\
+                                                g, (match) => variables[match]
+                                                || match);
+
+                                                \    };
+
+
+                                                \    const
+                                                replacePlaceholdersSMS =
+                                                (template) => {
+
+                                                \        if (!template) return
+                                                \"\";
+
+                                                \        return
+                                                template.replace(/\\{(.*?)\\}/g,
+                                                (match) => variables[match] ||
+                                                match);
+
+                                                \    };
+
+                                                \     \ 
+
+                                                \ \ 
+
+                                                \    smsContent =
+                                                replacePlaceholdersSMS(smsConte\
+                                                nt);
+
+                                                \    emailContent =
+                                                replacePlaceholders(emailConten\
+                                                t);
+
+                                                \    emailSubject =
+                                                replacePlaceholders(emailSubjec\
+                                                t);
+
+                                                \ \ 
+
+                                                \    logger.info(\"message:\", {
+
+                                                \      smsContent,
+
+                                                \      emailContent,
+
+                                                \      emailSubject,
+
+                                                \    });
+
+
+                                                \    let emailPayload = {
+
+                                                \        from,
+
+                                                \        to:customerEmail,
+
+                                                \        ownerEmail,
+
+                                                \        bcc,
+
+                                                \        subject:emailSubject,
+
+                                                \        body: emailContent
+
+                                                \    }
+
+
+                                                \    let smsPayload = {
+
+                                                \        from:phoneNumber,//com\
+                                                pany phone
+
+                                                \        to:contactPhone,//cust\
+                                                omer phone
+
+                                                \        text:smsContent
+
+                                                \    }
+
+                                                \ \ 
+
+                                                \    return {
+
+                                                \      data: {
+
+                                                \        smsContent,
+
+                                                \        emailContent,
+
+                                                \        emailSubject,
+
+                                                \        emailPayload,
+
+                                                \        smsPayload
+
+                                                \      },
+
+                                                \    };
+
+                                                \  };
+
+                                                \  "
+                                          name: Message Extractor
+                                        - action:
+                                            key: branchOnExpression
+                                            component:
+                                              isPublic: true
+                                              key: branch
+                                              version: LATEST
+                                          branches:
+                                            - name: Send Sms and Email
+                                              steps:
+                                                - action:
+                                                    key: writeLog
+                                                    component:
+                                                      isPublic: true
+                                                      key: log
+                                                      version: LATEST
+                                                  description: LOG SEND SMS AND EMAIL
+                                                  inputs:
+                                                    level:
+                                                      type: value
+                                                      value: info
+                                                    message:
+                                                      type: value
+                                                      value: SEND SMS AND EMAIL
+                                                  name: SEND SMS AND EMAIL
+                                                - action:
+                                                    key: httpPost
+                                                    component:
+                                                      isPublic: true
+                                                      key: http
+                                                      version: LATEST
+                                                  description: Send Email Follow up
+                                                  inputs:
+                                                    connection:
+                                                      type: configVar
+                                                      value: ""
+                                                    data:
+                                                      type: reference
+                                                      value: messageExtractor.results.emailPayload
+                                                    debugRequest:
+                                                      type: value
+                                                      value: "false"
+                                                    headers:
+                                                      type: complex
+                                                      value: []
+                                                    ignoreSslErrors:
+                                                      type: value
+                                                      value: "false"
+                                                    includeFullResponse:
+                                                      type: value
+                                                      value: "false"
+                                                    maxRetries:
+                                                      type: value
+                                                      value: "0"
+                                                    queryParams:
+                                                      type: complex
+                                                      value: []
+                                                    responseType:
+                                                      type: value
+                                                      value: json
+                                                    retryDelayMS:
+                                                      type: value
+                                                      value: "0"
+                                                    retryOnAllErrors:
+                                                      type: value
+                                                      value: "false"
+                                                    timeout:
+                                                      type: value
+                                                      value: ""
+                                                    url:
+                                                      type: configVar
+                                                      value: Email Sender Webhook URL
+                                                    useExponentialBackoff:
+                                                      type: value
+                                                      value: "false"
+                                                  name: A. Send Email
+                                                - action:
+                                                    key: httpPost
+                                                    component:
+                                                      isPublic: true
+                                                      key: http
+                                                      version: LATEST
+                                                  description: Send Text Follow up
+                                                  errorConfig:
+                                                    delaySeconds: null
+                                                    errorHandlerType: ignore
+                                                    ignoreFinalError: null
+                                                    maxAttempts: null
+                                                    usesExponentialBackoff: null
+                                                  inputs:
+                                                    connection:
+                                                      type: configVar
+                                                      value: ""
+                                                    data:
+                                                      type: reference
+                                                      value: messageExtractor.results.smsPayload
+                                                    debugRequest:
+                                                      type: value
+                                                      value: "false"
+                                                    headers:
+                                                      type: complex
+                                                      value: []
+                                                    ignoreSslErrors:
+                                                      type: value
+                                                      value: "false"
+                                                    includeFullResponse:
+                                                      type: value
+                                                      value: "false"
+                                                    maxRetries:
+                                                      type: value
+                                                      value: "0"
+                                                    queryParams:
+                                                      type: complex
+                                                      value: []
+                                                    responseType:
+                                                      type: value
+                                                      value: json
+                                                    retryDelayMS:
+                                                      type: value
+                                                      value: "0"
+                                                    retryOnAllErrors:
+                                                      type: value
+                                                      value: "false"
+                                                    timeout:
+                                                      type: value
+                                                      value: ""
+                                                    url:
+                                                      type: configVar
+                                                      value: Text Sender Webhook URL
+                                                    useExponentialBackoff:
+                                                      type: value
+                                                      value: "false"
+                                                  name: A. Send Text
+                                            - name: Send Email
+                                              steps:
+                                                - action:
+                                                    key: writeLog
+                                                    component:
+                                                      isPublic: true
+                                                      key: log
+                                                      version: LATEST
+                                                  description: LOG SEND EMAIL
+                                                  inputs:
+                                                    level:
+                                                      type: value
+                                                      value: info
+                                                    message:
+                                                      type: value
+                                                      value: SEND EMAIL
+                                                  name: SEND EMAIL
+                                                - action:
+                                                    key: httpPost
+                                                    component:
+                                                      isPublic: true
+                                                      key: http
+                                                      version: LATEST
+                                                  description: Send Email Follow up
+                                                  inputs:
+                                                    connection:
+                                                      type: configVar
+                                                      value: ""
+                                                    data:
+                                                      type: reference
+                                                      value: messageExtractor.results.emailPayload
+                                                    debugRequest:
+                                                      type: value
+                                                      value: "false"
+                                                    headers:
+                                                      type: complex
+                                                      value: []
+                                                    ignoreSslErrors:
+                                                      type: value
+                                                      value: "false"
+                                                    includeFullResponse:
+                                                      type: value
+                                                      value: "false"
+                                                    maxRetries:
+                                                      type: value
+                                                      value: "0"
+                                                    queryParams:
+                                                      type: complex
+                                                      value: []
+                                                    responseType:
+                                                      type: value
+                                                      value: json
+                                                    retryDelayMS:
+                                                      type: value
+                                                      value: "0"
+                                                    retryOnAllErrors:
+                                                      type: value
+                                                      value: "false"
+                                                    timeout:
+                                                      type: value
+                                                      value: ""
+                                                    url:
+                                                      type: configVar
+                                                      value: Email Sender Webhook URL
+                                                    useExponentialBackoff:
+                                                      type: value
+                                                      value: "false"
+                                                  name: B. Send Email
+                                            - name: Send Sms
+                                              steps:
+                                                - action:
+                                                    key: writeLog
+                                                    component:
+                                                      isPublic: true
+                                                      key: log
+                                                      version: LATEST
+                                                  description: LOG SEND SMS
+                                                  inputs:
+                                                    level:
+                                                      type: value
+                                                      value: info
+                                                    message:
+                                                      type: value
+                                                      value: SEND SMS
+                                                  name: SEND SMS
+                                                - action:
+                                                    key: httpPost
+                                                    component:
+                                                      isPublic: true
+                                                      key: http
+                                                      version: LATEST
+                                                  description: Send Text Follow up
+                                                  errorConfig:
+                                                    delaySeconds: null
+                                                    errorHandlerType: ignore
+                                                    ignoreFinalError: null
+                                                    maxAttempts: null
+                                                    usesExponentialBackoff: null
+                                                  inputs:
+                                                    connection:
+                                                      type: configVar
+                                                      value: ""
+                                                    data:
+                                                      type: reference
+                                                      value: messageExtractor.results.smsPayload
+                                                    debugRequest:
+                                                      type: value
+                                                      value: "false"
+                                                    headers:
+                                                      type: complex
+                                                      value: []
+                                                    ignoreSslErrors:
+                                                      type: value
+                                                      value: "false"
+                                                    includeFullResponse:
+                                                      type: value
+                                                      value: "false"
+                                                    maxRetries:
+                                                      type: value
+                                                      value: "0"
+                                                    queryParams:
+                                                      type: complex
+                                                      value: []
+                                                    responseType:
+                                                      type: value
+                                                      value: json
+                                                    retryDelayMS:
+                                                      type: value
+                                                      value: "0"
+                                                    retryOnAllErrors:
+                                                      type: value
+                                                      value: "false"
+                                                    timeout:
+                                                      type: value
+                                                      value: ""
+                                                    url:
+                                                      type: configVar
+                                                      value: Text Sender Webhook URL
+                                                    useExponentialBackoff:
+                                                      type: value
+                                                      value: "false"
+                                                  name: B. Send Text
+                                            - name: Else
+                                              steps:
+                                                - action:
+                                                    key: writeLog
+                                                    component:
+                                                      isPublic: true
+                                                      key: log
+                                                      version: LATEST
+                                                  description: LOG NO SEND ACTION
+                                                  inputs:
+                                                    level:
+                                                      type: value
+                                                      value: info
+                                                    message:
+                                                      type: value
+                                                      value: No Send Action
+                                                  name: No Send Action
+                                          description: Check send type, if both sms and email are check, it will send both
+                                            notification.
+                                          inputs:
+                                            conditions:
+                                              type: complex
+                                              value:
+                                                - name: Send Sms and Email
+                                                  type: complex
+                                                  value:
+                                                    - and
+                                                    - - isTrue
+                                                      - name: ""
+                                                        type: reference
+                                                        value: findTemplate.results.0.fields.Send SMS?
+                                                    - - isTrue
+                                                      - name: ""
+                                                        type: reference
+                                                        value: findTemplate.results.0.fields.Send Email?
+                                                - name: Send Email
+                                                  type: complex
+                                                  value:
+                                                    - and
+                                                    - - isTrue
+                                                      - name: ""
+                                                        type: reference
+                                                        value: findTemplate.results.0.fields.Send Email?
+                                                - name: Send Sms
+                                                  type: complex
+                                                  value:
+                                                    - and
+                                                    - - isTrue
+                                                      - name: ""
+                                                        type: reference
+                                                        value: findTemplate.results.0.fields.Send SMS?
+                                          name: Check Send Type
+                                        - action:
+                                            key: branchOnExpression
+                                            component:
+                                              isPublic: true
+                                              key: branch
+                                              version: LATEST
+                                          branches:
+                                            - name: In Marketing Pipeline
+                                              steps:
+                                                - action:
+                                                    key: rawRequest
+                                                    component:
+                                                      isPublic: true
+                                                      key: hubspot
+                                                      version: LATEST
+                                                  description: Update deal stage
+                                                  errorConfig:
+                                                    delaySeconds: 10
+                                                    errorHandlerType: retry
+                                                    ignoreFinalError: false
+                                                    maxAttempts: 1
+                                                    usesExponentialBackoff: false
+                                                  inputs:
+                                                    connection:
+                                                      type: configVar
+                                                      value: HubSpot Private App Connection
+                                                    data:
+                                                      type: template
+                                                      value: |-
+                                                        {
+                                                          "properties": {
+                                                        "dealstage":"{{$findTemplate.results.0.fields.Deal Stage ID to Move to}}"
+                                                          }
+                                                        }
+                                                    fileData:
+                                                      type: complex
+                                                      value: []
+                                                    fileDataFileNames:
+                                                      type: complex
+                                                      value: []
+                                                    formData:
+                                                      type: complex
+                                                      value: []
+                                                    headers:
+                                                      type: complex
+                                                      value:
+                                                        - name:
+                                                            type: value
+                                                            value: Content-Type
+                                                          type: value
+                                                          value: application/json
+                                                    maxRetries:
+                                                      type: value
+                                                      value: "0"
+                                                    method:
+                                                      type: value
+                                                      value: PATCH
+                                                    queryParams:
+                                                      type: complex
+                                                      value: []
+                                                    responseType:
+                                                      type: value
+                                                      value: json
+                                                    retryAllErrors:
+                                                      type: value
+                                                      value: "false"
+                                                    retryDelayMS:
+                                                      type: value
+                                                      value: "0"
+                                                    timeout:
+                                                      type: value
+                                                      value: ""
+                                                    url:
+                                                      type: template
+                                                      value: /crm/v3/objects/deals/{{$getDeal.results.results.0.id}}
+                                                    useExponentialBackoff:
+                                                      type: value
+                                                      value: "false"
+                                                  name: Update deal
+                                            - name: Else
+                                              steps:
+                                                - action:
+                                                    key: runCode
+                                                    component:
+                                                      isPublic: true
+                                                      key: code
+                                                      version: LATEST
+                                                  description: This code will only verify if the outreach is the first outreach.
+                                                  inputs:
+                                                    code:
+                                                      type: value
+                                                      value: >
+                                                        /*
+                                                          Access config variables by name through the configVars object. e.g.
+                                                            const apiEndpoint = `${configVars["App Base URL"]}/api`;
+
+                                                          Access previous steps' results through the stepResults object. Trigger
+                                                          and step names are camelCased. If the step "Get Data from API" returned
+                                                          {"foo": "bar", "baz": 123}, you could destructure that data with:
+                                                            const { foo, baz } = stepResults.getDataFromApi.results;
+
+                                                          You can return string, number or complex object data. e.g.
+                                                            return { data: { foo: "Hello", bar: 123.45, baz: true } };
+                                                        */
+
+
+                                                        module.exports = async
+                                                        ({ logger, configVars },
+                                                        stepResults) => {
+                                                          let firstOutReach = stepResults.loopOverEngagements.currentItem?.propertyValue
+                                                          return { data: firstOutReach.includes('1st') ? true : false };
+                                                        };
+                                                  name: String Container
+                                                - action:
+                                                    key: branchOnExpression
+                                                    component:
+                                                      isPublic: true
+                                                      key: branch
+                                                      version: LATEST
+                                                  branches:
+                                                    - name: 1st outreach
+                                                      steps:
+                                                        - action:
+                                                            key: runCode
+                                                            component:
+                                                              isPublic: true
+                                                              key: code
+                                                              version: LATEST
+                                                          description: ""
+                                                          inputs:
+                                                            code:
+                                                              type: value
+                                                              value: >
+                                                                
+                                                                module.exports =
+                                                                async ({ logger,
+                                                                configVars },
+                                                                stepResults) => {
+
+                                                                  let contactData = stepResults.getContact.results
+                                                                  let contactId = contactData.id
+                                                                  let firstName = contactData.properties["firstname"]
+                                                                  let lastname = contactData.properties["lastname"]
+                                                                  let phone = contactData.properties["phone"]
+                                                                  let email = contactData.properties["email"]
+                                                                  let address = contactData.properties["address"]
+                                                                  let city = contactData.properties["city"]
+                                                                  let state = contactData.properties["state"]
+                                                                  let zip = contactData.properties["zip"]
+                                                                  let hsOwnerId = contactData.properties["hubspot_owner_id"]
+                                                                  let dealName = `${firstName} ${lastname}`
+
+                                                                  // Map the variables into the payload
+                                                                  let payload = {
+                                                                    "dealname": dealName,
+                                                                    // "project_type": projectType,
+                                                                    "job_contact_email": email,
+                                                                    "job_contact_first_name": firstName,
+                                                                    "job_contact_last_name": lastname,
+                                                                    "job_contact_phone": phone,
+                                                                    "job_site_city": city,
+                                                                    "job_site_postal_code": zip,
+                                                                    "job_site_state": state,
+                                                                    "job_site_street_address": address,
+                                                                    // "marketing_sources": sources,
+                                                                    // "source": sources,
+                                                                    "hubspot_owner_id": hsOwnerId,
+                                                                    "dealstage": configVars["Lead - Follow-Up 1"]
+                                                                  };
+
+                                                                  // Return the mapped fields
+                                                                  return { 
+                                                                    "properties": payload,
+                                                                    "associations": [
+                                                                    {
+                                                                      "types": [
+                                                                        {
+                                                                          "associationCategory": "HUBSPOT_DEFINED",
+                                                                          "associationTypeId": 3
+                                                                        }
+                                                                      ],
+                                                                      "to": {
+                                                                        "id": contactId
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                  };
+                                                                };
+                                                          name: Create deal payload
+                                                        - action:
+                                                            key: rawRequest
+                                                            component:
+                                                              isPublic: true
+                                                              key: hubspot
+                                                              version: LATEST
+                                                          description: Process is used to create a new deal in HubSpot. This involves
+                                                            specifying key deal
+                                                            properties such as
+                                                            deal name, amount,
+                                                            stage, pipeline,
+                                                            close date, and any
+                                                            custom fields. It
+                                                            enables teams to
+                                                            efficiently add new
+                                                            opportunities to
+                                                            their sales
+                                                            pipeline, ensuring
+                                                            accurate tracking
+                                                            and management of
+                                                            potential revenue
+                                                            within the HubSpot
+                                                            CRM.
+                                                          errorConfig:
+                                                            delaySeconds: 10
+                                                            errorHandlerType: retry
+                                                            ignoreFinalError: false
+                                                            maxAttempts: 1
+                                                            usesExponentialBackoff: false
+                                                          inputs:
+                                                            connection:
+                                                              type: configVar
+                                                              value: HubSpot Private App Connection
+                                                            data:
+                                                              type: reference
+                                                              value: createDealPayload.results
+                                                            fileData:
+                                                              type: complex
+                                                              value: []
+                                                            fileDataFileNames:
+                                                              type: complex
+                                                              value: []
+                                                            formData:
+                                                              type: complex
+                                                              value: []
+                                                            headers:
+                                                              type: complex
+                                                              value: []
+                                                            maxRetries:
+                                                              type: value
+                                                              value: "0"
+                                                            method:
+                                                              type: value
+                                                              value: POST
+                                                            queryParams:
+                                                              type: complex
+                                                              value: []
+                                                            responseType:
+                                                              type: value
+                                                              value: json
+                                                            retryAllErrors:
+                                                              type: value
+                                                              value: "false"
+                                                            retryDelayMS:
+                                                              type: value
+                                                              value: "0"
+                                                            timeout:
+                                                              type: value
+                                                              value: ""
+                                                            url:
+                                                              type: value
+                                                              value: /crm/v3/objects/deals
+                                                            useExponentialBackoff:
+                                                              type: value
+                                                              value: "false"
+                                                          name: Create deal
+                                                    - name: Else
+                                                      steps:
+                                                        - action:
+                                                            key: writeLog
+                                                            component:
+                                                              isPublic: true
+                                                              key: log
+                                                              version: LATEST
+                                                          description: ""
+                                                          inputs:
+                                                            level:
+                                                              type: value
+                                                              value: info
+                                                            message:
+                                                              type: value
+                                                              value: Not first outreach
+                                                          name: First outreach
+                                                  description: Check if outreach is the first outreach base on string container.
+                                                  inputs:
+                                                    conditions:
+                                                      type: complex
+                                                      value:
+                                                        - name: 1st outreach
+                                                          type: complex
+                                                          value:
+                                                            - and
+                                                            - - isTrue
+                                                              - name: ""
+                                                                type: reference
+                                                                value: stringContainer.results
+                                                  name: Check if 1st outreach
+                                          description: CHECK IF DEAL EXIST
+                                          inputs:
+                                            conditions:
+                                              type: complex
+                                              value:
+                                                - name: In Marketing Pipeline
+                                                  type: complex
+                                                  value:
+                                                    - and
+                                                    - - equal
+                                                      - name: ""
+                                                        type: reference
+                                                        value: getDeal.results.results.0.properties.pipeline
+                                                      - name: ""
+                                                        type: configVar
+                                                        value: HubSpot Marketing Pipeline
+                                          name: Deal Exist
+                                  description: Check if template is empty
+                                  inputs:
+                                    conditions:
+                                      type: complex
+                                      value:
+                                        - name: Template is empty
+                                          type: complex
+                                          value:
+                                            - and
+                                            - - isEmpty
+                                              - name: ""
+                                                type: reference
+                                                value: findTemplate.results
+                                              - name: ""
+                                                type: value
+                                                value: ""
+                                  name: Is template empty?
+                          description: Check if owner has value
+                          inputs:
+                            conditions:
+                              type: complex
+                              value:
+                                - name: If Owner is empty
+                                  type: complex
+                                  value:
+                                    - and
+                                    - - isEmpty
+                                      - name: ""
+                                        type: reference
+                                        value: getOwner.results
+                                      - name: ""
+                                        type: value
+                                        value: ""
+                          name: Check if owner has value
+                    - name: Else
+                      steps:
+                        - action:
+                            key: writeLog
+                            component:
+                              isPublic: true
+                              key: log
+                              version: LATEST
+                          description: Skip if action is not outreach
+                          inputs:
+                            level:
+                              type: value
+                              value: info
+                            message:
+                              type: value
+                              value: Not outreach trigger
+                          name: Write Log Message
+                  description: Checks if outreach action
+                  inputs:
+                    conditions:
+                      type: complex
+                      value:
+                        - name: If Outreach
+                          type: complex
+                          value:
+                            - and
+                            - - in
+                              - name: ""
+                                type: value
+                                value: Outreach
+                              - name: ""
+                                type: reference
+                                value: loopOverEngagements.currentItem.propertyValue
+                  name: Outreach Branch
+            - name: Else
+              steps:
+                - action:
+                    key: writeLog
+                    component:
+                      isPublic: true
+                      key: log
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    level:
+                      type: value
+                      value: info
+                    message:
+                      type: value
+                      value: Outreach contains a string
+                  name: Outreach contains a number
+          description: ""
+          inputs:
+            conditions:
+              type: complex
+              value:
+                - name: Outreach value is sa string
+                  type: complex
+                  value:
+                    - and
+                    - - isFalse
+                      - name: ""
+                        type: reference
+                        value: numberChecker.results
+          name: Outreach value is valid

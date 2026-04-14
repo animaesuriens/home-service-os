@@ -1,0 +1,71 @@
+sourceFile: sales-and-marketing-reporting-export.yml
+category: Marketing and Sales System
+flow:
+  name: 01 On deploy
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: instanceDeploy
+        component:
+          isPublic: true
+          key: management-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: On deploy
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: Get Config Variables
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              let initalConfigData  = configVars["Setting Up Google Sheets Page"]
+              let overrideData = []
+
+              for(let item of initalConfigData){
+                  overrideData.push({
+                    ...item,
+                    clientVariableName:item?.clientName?.replace(/\s+/g, "_")?.toLowerCase()
+                  })
+              }
+
+              return { data: overrideData };
+            };
+      name: Get Config Variables
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: getConfigVariables.results
+      name: Loop Over Items
+      steps:
+        - action:
+            key: invokeFlow
+            component:
+              isPublic: true
+              key: cross-flow
+              version: LATEST
+          description: ""
+          inputs:
+            data:
+              type: reference
+              value: loopOverItems.currentItem
+            flowName:
+              type: value
+              value: 01.1 Process Mass Syncing
+          name: Process Mass Import

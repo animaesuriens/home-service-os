@@ -1,0 +1,350 @@
+sourceFile: boolean-sales-integration-export.yml
+category: Marketing and Sales System
+name: Boolean Sales Integration
+description: This integration connects PaintScout and HubSpot to streamline
+  quote management and sales processes. It automatically syncs PaintScout quotes
+  with HubSpot, providing seamless access to detailed project estimates and
+  client data for efficient follow-ups and improved sales tracking.
+configPages:
+  - elements:
+      - type: htmlElement
+        value: >
+          <!doctype html>
+
+          <html lang="en">
+
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>V77 – Sales Integration (BETA)</title>
+          </head>
+
+          <body style="font-family: Arial, Helvetica, sans-serif;
+          line-height:1.5; margin:24px; color:#111">
+            <header style="margin-bottom:18px;">
+              <h1 style="margin:0 0 6px 0; font-size:22px;">📣 New BETA Version Published 📣</h1>
+              <div style="font-size:14px; color:#333">
+                <strong>Version:</strong> V77 – Sales Integration<br>
+                <strong>Date:</strong> 10/06/2025 MDT
+              </div>
+            </header>
+
+            <main>
+              <section style="margin-bottom:20px;">
+                <h2 style="margin:0 0 8px 0; font-size:18px;">Feature: Config Wizard – PaintScout Default Values Settings</h2>
+
+                <h3 style="margin:12px 0 6px 0; font-size:16px;">Problem</h3>
+                <ul style="margin:0 0 0 18px; padding:0;">
+                  <li style="margin:6px 0;">🔸 On Page 5 of the Config Wizard (<strong>“PaintScout Default Values Settings”</strong>), the process could not proceed when HubSpot properties contained too many fields, resulting in the error: <em>“Maximum call stack size exceeded.”</em></li>
+                </ul>
+
+                <h3 style="margin:12px 0 6px 0; font-size:16px;">Solution</h3>
+                <ul style="margin:0 0 0 18px; padding:0;">
+                  <li style="margin:6px 0;">🔸 Added multi-pick list options for <strong>Deal Group Name</strong>, <strong>Contact Group Name</strong>, and <strong>Company Group Name</strong>.</li>
+                  <li style="margin:6px 0;">🔸 Users can now select which properties under these group names should appear in the dropdown on Page 5.</li>
+                </ul>
+
+                <h3 style="margin:12px 0 6px 0; font-size:16px;">Test</h3>
+                <p style="margin:0;">🔸 Verified during development. The API response for fetching properties in Flow 5 was successfully filtered and no longer triggers the error.</p>
+
+                <h3 style="margin:12px 0 6px 0; font-size:16px;">Notes</h3>
+                <p style="margin:0;">🔸 This is a <strong>beta version</strong>. PGN Paragon will be used for beta testing.</p>
+              </section>
+            </main>
+
+            <footer style="margin-top:20px; font-size:13px; color:#444">
+              <em>Generated: 10/06/2025 MDT</em>
+            </footer>
+          </body>
+
+          </html>
+      - type: htmlElement
+        value: <h1>Applications</h1>
+      - type: configVar
+        value: HubSpot Private App Connection
+      - type: htmlElement
+        value: |-
+          <p>
+            Include the following to the Private App scopes:
+          </p><br>
+
+          <p style="
+              font-family:'Courier New', courier;
+              font-size:12px;
+              background-color:#000;      /* try #1e1e1e for a softer dark */
+              color:#fba026;
+              display:inline-block;
+              padding:8px 12px;
+              margin:0;
+              border-radius:6px;
+              box-shadow:0 2px 6px rgba(0,0,0,0.5);
+          ">
+            <code>crm.objects.companies.read</code>&nbsp;
+            <code>crm.objects.companies.write</code>&nbsp;
+            <code>crm.objects.contacts.read</code>&nbsp;
+            <code>crm.objects.contacts.write</code>&nbsp;
+            <code>crm.objects.custom.read</code>&nbsp;
+            <code>crm.objects.deals.read</code>&nbsp;
+            <code>crm.objects.deals.write</code>&nbsp;
+            <code>crm.objects.owners.read</code>&nbsp;
+            <code>crm.objects.users.read</code>&nbsp;
+            <code>crm.schemas.companies.read</code>&nbsp;
+            <code>crm.schemas.contacts.read</code>&nbsp;
+            <code>crm.schemas.custom.read</code>&nbsp;
+            <code>crm.schemas.deals.read</code>&nbsp;
+            <code>forms</code>&nbsp;
+            <code>oauth</code>&nbsp;
+            <code>files</code>&nbsp;
+            <code>files.ui_hidden.read</code>
+          </p>
+      - type: configVar
+        value: PaintScout Connection
+      - type: configVar
+        value: CompanyCam API Connection
+      - type: htmlElement
+        value: <h1>Webhooks to Integration(s)</h1>
+      - type: configVar
+        value: Email Sender URL
+      - type: configVar
+        value: HubSpot Route Registration URL
+    name: Connections
+    tagline: ""
+  - elements:
+      - type: configVar
+        value: HubSpot Sales Pipeline
+      - type: configVar
+        value: HubSpot Marketing Pipeline
+      - type: configVar
+        value: HubSpot Portal ID
+      - type: configVar
+        value: Project Management Base
+      - type: configVar
+        value: Estimate Date Type
+      - type: configVar
+        value: Assign Company Cam to Project Owner
+      - type: configVar
+        value: TNT - Blacklist Settings
+      - type: configVar
+        value: Override Contact in mass import
+      - type: configVar
+        value: Mass Import Log Message
+      - type: configVar
+        value: Change Order Settings
+    name: Foundation Setup
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: htmlElement
+        value: <h2>HubSpot Configuration</h2>
+      - type: configVar
+        value: Bid Scheduled
+      - type: configVar
+        value: Bid in Progress
+      - type: configVar
+        value: Bid Sent
+      - type: configVar
+        value: Customer Accepted Proposal
+      - type: configVar
+        value: Sales Won
+      - type: configVar
+        value: Sales Lost
+      - type: configVar
+        value: Declined Stage
+      - type: configVar
+        value: Deal Status for Accepted Quotes
+      - type: configVar
+        value: Airtable Job Record ID Property
+      - type: configVar
+        value: Invoice Work Order URL Property
+      - type: configVar
+        value: PaintScout Invoice URL (Internal) Property
+      - type: htmlElement
+        value: <h2>HubSpot Forms</h2>
+      - type: htmlElement
+        value: |-
+          <p>
+            We use two different HubSpot forms to manage contact enrollment in Sales Sequences:
+          </p>
+          <ul>
+            <li><strong>Enroll form</strong>: Submitted after a quote is sent.</li>
+            <li><strong>Unenroll form</strong>: Submitted after a quote is either accepted, won, or lost.</li>
+          </ul>
+          <p>
+            To locate the <strong>Form ID</strong>, go to your HubSpot Forms dashboard, open the form, and copy the ID from the URL.
+            The Form ID is the bold portion shown in this example:
+          </p>
+          <pre style="white-space: pre-wrap; word-break: break-word;">
+          https://app.hubspot.com/submissions/47942240/form/<strong>133e228a-95b5-446d-86e6-a8d7a8cecd54</strong>
+          </pre>
+      - type: configVar
+        value: Enroll Sequence Form ID
+      - type: configVar
+        value: Unenroll Sequence Form ID
+      - type: htmlElement
+        value: <h2>PaintScout Configuration</h2>
+      - type: configVar
+        value: Sync Deals After X Date
+      - type: htmlElement
+        value: >
+          <p>Only PaintScout quotes that have an <strong>estimate date on or
+          after</strong> the date you set will be synced to the corresponding
+          deals in HubSpot.</p>
+
+
+          <p><strong>Example:</strong><br>
+
+          If you set the date to <em>April 1, 2025</em>, then:</p>
+
+
+          <ul>
+            <li>A quote with an estimate date of <strong>April 3, 2025</strong> <em>will be synced</em></li>
+            <li>A quote with an estimate date of <strong>March 28, 2025</strong> <em>will NOT be synced</em></li>
+          </ul>
+      - type: htmlElement
+        value: <h3>Mappable PaintScout Fields</h3>
+      - type: htmlElement
+        value: >-
+          <p>
+            <strong>ADVANCED:</strong> The default values will suffice for most clients. Only edit if requested by a developer or client-specific need.
+          </p><br>
+
+          <p>
+            <strong>What is this for?</strong> The Quote and Contact JSON Output fields define which PaintScout data fields are available for mapping to HubSpot properties in the next configuration step.
+          </p>
+      - type: configVar
+        value: Quote JSON Output
+      - type: configVar
+        value: Contact JSON Output
+      - type: htmlElement
+        value: <h2>Airtable</h2>
+      - type: htmlElement
+        value: >-
+          <p>
+            Select the Airtable tables used to reference key system data. These tables are required for syncing user details and object definitions during automation workflows.
+          </p>
+      - type: configVar
+        value: People Table
+      - type: configVar
+        value: Lead Intake Conversion Table
+      - type: configVar
+        value: Deal Group Name
+      - type: configVar
+        value: Contact Group Name
+      - type: configVar
+        value: Company Group Name
+    name: Variables
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: htmlElement
+        value: >-
+          <div style="margin: 30px 0;">
+            <hr style="border: none; border-top: 1px solid #ccc; margin-bottom: 10px; width: 100%;" />
+
+            <div>
+              <span style="font-weight: bold;">
+                PS Quote Data to HS Properties Mapping
+              </span>
+              <p style="margin-top: 8px;">
+                <strong>Description:</strong> Mapping for PaintScout quote payload to HubSpot deal properties for accurate and automated deal data syncing.
+              </p>
+            </div>
+          </div>
+      - type: configVar
+        value: PS Quote Data to HS Properties Mapping
+      - type: htmlElement
+        value: >-
+          <div style="margin: 30px 0;">
+            <hr style="border: none; border-top: 1px solid #ccc; margin-bottom: 10px; width: 100%;" />
+
+            <div>
+              <span style="font-weight: bold;">
+                PS Contact Data to HS Contact Properties Mapping
+              </span>
+              <p style="margin-top: 8px;">
+                <strong>Description:</strong> Mapping for PaintScout contact payload to HubSpot contact properties for accurate and automated contact data syncing.
+              </p>
+            </div>
+          </div>
+      - type: configVar
+        value: PS Contact Data to HS Contact Properties Mapping
+    name: PaintScout to Hubspot Mapping Setup
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: htmlElement
+        value: >-
+          <p>Define the fallback order of PaintScout data sources when a value
+          is missing.
+
+          Each field represents a prioritized list of picklist options (e.g.,
+          Job Info → Billing Info → Contact Info).
+
+          If the primary data is empty, the system will automatically use the
+          next one in the list to populate PaintScout data during
+          automation.</p>
+      - type: configVar
+        value: HubSpot Objects to PaintScout Quote
+    name: PaintScout Default Values Settings
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: htmlElement
+        value: <h2>Marketing Pipeline Auto-Update Deal Names</h2>
+      - type: htmlElement
+        value: <p>Enable this to auto-update deal names in the Marketing Pipeline based
+          on your configured naming format.</p>
+      - type: configVar
+        value: Auto-Update Deal Name in Marketing Pipeline
+      - type: htmlElement
+        value: <h2>Deal Name Format Mapping</h2>
+      - type: htmlElement
+        value: >-
+          <p>Defines how properties (like job information, project type, etc.)
+          should be combined to generate a standardized deal name format. These
+          fields allow you to customize the structure of auto-generated names
+          for consistency and clarity.
+
+          </p>
+      - type: htmlElement
+        value: >
+          <div style="margin: 30px 0;">
+            <hr style="border: none; border-top: 1px solid #ccc; margin-bottom: 10px; width: 100%;" />
+
+            <div>
+              <span style="font-weight: bold;">
+                Job/Estimate Name Formatting
+              </span>
+              <p style="margin-top: 8px;">
+                <strong>Description:</strong> This configuration defines how the <strong>Job/Estimate Number</strong> is formatted using data from <strong>HubSpot deal properties</strong> and the <strong>People table in Airtable</strong>. The same format will also be applied to the <strong>CompanyCam project name</strong>.
+              </p>
+              <p style="margin-top: 6px; margin-bottom: 4px;">
+                Process Overview:
+              </p>
+              <ul style="list-style-type: disc; padding-left: 20px;">
+                <li>Format Job/Estimate Number</li>
+                <li>Retrieve Deal Name format</li>
+                <li>Update Deal Name in HubSpot</li>
+                <li>Sync CompanyCam Project Name</li>
+              </ul>
+            </div>
+      - type: configVar
+        value: Job/Estimate Number
+      - type: htmlElement
+        value: >-
+          <div style="margin: 30px 0;">
+            <hr style="border: none; border-top: 1px solid #ccc; margin-bottom: 10px; width: 100%;" />
+
+            <div>
+              <span style="font-weight: bold;">
+                Deal Name Format Mapping
+              </span>
+              <p style="margin-top: 8px;">
+                <strong>Description:</strong> Defines how the deal name should be formatted using selected fields from <strong>HubSpot deal properties</strong>.
+              </p>
+            </div>
+      - type: configVar
+        value: Deal Name Format
+    name: Naming System
+    tagline: ""
+    userLevelConfigured: false

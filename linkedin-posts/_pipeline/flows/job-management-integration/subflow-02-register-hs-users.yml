@@ -1,0 +1,204 @@
+sourceFile: job-management-integration-export.yml
+category: Boolean PaintOS
+flow:
+  name: Subflow - 02 Register HS Users
+  description: Update People table in PaintOS with HubSpot active users.
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: HS User IDs Trigger
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: This is to update the record in peoples table, if the error message
+        says ""Cannot update more than one record for fields to merge on"
+        meaning it has same value in two record, it could be two records are
+        found in one email or two record found in 'HS User ID'
+      errorConfig:
+        delaySeconds: null
+        errorHandlerType: ignore
+        ignoreFinalError: null
+        maxAttempts: null
+        usesExponentialBackoff: null
+      inputs:
+        connection:
+          type: configVar
+          value: Airtable Connection
+        data:
+          type: reference
+          value: hsUserIdsTrigger.results.body.data
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value: []
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: PATCH
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: template
+          value: /v0/{{#Project Management Base}}/{{#People Table}}
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: HS Owner x People Table
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Single value option
+          steps:
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      let payload = stepResults?.hsUserIdsTrigger?.results?.body?.data;
+
+                      if (payload?.records?.length) {
+                        payload.records = payload.records.map((record) => {
+                          const role = record?.fields?.Role;
+                          if (Array.isArray(role)) {
+                            record.fields.Role = role.join(", "); // convert array to comma-separated string
+                          }
+                          return record;
+                        });
+                      }
+
+                      return { data: payload };
+                    };
+              name: Over ride payload
+            - action:
+                key: rawRequest
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: This is to update the record in peoples table, if the error message
+                says ""Cannot update more than one record for fields to merge
+                on" meaning it has same value in two record, it could be two
+                records are found in one email or two record found in 'HS User
+                ID'
+              errorConfig:
+                delaySeconds: 10
+                errorHandlerType: retry
+                ignoreFinalError: true
+                maxAttempts: 1
+                usesExponentialBackoff: false
+              inputs:
+                connection:
+                  type: configVar
+                  value: Airtable Connection
+                data:
+                  type: reference
+                  value: overRidePayload.results
+                debugRequest:
+                  type: value
+                  value: "false"
+                fileData:
+                  type: complex
+                  value: []
+                fileDataFileNames:
+                  type: complex
+                  value: []
+                formData:
+                  type: complex
+                  value: []
+                headers:
+                  type: complex
+                  value: []
+                maxRetries:
+                  type: value
+                  value: "0"
+                method:
+                  type: value
+                  value: PATCH
+                queryParams:
+                  type: complex
+                  value: []
+                responseType:
+                  type: value
+                  value: json
+                retryAllErrors:
+                  type: value
+                  value: "false"
+                retryDelayMS:
+                  type: value
+                  value: "0"
+                timeout:
+                  type: value
+                  value: ""
+                url:
+                  type: template
+                  value: /v0/{{#Project Management Base}}/{{#People Table}}
+                useExponentialBackoff:
+                  type: value
+                  value: "false"
+              name: HS Owner x People Table 2
+        - name: Else
+          steps: []
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Single value option
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: hsOwnerXPeopleTable.results.error.name
+      name: Branch on Expression

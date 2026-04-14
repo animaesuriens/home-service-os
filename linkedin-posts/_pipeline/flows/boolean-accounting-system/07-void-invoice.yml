@@ -1,0 +1,303 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 07 Void Invoice
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: webhook
+        component:
+          isPublic: true
+          key: webhook-triggers
+          version: LATEST
+      description: ""
+      inputs:
+        body:
+          type: value
+          value: ""
+        contentType:
+          type: value
+          value: ""
+        headers:
+          type: complex
+          value: []
+        statusCode:
+          type: value
+          value: ""
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: getRecord
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: ""
+      inputs:
+        airtableConnection:
+          type: configVar
+          value: Airtable Connection
+        baseId:
+          type: configVar
+          value: Project Management Base
+        record:
+          type: reference
+          value: trigger.results.body.data.recordId
+        tableName:
+          type: configVar
+          value: Invoices Table
+      name: Get Invoice
+    - action:
+        key: getInvoiceById
+        component:
+          isPublic: true
+          key: quickbooks
+          version: LATEST
+      description: ""
+      inputs:
+        debug:
+          type: value
+          value: "false"
+        id:
+          type: reference
+          value: getInvoice.results.fields.QBO Invoice ID
+        quickbooksConnection:
+          type: configVar
+          value: QuickBooks Connection
+      name: Get Invoice By Id
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const atInvoice = stepResults.getInvoice.results.fields;
+              const qboInvoice = stepResults.getInvoiceById.results;
+              const randomSuffix = Math.floor(100 + Math.random() * 900).toString();
+
+              const payload = {
+                SyncToken: qboInvoice.SyncToken,
+                Id: qboInvoice.Id,
+                sparse: true,
+                DocNumber: `${atInvoice["Invoice Number"]}_V-${randomSuffix}`,
+              };
+
+              return { data: payload };
+            };
+      name: Update Doc Number Payload
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: quickbooks
+          version: LATEST
+      description: ""
+      inputs:
+        connection:
+          type: configVar
+          value: QuickBooks Connection
+        data:
+          type: reference
+          value: updateDocNumberPayload.results
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: Content-Type
+              type: value
+              value: application/json
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: POST
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: /invoice?minorversion=73
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Update Doc Number
+    - action:
+        key: voidInvoice
+        component:
+          isPublic: true
+          key: quickbooks
+          version: LATEST
+      description: ""
+      inputs:
+        debug:
+          type: value
+          value: "false"
+        id:
+          type: reference
+          value: updateDocNumber.results.Id
+        quickbooksConnection:
+          type: configVar
+          value: QuickBooks Connection
+        syncToken:
+          type: reference
+          value: updateDocNumber.results.SyncToken
+      name: Void Invoice
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Yes
+          steps:
+            - action:
+                key: updateRecord
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: ""
+              inputs:
+                airtableConnection:
+                  type: configVar
+                  value: Airtable Connection
+                baseId:
+                  type: configVar
+                  value: Project Management Base
+                dynamicFields:
+                  type: value
+                  value: ""
+                record:
+                  type: reference
+                  value: getInvoice.results.id
+                recordFields:
+                  type: complex
+                  value:
+                    - name:
+                        type: value
+                        value: Invoice Actions
+                      type: value
+                      value: Done
+                tableName:
+                  type: configVar
+                  value: Invoices Table
+              name: Update Invoice - Success
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      const atInvoiceId = stepResults.getInvoice.results.id;
+                      const qboInvoiceId = stepResults.getInvoiceById.results.Id;
+
+                      const payload = {
+                        atInvoiceId: atInvoiceId,
+                        qboInvoiceId: qboInvoiceId,
+                      };
+
+                      return { data: payload };
+                    };
+              name: Generate Payload
+            - action:
+                key: invokeFlow
+                component:
+                  isPublic: true
+                  key: cross-flow
+                  version: LATEST
+              description: ""
+              inputs:
+                data:
+                  type: reference
+                  value: generatePayload.results
+                flowName:
+                  type: value
+                  value: 30 Save Invoice's PDF in Airtable
+              name: Save Invoice PDF
+        - name: Else
+          steps:
+            - action:
+                key: updateRecord
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: ""
+              inputs:
+                airtableConnection:
+                  type: configVar
+                  value: Airtable Connection
+                baseId:
+                  type: configVar
+                  value: Project Management Base
+                dynamicFields:
+                  type: value
+                  value: ""
+                record:
+                  type: reference
+                  value: getInvoice.results.id
+                recordFields:
+                  type: complex
+                  value:
+                    - name:
+                        type: value
+                        value: Invoice Actions
+                      type: value
+                      value: Error
+                tableName:
+                  type: configVar
+                  value: Invoices Table
+              name: Update Invoice - Error
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Yes
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: voidInvoice.results.Id
+      name: Update Successful?

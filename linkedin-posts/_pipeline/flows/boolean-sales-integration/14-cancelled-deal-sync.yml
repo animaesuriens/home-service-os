@@ -1,0 +1,226 @@
+sourceFile: boolean-sales-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 14 Cancelled Deal Sync
+  description: ""
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Cross Flow
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Update HS
+          steps:
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    const axios = require("axios");
+
+
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      try {
+                        const declineStage = configVars["Declined Stage"];
+                        const wonStage = configVars["Sales Won"];
+                        const accessToken =
+                          configVars["HubSpot Private App Connection"]?.fields?.accessToken;
+
+                        // estimate is a CSV string: "123,456,789"
+                        let estimate = stepResults?.crossFlow?.results?.body?.data?.source?.id;
+                        if (!estimate) throw new Error("No deal IDs found");
+
+                        // Convert to array: ["123", "456", ...]
+                        const dealIds = estimate.split(",").map((id) => id.trim());
+
+                        const results = [];
+
+                        for (const dealId of dealIds) {
+                          const url = `https://api.hubapi.com/crm/v3/objects/deals/${dealId}`;
+
+                          try {
+                            // 1️⃣ GET the current deal to check its stage
+                            const dealData = await axios.get(url, {
+                              headers: {
+                                Authorization: `Bearer ${accessToken}`,
+                              },
+                              params: {
+                                properties: "dealstage",
+                              },
+                            });
+
+                            const currentStage = dealData.data.properties?.dealstage;
+
+                            // 2️⃣ If already in Won stage, skip update
+                            if (currentStage === wonStage) {
+                              results.push({
+                                dealId,
+                                skipped: true,
+                                reason: "Deal already in WON stage",
+                              });
+                              continue;
+                            }
+
+                            // 3️⃣ Patch update to decline stage
+                            const response = await axios.patch(
+                              url,
+                              {
+                                properties: {
+                                  dealstage: declineStage,
+                                },
+                              },
+                              {
+                                headers: {
+                                  Authorization: `Bearer ${accessToken}`,
+                                  "Content-Type": "application/json",
+                                },
+                              }
+                            );
+
+                            results.push({
+                              dealId,
+                              success: true,
+                              response: response.data,
+                            });
+
+                          } catch (err) {
+                            results.push({
+                              dealId,
+                              success: false,
+                              error: err.response?.data || err.message,
+                            });
+                          }
+                        }
+
+                        return {
+                          updatedStage: declineStage,
+                          processedDeals: results,
+                        };
+                      } catch (error) {
+                        logger.error("Error updating deal stages:", error);
+                        return { error: error.message };
+                      }
+                    };
+              name: Update Hubspot
+        - name: Else
+          steps:
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    const axios = require("axios");
+
+
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      try {
+                        const declineStage = configVars["Declined Stage"];
+                        const psConnection = configVars["PaintScout Connection"]?.token?.access_token;
+
+                        const stageValue = stepResults?.crossFlow?.results?.body?.data[0]?.propertyValue;
+                        const dealId = stepResults?.crossFlow?.results?.body?.data[0]?.objectId;
+
+                        const baseUrl = "https://openapi.paintscout.com/v2/quotes";
+
+                        // Only continue if the deal stage matches the Declined stage
+                        if (declineStage === stageValue) {
+                          // 1️⃣ Get HubSpot deal to retrieve PaintScout Quote ID
+                          const hubspotResponse = await axios.get(
+                            `https://api.hubapi.com/crm/v3/objects/deals/${dealId}`,
+                            {
+                              headers: {
+                                Authorization: `Bearer ${configVars["HubSpot Private App Connection"]?.fields?.accessToken}`,
+                              },
+                              params: {
+                                properties: "paintscout_quote_id", // 👈 Must match your HubSpot custom property
+                              },
+                            }
+                          );
+
+                          const quoteId = hubspotResponse?.data?.properties?.paintscout_quote_id;
+
+                          if (!quoteId) {
+                            throw new Error("PaintScout Quote ID not found on this deal.");
+                          }
+
+                          // 2️⃣ Update PaintScout quote status to declined
+                          const updateUrl = `${baseUrl}/${quoteId}`;
+
+                          const psUpdateResponse = await axios.put(
+                            updateUrl,
+                            {
+                              status: "declined",
+                            },
+                            {
+                              headers: {
+                                Authorization: `Bearer ${psConnection}`,
+                                "Content-Type": "application/json",
+                              },
+                            }
+                          );
+
+                          return {
+                            updated: true,
+                            dealId,
+                            quoteId,
+                            newStatus: "declined",
+                            paintScoutResponse: psUpdateResponse.data,
+                          };
+                        }
+
+                        // If stage does not match decline stage, do nothing
+                        return {
+                          updated: false,
+                          reason: "Deal stage did not match Declined Stage",
+                          dealId,
+                          stageValue,
+                          expectedDeclineStage: declineStage,
+                        };
+                      } catch (error) {
+                        logger.error("Error in updating PaintScout status:", error);
+                        return { error: error.message };
+                      }
+                    };
+              name: Update PaintScout
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Update HS
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: crossFlow.results.body.data.number
+      name: Branch on Expression

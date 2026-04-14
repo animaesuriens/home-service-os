@@ -1,0 +1,357 @@
+sourceFile: boolean-marketing-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 03.4 Update/Create HubSpot Deal
+  description: Pass on HubSpot deal payload to process creation or update, then
+    return the final HS deal details.
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Deal Properties
+          steps:
+            - action:
+                key: invokeFlow
+                component:
+                  isPublic: true
+                  key: cross-flow
+                  version: LATEST
+              description: ""
+              inputs:
+                data:
+                  type: reference
+                  value: trigger.results.body.data.dealPayload
+                flowName:
+                  type: value
+                  value: 11 Estimate Date Converter
+              name: Converted Estimate Date
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      try{
+                        let payload = stepResults?.trigger?.results?.body?.data?.dealPayload;
+                        let convertedPayload = stepResults?.convertedEstimateDate?.results;
+
+                        const formatPhone = (phone) => {
+                          if (!phone) return phone;
+
+                          // Skip if already formatted
+                          if (phone.startsWith("+1 (") || phone.includes("(")) return phone;
+
+                          // Extract only digits
+                          const digits = phone.replace(/\D/g, "");
+
+                          // Must start with 1 and have at least 11 digits
+                          if (digits.startsWith("1") && digits.length >= 11) {
+                            const area = digits.slice(1, 4);
+                            const prefix = digits.slice(4, 7);
+                            const line = digits.slice(7, 11);
+                            return `+1 (${area}) ${prefix}-${line}`;
+                          }
+
+                          // If exactly 10 digits, assume local US number
+                          if (digits.length === 10) {
+                            const area = digits.slice(0, 3);
+                            const prefix = digits.slice(3, 6);
+                            const line = digits.slice(6);
+                            return `+1 (${area}) ${prefix}-${line}`;
+                          }
+
+                          return phone;
+                        };
+
+                        // Combine payload and converted properties
+                        const mergedProperties = {
+                          ...payload?.properties,
+                          ...convertedPayload?.properties,
+                        };
+
+                        // Format phone-related fields
+                        for (const key in mergedProperties) {
+                          if (key.toLowerCase().includes("phone")) {
+                            mergedProperties[key] = formatPhone(mergedProperties[key]);
+                          }
+                        }
+
+                        return {
+                          data: {
+                            ...payload,
+                            properties: mergedProperties,
+                          },
+                        };
+                      }catch {
+                        let payload = stepResults?.trigger?.results?.body?.data?.dealPayload
+                        let convertedPayload = stepResults?.convertedEstimateDate?.results
+                        return { 
+                          data: {
+                            ...payload,
+                            properties:convertedPayload?.properties
+                          }
+                        }
+                      }
+                    };
+              name: Payload Override
+            - action:
+                key: getDealById
+                component:
+                  isPublic: true
+                  key: hubspot
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: 10
+                errorHandlerType: retry
+                ignoreFinalError: true
+                maxAttempts: 1
+                usesExponentialBackoff: false
+              inputs:
+                additionalProperties:
+                  type: complex
+                  value: []
+                archived:
+                  type: value
+                  value: "false"
+                associationsList:
+                  type: complex
+                  value: []
+                dealId:
+                  type: reference
+                  value: trigger.results.body.data.hs_deal_id
+                dealName:
+                  type: value
+                  value: ""
+                hubspotConnection:
+                  type: configVar
+                  value: HubSpot Private App Connection
+                timeout:
+                  type: value
+                  value: ""
+              name: Get Deal
+            - action:
+                key: branchOnExpression
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              branches:
+                - name: If Deal Don't Exist
+                  steps:
+                    - action:
+                        key: rawRequest
+                        component:
+                          isPublic: true
+                          key: hubspot
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 10
+                        errorHandlerType: retry
+                        ignoreFinalError: false
+                        maxAttempts: 2
+                        usesExponentialBackoff: false
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: HubSpot Private App Connection
+                        data:
+                          type: reference
+                          value: payloadOverride.results
+                        fileData:
+                          type: complex
+                          value: []
+                        fileDataFileNames:
+                          type: complex
+                          value: []
+                        formData:
+                          type: complex
+                          value: []
+                        headers:
+                          type: complex
+                          value:
+                            - name:
+                                type: value
+                                value: Content-Type
+                              type: value
+                              value: application/json
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        method:
+                          type: value
+                          value: POST
+                        queryParams:
+                          type: complex
+                          value: []
+                        responseType:
+                          type: value
+                          value: json
+                        retryAllErrors:
+                          type: value
+                          value: "false"
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: template
+                          value: /crm/v3/objects/deals
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: Create Deal
+                - name: Else
+                  steps:
+                    - action:
+                        key: rawRequest
+                        component:
+                          isPublic: true
+                          key: hubspot
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 10
+                        errorHandlerType: retry
+                        ignoreFinalError: false
+                        maxAttempts: 2
+                        usesExponentialBackoff: false
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: HubSpot Private App Connection
+                        data:
+                          type: reference
+                          value: payloadOverride.results
+                        fileData:
+                          type: complex
+                          value: []
+                        fileDataFileNames:
+                          type: complex
+                          value: []
+                        formData:
+                          type: complex
+                          value: []
+                        headers:
+                          type: complex
+                          value:
+                            - name:
+                                type: value
+                                value: Content-Type
+                              type: value
+                              value: application/json
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        method:
+                          type: value
+                          value: PATCH
+                        queryParams:
+                          type: complex
+                          value: []
+                        responseType:
+                          type: value
+                          value: json
+                        retryAllErrors:
+                          type: value
+                          value: "false"
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: template
+                          value: /crm/v3/objects/deals/{{$getDeal.results.id}}
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: Update Deal
+              description: ""
+              inputs:
+                conditions:
+                  type: complex
+                  value:
+                    - name: If Deal Don't Exist
+                      type: complex
+                      value:
+                        - and
+                        - - doesNotExist
+                          - name: ""
+                            type: reference
+                            value: getDeal.results.id
+              name: Deal Branch
+            - action:
+                key: selectExecutedStepResult
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              description: ""
+              inputs:
+                stepResults:
+                  type: complex
+                  value:
+                    - type: reference
+                      value: createDeal.results
+                    - type: reference
+                      value: updateDeal.results
+              name: HS Deal Final Output
+        - name: Else
+          steps:
+            - action:
+                key: writeLog
+                component:
+                  isPublic: true
+                  key: log
+                  version: LATEST
+              description: ""
+              inputs:
+                level:
+                  type: value
+                  value: info
+                message:
+                  type: value
+                  value: No Properties Found
+              name: Write Log Message
+      description: This is to avoid empty data fields in hubspot
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Deal Properties
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: trigger.results.body.data.dealPayload.properties
+      name: Check properties exist

@@ -1,0 +1,29 @@
+sourceFile: gmail-and-ring-central-communicator-export.yml
+category: Marketing and Sales System
+name: Gmail and RingCentral Communicator
+description: This integration connects Gmail and RingCentral to automate
+  communication workflows by receiving data and triggering actions based on the
+  information received. It ensures seamless data transfer between email and
+  phone systems, streamlining task management and enhancing responsiveness.
+configPages:
+  - elements:
+      - type: configVar
+        value: Hubspot Contact Activity Logger URL
+    name: Connections
+    tagline: ""
+  - elements:
+      - type: htmlElement
+        value: <h1>Calendar</h1>
+      - type: configVar
+        value: Google Calendar Connection
+      - type: htmlElement
+        value: <h1>Email Notification</h1>
+      - type: configVar
+        value: Gmail Sender Authentication
+      - type: htmlElement
+        value: <h1>Ring Central Connection</h1>
+      - type: configVar
+        value: RingCentral Connect Platform API Connection
+    name: Email Connection
+    tagline: ""
+    userLevelConfigured: true

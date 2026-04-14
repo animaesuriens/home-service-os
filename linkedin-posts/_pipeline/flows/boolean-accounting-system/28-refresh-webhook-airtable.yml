@@ -1,0 +1,82 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 28 Refresh Webhook (Airtable)
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: schedule
+        component:
+          isPublic: true
+          key: schedule-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Refresh Webhook Trigger
+      schedule:
+        meta:
+          scheduleType: day
+          timeZone: Asia/Manila
+        type: value
+        value: 00 12 */3 * *
+    - action:
+        key: listWebhooks
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: true
+        maxAttempts: 5
+        usesExponentialBackoff: false
+      inputs:
+        airtableConnection:
+          type: configVar
+          value: Airtable Connection
+        baseId:
+          type: configVar
+          value: Project Management Base
+      name: List Webhooks
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: listWebhooks.results
+      name: Loop Over Items
+      steps:
+        - action:
+            key: refreshWebhook
+            component:
+              isPublic: true
+              key: airtable
+              version: LATEST
+          description: ""
+          errorConfig:
+            delaySeconds: 10
+            errorHandlerType: retry
+            ignoreFinalError: true
+            maxAttempts: 5
+            usesExponentialBackoff: false
+          inputs:
+            airtableConnection:
+              type: configVar
+              value: Airtable Connection
+            baseId:
+              type: configVar
+              value: Project Management Base
+            webhookId:
+              type: reference
+              value: loopOverItems.currentItem.id
+          name: Refresh Webhook

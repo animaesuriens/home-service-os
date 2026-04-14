@@ -1,0 +1,813 @@
+sourceFile: job-management-integration-export.yml
+category: Boolean PaintOS
+flow:
+  name: 04 Process Change Order
+  description: Creates change order record in Addendums table
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 5
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 2
+        usesExponentialBackoff: false
+      inputs:
+        connection:
+          type: configVar
+          value: Airtable Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value: []
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: template
+          value: /v0/meta/bases/{{#Project Management Base}}/tables
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Fields
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >-
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              let jobsTable = configVars?.["Addendums Table"];
+
+              // Retrieve all tables
+              let fields = stepResults?.getFields?.results?.data?.tables || [];
+              // logger.log("Fields from API:", fields);
+
+              // Filter for the jobs table
+              let jobsFields = fields?.filter(tbl => tbl?.id === jobsTable)?.[0]?.fields || [];
+              // logger.log("Jobs Fields after filtering table:", jobsFields);
+
+              // Log field types to debug filtering
+              jobsFields?.forEach(field => logger.log(`Field Name: ${field?.name}, Type: ${field?.type}`));
+
+              // Filter non-mappable fields
+              let mappableFields = jobsFields?.filter(fld => {
+                return (
+                  fld?.type !== "formula" &&
+                  fld?.type !== "rollup" &&
+                  fld?.type !== "lookup" &&
+                  fld?.type !== "singleCollaborator" &&
+                  fld?.type !== "multipleCollaborators" &&
+                  fld?.type !== "multipleAttachments" &&
+                  fld?.type !== "createdTime" &&
+                  fld?.type !== "multipleLookupValues" &&
+                  fld?.type !== "autoNumber" &&
+                  fld?.type !== "lastModifiedTime" &&
+                  fld?.type !== "button" &&
+                  fld?.type !== "createdBy" &&
+                  fld?.type !== "lastModifiedBy"
+                );
+              });
+
+              // logger.log("Mappable Fields:", mappableFields);
+
+              return mappableFields;
+            };
+      name: Mappable Fields
+    - action:
+        key: listRecords
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: ""
+      inputs:
+        airtableConnection:
+          type: configVar
+          value: Airtable Connection
+        baseId:
+          type: configVar
+          value: Project Management Base
+        fields:
+          type: complex
+          value: []
+        filterByFormula:
+          type: template
+          value: '{{{#Estimate/Job Number
+            Field}}}="{{$trigger.results.body.data.results.0.properties.jobestimate_number}}"'
+        tableName:
+          type: configVar
+          value: Jobs Table
+        view:
+          type: value
+          value: ""
+      name: Get Job
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Project Exist
+          steps: []
+        - name: Else
+          steps:
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: Custom Create Project
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    const axios = require('axios');
+
+
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      const baseId = configVars?.["Project Management Base"];
+                      const tableName = configVars?.["Projects Table"];
+                      const airtableToken = configVars?.["Airtable Personal Token"];
+                      const objectTable = configVars?.["Objects Table"];
+
+                      let jobId = stepResults?.getJob?.results?.[0]?.id;
+                      let projectType = stepResults?.trigger?.results?.body?.data?.results?.[0]?.properties?.project_type;
+
+                      const projectTypeOptions = await getAllTableItems(baseId, objectTable, airtableToken, logger);
+
+                      projectType = projectTypeOptions?.filter(item =>
+                        item?.name?.toUpperCase?.()?.includes?.(projectType?.toUpperCase?.())
+                      );
+
+                      // Example data to insert
+                      const newItem = {
+                        jobId,
+                        projectType,
+                        baseId,
+                        tableName,
+                        airtableToken,
+                        projectTypeOptions,
+                        fields: {
+                          Job: [jobId],
+                          "Project Sequence Number": 1,
+                          "Project Type": [projectType?.[0]?.recordId]
+                        }
+                      };
+
+                      const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}`;
+
+                      try {
+                        const response = await axios.post(
+                          url,
+                          {
+                            records: [
+                              {
+                                fields: {
+                                  Job: [jobId],
+                                  "Project Sequence Number": 1,
+                                  "Project Type": [projectType?.[0]?.recordId]
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            headers: {
+                              Authorization: `Bearer ${airtableToken}`,
+                              "Content-Type": "application/json"
+                            }
+                          }
+                        );
+
+                        logger?.info?.("✅ Airtable record created:", response?.data);
+                        return { data: response?.data };
+                      } catch (error) {
+                        logger?.error?.("❌ Airtable create error:", error?.response?.data || error?.message);
+                        return { error: error?.message };
+                      }
+                    };
+
+
+                    async function getAllTableItems(baseId, tableId, token,
+                    logger) {
+                      const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+                      try {
+                        const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableId)}`;
+                        const headers = {
+                          Authorization: `Bearer ${token}`,
+                        };
+
+                        let allRecords = [];
+                        let offset;
+
+                        do {
+                          const response = await axios.get(
+                            `${url}${offset ? `?offset=${offset}` : ""}`,
+                            { headers }
+                          );
+
+                          if (!response?.data?.records) {
+                            throw new Error("No records found");
+                          }
+
+                          const filtered = response?.data?.records?.map((record) => ({
+                            name: record?.fields?.Name || null,
+                            recordId: record?.id,
+                          }));
+
+                          allRecords.push(...filtered);
+                          offset = response?.data?.offset;
+
+                          if (offset) {
+                            logger?.debug?.("🌙 Waiting 250ms to avoid API rate limits...");
+                            await sleep(250);
+                          }
+                        } while (offset);
+
+                        logger?.info?.(`✅ Retrieved ${allRecords.length} records from table '${tableId}'`);
+                        return allRecords;
+                      } catch (err) {
+                        logger?.error?.("❌ Failed to fetch records from table:", err?.response?.data || err?.message);
+                        return [];
+                      }
+                    }
+              name: Custom Create Project
+      description: Check if Project Exist
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Project Exist
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: getJob.results.0.fields.Projects
+      name: Check if Project Exist
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: Get Project
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const airtableAccessToken = configVars["Airtable Connection"]?.fields?.apiKey;
+
+              if (!airtableAccessToken) {
+                logger.error("Missing Airtable Access Token");
+                throw new Error("Airtable access token missing");
+              }
+
+              // Airtable Base ID
+              const baseId = configVars["Project Management Base"];
+              const tableName = configVars["Projects Table"];
+
+              // IDs to filter
+              const createdProject =
+                stepResults?.customCreateProject?.results?.records?.map(
+                  (item) => item?.id,
+                ) || [];
+
+              const fetchedProject =
+                stepResults?.getJob?.results?.[0]?.fields?.["Projects"] || [];
+
+              // Select which IDs to use
+              const targetIds =
+                createdProject?.length > 0 ? createdProject : fetchedProject;
+
+              // GUARD: If no job was found and no project was created, abort.
+              // Without this, an empty filter fetches ALL projects and the addendum
+              // gets linked to the first project-type match — wrong project.
+              if (!targetIds.length && !stepResults?.getJob?.results?.length) {
+                logger.error("No matching job found for this change order — aborting to prevent wrong-project link");
+                return { data: [] };
+              }
+
+              // Build filterByFormula for Airtable
+              const filterFormula = targetIds.length
+                ? `OR(${targetIds.map((id) => `RECORD_ID() = '${id}'`).join(",")})`
+                : "";
+
+              try {
+                // API request to get filtered projects
+                const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(
+                  tableName,
+                )}?filterByFormula=${encodeURIComponent(filterFormula)}`;
+
+                const response = await fetch(url, {
+                  method: "GET",
+                  headers: {
+                    Authorization: `Bearer ${airtableAccessToken}`,
+                    "Content-Type": "application/json",
+                  },
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                  logger.error("Airtable error:", data);
+                  throw new Error(`Airtable API Error: ${data?.error?.message}`);
+                }
+
+                logger.info("Filtered projects:", data.records);
+
+                // --- FILTER LOGIC ---
+                function filterProjects(records) {
+                  if (!Array.isArray(records) || records.length === 0) return [];
+
+                  // Group by Project Type (use first value only)
+                  const groups = {};
+
+                  for (const rec of records) {
+                    const projectType = rec.fields["Project Type"]?.[0] || "__NO_TYPE__";
+
+                    if (!groups[projectType]) groups[projectType] = [];
+                    groups[projectType].push(rec);
+                  }
+
+                  const finalResults = [];
+
+                  for (const type in groups) {
+                    const group = groups[type];
+
+                    if (group.length === 1) {
+                      // Only one project → auto select
+                      finalResults.push(group[0].id);
+                      continue;
+                    }
+
+                    // Multiple projects with same type → filter by Event Type
+                    const withStandard = group.filter((rec) => {
+                      const eventTypes = rec.fields["Event Type"];
+                      return Array.isArray(eventTypes) && eventTypes.includes("Standard");
+                    });
+
+                    let chosen;
+
+                    if (withStandard.length === 1) {
+                      // Only one has Standard → choose it
+                      chosen = withStandard[0];
+                    } else if (withStandard.length > 1) {
+                      // Multiple with Standard → choose most recent
+                      chosen = withStandard.sort(
+                        (a, b) => new Date(b.createdTime) - new Date(a.createdTime),
+                      )[0];
+                    } else {
+                      // No standard event type → choose most recent from whole group
+                      chosen = group.sort(
+                        (a, b) => new Date(b.createdTime) - new Date(a.createdTime),
+                      )[0];
+                    }
+
+                    if (chosen) finalResults.push(chosen.id);
+                  }
+
+                  return finalResults;
+                }
+
+                const filteredRecordIds = filterProjects(data.records);
+
+                logger.info("Final Selected Record IDs:", filteredRecordIds);
+
+                return {
+                  data: filteredRecordIds,
+                };
+              } catch (e) {
+                logger.error("Failed to fetch from Airtable:", e);
+                throw e;
+              }
+            };
+      name: Project
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: project.results
+      name: Loop Over Projects
+      steps:
+        - action:
+            key: getRecord
+            component:
+              isPublic: true
+              key: airtable
+              version: LATEST
+          description: ""
+          errorConfig:
+            delaySeconds: 15
+            errorHandlerType: retry
+            ignoreFinalError: false
+            maxAttempts: 2
+            usesExponentialBackoff: false
+          inputs:
+            airtableConnection:
+              type: configVar
+              value: Airtable Connection
+            baseId:
+              type: configVar
+              value: Project Management Base
+            record:
+              type: reference
+              value: loopOverProjects.currentItem
+            tableName:
+              type: configVar
+              value: Projects Table
+          name: Get Project
+        - action:
+            key: runCode
+            component:
+              isPublic: true
+              key: code
+              version: LATEST
+          description: ""
+          inputs:
+            code:
+              type: value
+              value: >
+                module.exports = async ({ logger, configVars }, stepResults) =>
+                {
+                  const projectTypeFromPayload = stepResults?.trigger?.results?.body?.data?.results[0]?.properties?.project_type || "";
+                  const projectTypeFromAT = stepResults?.getProject?.results?.fields?.["Project Number & Type"] || "";
+
+                  // Split by semicolon and check if any match exists in projectTypeFromAT
+                  const types = projectTypeFromPayload.split(";").map(s => s.trim());
+                  const hasMatch = types.some(type => projectTypeFromAT.includes(type));
+
+                  return {
+                    data: {
+                      projectTypeFromPayload,
+                      projectTypeFromAT,
+                      hasMatch
+                    }
+                  };
+                };
+          name: Project Type Match Checker
+        - action:
+            key: branchOnExpression
+            component:
+              isPublic: true
+              key: branch
+              version: LATEST
+          branches:
+            - name: Match Project Type
+              steps:
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+                            // Get HubSpot data from the previous step results
+                            const hubspotData = Array.isArray(
+                                stepResults?.trigger?.results?.body?.data?.results
+                            )
+                                ? stepResults?.trigger?.results?.body?.data?.results?.[0]?.properties
+                                : {};
+
+                            const projectId = stepResults?.getProject?.results?.id || "";
+                            const mappableFields = stepResults?.mappableFields?.results || [];
+
+                            // Get the mapping Config Variable
+                            const mapping =
+                                configVars?.[
+                                    "HubSpot Deal Properties to Airtable Addendums Fields Mapping"
+                                ];
+
+                            // Map properties of the HubSpot data to the specified field mappings
+                            const mappedFields =
+                                mapping?.reduce((acc, { source, destination }) => {
+                                    let value = hubspotData?.[source];
+
+                                    // Find the destination field details in mappableFields
+                                    const destinationField = mappableFields?.find(
+                                        (field) => field?.name === destination
+                                    );
+
+                                    if (destinationField) {
+                                        // Convert to number for currency/number types
+                                        if (
+                                            (destinationField?.type === "currency" ||
+                                                destinationField?.type === "number" ||
+                                                destinationField?.type === "rating") &&
+                                            value
+                                        ) {
+                                            value = Number(value);
+                                        }
+
+                                        // Split and wrap in an array for multipleSelects
+                                        if (destinationField?.type === "multipleSelects" && value) {
+                                            value = value?.split(";")?.map((item) => item?.trim());
+                                        }
+
+                                        // Split and wrap in an array for multipleRecordLinks
+                                        if (destinationField?.type === "multipleRecordLinks" && value) {
+                                            value = value?.split(";")?.map((item) => item?.trim());
+                                        }
+
+                                        // Convert acceptable date
+                                        if (destinationField?.type === "date" && value) {
+                                            const date = new Date(value);
+                                            value = date?.toISOString()?.split("T")?.[0];
+                                        }
+                                    }
+
+                                    // Add to accumulator if the value is not null or undefined
+                                    if (value !== undefined && value !== null && value !== "") {
+                                        acc[destination] = value;
+                                    }
+
+                                    return acc;
+                                }, {}) || {};
+
+                            mappedFields["Addendum Type"] = "Change Order";
+                            mappedFields["Project"] = [projectId];
+                            mappedFields["CO Type"] = "Sales";
+                            mappedFields["Status"] = "Accepted";
+
+                            logger.log(mappedFields);
+
+                            // Return the mapped fields in the required format
+                            return { data: { records: [{ fields: mappedFields }] } };
+                        };
+                  name: Generate Deal Payload
+                - action:
+                    key: rawRequest
+                    component:
+                      isPublic: true
+                      key: airtable
+                      version: LATEST
+                  description: ""
+                  errorConfig:
+                    delaySeconds: 5
+                    errorHandlerType: retry
+                    ignoreFinalError: false
+                    maxAttempts: 2
+                    usesExponentialBackoff: false
+                  inputs:
+                    connection:
+                      type: configVar
+                      value: Airtable Connection
+                    data:
+                      type: reference
+                      value: generateDealPayload.results
+                    debugRequest:
+                      type: value
+                      value: "true"
+                    fileData:
+                      type: complex
+                      value: []
+                    fileDataFileNames:
+                      type: complex
+                      value: []
+                    formData:
+                      type: complex
+                      value: []
+                    headers:
+                      type: complex
+                      value:
+                        - name:
+                            type: value
+                            value: Content-Type
+                          type: value
+                          value: application/json
+                    maxRetries:
+                      type: value
+                      value: "0"
+                    method:
+                      type: value
+                      value: POST
+                    queryParams:
+                      type: complex
+                      value: []
+                    responseType:
+                      type: value
+                      value: json
+                    retryAllErrors:
+                      type: value
+                      value: "false"
+                    retryDelayMS:
+                      type: value
+                      value: "0"
+                    timeout:
+                      type: value
+                      value: ""
+                    url:
+                      type: template
+                      value: /v0/{{#Project Management Base}}/{{#Addendums Table}}
+                    useExponentialBackoff:
+                      type: value
+                      value: "false"
+                  name: Create Addendum CO
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+
+                          // Get job data
+                          let addendumData = stepResults?.createAddendumCo?.results?.data?.records?.[0] || "";
+                          let addendumId = addendumData?.id || "";
+
+                          logger.log(addendumData);
+
+                          let readyToProcess = configVars?.["Choose the Ready to Process Property"];
+                          let coProperty = configVars?.["Airtable CO Record ID Property"];
+
+                          /**
+                           * NOTE: NO NEED TO MAPP THE AIRTABLE JOB RECORD ID 
+                           * SINCE IT ALREADY HAVE THAT VALUE
+                           */
+
+                          let payload = {
+                            "properties": {
+                              [readyToProcess]: "Done",
+                              [coProperty]: addendumId
+                            }
+                          };
+
+                          return payload;
+                        };
+                  name: Update Deal Payload
+                - action:
+                    key: rawRequest
+                    component:
+                      isPublic: true
+                      key: hubspot
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    connection:
+                      type: configVar
+                      value: HubSpot Private App Connection
+                    data:
+                      type: reference
+                      value: updateDealPayload.results
+                    debugRequest:
+                      type: value
+                      value: "true"
+                    fileData:
+                      type: complex
+                      value: []
+                    fileDataFileNames:
+                      type: complex
+                      value: []
+                    formData:
+                      type: complex
+                      value: []
+                    headers:
+                      type: complex
+                      value:
+                        - name:
+                            type: value
+                            value: Content-Type
+                          type: value
+                          value: application/json
+                    maxRetries:
+                      type: value
+                      value: "0"
+                    method:
+                      type: value
+                      value: PATCH
+                    queryParams:
+                      type: complex
+                      value: []
+                    responseType:
+                      type: value
+                      value: json
+                    retryAllErrors:
+                      type: value
+                      value: "false"
+                    retryDelayMS:
+                      type: value
+                      value: "0"
+                    timeout:
+                      type: value
+                      value: ""
+                    url:
+                      type: template
+                      value: /crm/v3/objects/deals/{{$trigger.results.body.data.results.0.id}}
+                    useExponentialBackoff:
+                      type: value
+                      value: "false"
+                  name: Update Deal
+                - action:
+                    key: invokeFlow
+                    component:
+                      isPublic: true
+                      key: cross-flow
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    data:
+                      type: template
+                      value: |-
+                        {    
+
+                        "hs_object_id":{{$updateDeal.results.id}},    "airtable_id":"{{$getJob.results.0.id}}"
+
+                        }
+                    flowName:
+                      type: value
+                      value: 12 Hubspot mapper to file field
+                  name: Invoke Flow
+            - name: Else
+              steps: []
+          description: ""
+          inputs:
+            conditions:
+              type: complex
+              value:
+                - name: Match Project Type
+                  type: complex
+                  value:
+                    - and
+                    - - isTrue
+                      - name: ""
+                        type: reference
+                        value: projectTypeMatchChecker.results.hasMatch
+          name: Branch on Expression

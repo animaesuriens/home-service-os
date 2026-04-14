@@ -1,0 +1,1737 @@
+sourceFile: boolean-sales-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 02 Create Any Missing PaintScout, HubSpot Deal & CompanyCam
+  description: Create Any Missing PaintScout, HubSpot Deal & CompanyCam
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Process Quote
+          steps:
+            - action:
+                key: writeLog
+                component:
+                  isPublic: true
+                  key: log
+                  version: LATEST
+              description: ""
+              inputs:
+                level:
+                  type: value
+                  value: info
+                message:
+                  type: reference
+                  value: trigger.results
+              name: Quote Data
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      return { data: stepResults?.trigger?.results?.body?.data?.owner?.email };
+                    };
+              name: Get Email From Payload
+            - action:
+                key: listRecords
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: 30
+                errorHandlerType: retry
+                ignoreFinalError: false
+                maxAttempts: 2
+                usesExponentialBackoff: false
+              inputs:
+                airtableConnection:
+                  type: configVar
+                  value: Airtable Connection
+                baseId:
+                  type: configVar
+                  value: Project Management Base
+                fields:
+                  type: complex
+                  value: []
+                filterByFormula:
+                  type: template
+                  value: AND({Work Email}="{{$getEmailFromPayload.results}}",{Work Email})
+                tableName:
+                  type: configVar
+                  value: People Table
+                view:
+                  type: value
+                  value: ""
+              name: Get Owner
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      const psData = stepResults.trigger.results.body.data?.contact || {};
+                      const contactMapping = configVars["PS Contact Data to HS Contact Properties Mapping"]
+                      logger.log(contactMapping)
+
+                      function getNestedValue(obj, path) {
+                        return path
+                          .split(".")
+                          .reduce(
+                            (acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined),
+                            obj
+                          );
+                      }
+
+                      const iconOptions = new Set([
+                        "🧨","🔥","⚡️","💥","🚨","❌","⭕️","🛑","⚫️","🔴","🔵","🟢","🟡","🟣","🟤",
+                        "😀","😅","😂","🤣","😊","😍","😎","🥳","😭","😡","😴","🤔","😇",
+                        "💪","👍","👎","👏","🙏","🤝","👊","✌️","👌","🤙",
+                        "🌞","🌙","⭐️","🌈","☁️","🌧️","⛈️","🌪️","🌊","🌋",
+                        "💎","💰","💼","📱","💻","📸","🎯","🎁","🚀","🏆",
+                    ]);
+
+
+                    function hasListedEmoji(str) {
+                        for (const icon of iconOptions) {
+                            if (str.includes(icon)) return true;
+                        }
+                        return false;
+                    }
+
+
+                      // Map properties of the PaintScout data to the specified field mappings
+                      const mappedFields = contactMapping.reduce((acc, { source, destination }) => {
+                        let value = getNestedValue(psData, source); // Get nested value
+
+                        // Add to accumulator if the value is not null or undefined
+                        if (value !== undefined && value !== null && value !== "") {
+                          logger.info(hasListedEmoji(value))
+                          if (!hasListedEmoji(value)) {
+                              acc[destination] = value;
+                          }
+                        }
+
+                        return acc;
+                      }, {});
+
+                      // Extract contact details from psData
+                      // const firstName = psData.contact.firstName;
+                      // const lastName = psData.contact.lastName;
+                      // const email = psData.contact.email;
+                      // const phone = psData.contact.phoneNumber;
+                      // const company = psData.contact.company;
+                      // const address = psData.contact.address;
+                      // const city = psData.contact.city;
+                      // const state = psData.contact.state;
+                      // const zip = psData.contact.zip;
+
+                      // Create HubSpot contact payload
+                      const hubspotPayload = {
+                        properties: { ...mappedFields }
+                      };
+
+                      logger.info("HubSpot contact payload created", hubspotPayload);
+
+                      return hubspotPayload;
+                    };
+              name: Contact Payload
+            - action:
+                key: getContact
+                component:
+                  isPublic: true
+                  key: hubspot
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: null
+                errorHandlerType: ignore
+                ignoreFinalError: null
+                maxAttempts: null
+                usesExponentialBackoff: null
+              inputs:
+                additionalProperties:
+                  type: complex
+                  value:
+                    - type: value
+                      value: firstname
+                    - type: value
+                      value: lastname
+                archived:
+                  type: value
+                  value: "false"
+                associationsList:
+                  type: complex
+                  value: []
+                contactEmail:
+                  type: value
+                  value: ""
+                contactId:
+                  type: reference
+                  value: trigger.results.body.data.contact.source.id
+                debugRequest:
+                  type: value
+                  value: "false"
+                hubspotConnection:
+                  type: configVar
+                  value: HubSpot Private App Connection
+                timeout:
+                  type: value
+                  value: ""
+              name: Get Contact by ID
+            - action:
+                key: branchOnExpression
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              branches:
+                - name: If ID Does Not Exist
+                  steps:
+                    - action:
+                        key: getContact
+                        component:
+                          isPublic: true
+                          key: hubspot
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 30
+                        errorHandlerType: retry
+                        ignoreFinalError: true
+                        maxAttempts: 2
+                        usesExponentialBackoff: false
+                      inputs:
+                        additionalProperties:
+                          type: complex
+                          value: []
+                        archived:
+                          type: value
+                          value: "false"
+                        associationsList:
+                          type: complex
+                          value: []
+                        contactEmail:
+                          type: reference
+                          value: trigger.results.body.data.contact.email
+                        contactId:
+                          type: value
+                          value: ""
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        hubspotConnection:
+                          type: configVar
+                          value: HubSpot Private App Connection
+                        timeout:
+                          type: value
+                          value: ""
+                      name: Get Contact by Email
+                    - action:
+                        key: branchOnExpression
+                        component:
+                          isPublic: true
+                          key: branch
+                          version: LATEST
+                      branches:
+                        - name: If No Contact
+                          steps:
+                            - action:
+                                key: rawRequest
+                                component:
+                                  isPublic: true
+                                  key: hubspot
+                                  version: LATEST
+                              description: ""
+                              errorConfig:
+                                delaySeconds: 30
+                                errorHandlerType: retry
+                                ignoreFinalError: false
+                                maxAttempts: 2
+                                usesExponentialBackoff: false
+                              inputs:
+                                connection:
+                                  type: configVar
+                                  value: HubSpot Private App Connection
+                                data:
+                                  type: reference
+                                  value: contactPayload.results
+                                debugRequest:
+                                  type: value
+                                  value: "false"
+                                fileData:
+                                  type: complex
+                                  value: []
+                                fileDataFileNames:
+                                  type: complex
+                                  value: []
+                                formData:
+                                  type: complex
+                                  value: []
+                                headers:
+                                  type: complex
+                                  value: []
+                                maxRetries:
+                                  type: value
+                                  value: "0"
+                                method:
+                                  type: value
+                                  value: POST
+                                queryParams:
+                                  type: complex
+                                  value: []
+                                responseType:
+                                  type: value
+                                  value: json
+                                retryAllErrors:
+                                  type: value
+                                  value: "false"
+                                retryDelayMS:
+                                  type: value
+                                  value: "0"
+                                timeout:
+                                  type: value
+                                  value: ""
+                                url:
+                                  type: value
+                                  value: /crm/v3/objects/contacts
+                                useExponentialBackoff:
+                                  type: value
+                                  value: "false"
+                              name: Create Contact
+                        - name: Else
+                          steps:
+                            - action:
+                                key: runCode
+                                component:
+                                  isPublic: true
+                                  key: code
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                code:
+                                  type: value
+                                  value: >-
+                                    module.exports = async ({ logger, configVars
+                                    }, stepResults) => {
+                                      // Extract data from the trigger (PaintScout data)
+                                      const psData = stepResults.trigger.results.body.data?.contact || {};
+                                      // Get the mapping configuration
+                                      const contactMapping = configVars["PS Contact Data to HS Contact Properties Mapping"];
+                                      // Get the existing HubSpot contact properties from a previous step
+                                      const contact = stepResults?.getContactByEmail?.results?.results[0].properties; 
+
+                                      // --- Utility Functions ---
+
+                                      /**
+                                       * Safely retrieves a nested value from an object using a dot-separated path string.
+                                       */
+                                      function getNestedValue(obj, path) {
+                                        return path
+                                          .split(".")
+                                          .reduce(
+                                            (acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined),
+                                            obj
+                                          );
+                                      }
+
+                                      // Set of emojis to check against
+                                      const iconOptions = new Set([
+                                          "🧨","🔥","⚡️","💥","🚨","❌","⭕️","🛑","⚫️","🔴","🔵","🟢","🟡","🟣","🟤",
+                                          "😀","😅","😂","🤣","😊","😍","😎","🥳","😭","😡","😴","🤔","😇",
+                                          "💪","👍","👎","👏","🙏","🤝","👊","✌️","👌","🤙",
+                                          "🌞","🌙","⭐️","🌈","☁️","🌧️","⛈️","🌪️","🌊","🌋",
+                                          "💎","💰","💼","📱","💻","📸","🎯","🎁","🚀","🏆",
+                                      ]);
+
+                                      /**
+                                       * Checks if a string contains any of the listed emojis.
+                                       */
+                                      function hasListedEmoji(str) {
+                                          if (typeof str !== 'string') return false;
+                                          for (const icon of iconOptions) {
+                                              if (str.includes(icon)) return true;
+                                          }
+                                          return false;
+                                      }
+
+                                      // ------------------------------------------------------------------
+                                      // 🎯 CORE LOGIC: Check Existing Contact's Name Fields for Icons
+                                      // ------------------------------------------------------------------
+
+                                      const existingFirstName = contact?.firstname || '';
+                                      const existingLastName = contact?.lastname || '';
+                                      
+                                      // A flag to determine if the name fields should be skipped during mapping
+                                      const skipNameMapping = hasListedEmoji(existingFirstName) || hasListedEmoji(existingLastName);
+
+                                      if (skipNameMapping) {
+                                          logger.warn(`Skipping NEW firstname/lastname mapping because existing contact name fields contain an icon: ${existingFirstName} / ${existingLastName}`);
+                                      }
+
+                                      // ------------------------------------------------------------------
+                                      // Mapping Logic: Filter based on the skipNameMapping flag
+                                      // ------------------------------------------------------------------
+
+                                      const mappedFields = contactMapping.reduce((acc, { source, destination }) => {
+                                        let value = getNestedValue(psData, source); 
+                                        
+                                        // Check if the property being mapped is 'firstname' or 'lastname'
+                                        const isNameField = destination === 'firstname' || destination === 'lastname';
+
+                                        // 1. Skip if it's a name field AND we have the 'skipNameMapping' flag
+                                        if (isNameField && skipNameMapping) {
+                                            logger.warn(`🚫 Skipped: Name field '${destination}' because existing contact name has an icon.`);
+                                            return acc; // Skip this iteration
+                                        }
+
+                                        // 2. Only proceed if the new value is not empty/null/undefined
+                                        if (value !== undefined && value !== null && value !== "") {
+                                          
+                                            // 3. For ALL fields (including name fields if not skipped above), 
+                                            //    the logic is now to simply map the value without checking for 
+                                            //    emojis in the *new* value (as per your request to remove that check)
+                                            
+                                            // Map the field
+                                            acc[destination] = value;
+                                            logger.info(`✅ Mapped: ${destination} = ${value}`);
+                                        } else {
+                                            logger.debug(`Value for source path '${source}' is empty or null, skipping mapping.`);
+                                        }
+
+                                        return acc;
+                                      }, {});
+
+                                      // Create HubSpot contact payload
+                                      const hubspotPayload = {
+                                        properties: { ...mappedFields }
+                                      };
+
+                                      logger.info("HubSpot contact payload created", hubspotPayload);
+
+                                      return hubspotPayload;
+                                    };
+                              name: Override Payload 2
+                            - action:
+                                key: rawRequest
+                                component:
+                                  isPublic: true
+                                  key: hubspot
+                                  version: LATEST
+                              description: ""
+                              errorConfig:
+                                delaySeconds: 30
+                                errorHandlerType: retry
+                                ignoreFinalError: false
+                                maxAttempts: 2
+                                usesExponentialBackoff: false
+                              inputs:
+                                connection:
+                                  type: configVar
+                                  value: HubSpot Private App Connection
+                                data:
+                                  type: reference
+                                  value: overridePayload2.results
+                                debugRequest:
+                                  type: value
+                                  value: "false"
+                                fileData:
+                                  type: complex
+                                  value: []
+                                fileDataFileNames:
+                                  type: complex
+                                  value: []
+                                formData:
+                                  type: complex
+                                  value: []
+                                headers:
+                                  type: complex
+                                  value: []
+                                maxRetries:
+                                  type: value
+                                  value: "0"
+                                method:
+                                  type: value
+                                  value: PATCH
+                                queryParams:
+                                  type: complex
+                                  value: []
+                                responseType:
+                                  type: value
+                                  value: json
+                                retryAllErrors:
+                                  type: value
+                                  value: "false"
+                                retryDelayMS:
+                                  type: value
+                                  value: "0"
+                                timeout:
+                                  type: value
+                                  value: ""
+                                url:
+                                  type: template
+                                  value: /crm/v3/objects/contacts/{{$getContactByEmail.results.results.0.id}}
+                                useExponentialBackoff:
+                                  type: value
+                                  value: "false"
+                              name: Update Contact
+                      description: ""
+                      inputs:
+                        conditions:
+                          type: complex
+                          value:
+                            - name: If No Contact
+                              type: complex
+                              value:
+                                - and
+                                - - isEmpty
+                                  - name: ""
+                                    type: reference
+                                    value: getContactByEmail.results.results
+                                  - name: ""
+                                    type: value
+                                    value: ""
+                      name: HS Contact Create Branch
+                - name: Else
+                  steps:
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >-
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              // Extract data from the trigger (PaintScout data)
+                              const psData = stepResults.trigger.results.body.data?.contact || {};
+                              // Get the mapping configuration
+                              const contactMapping = configVars["PS Contact Data to HS Contact Properties Mapping"];
+                              // Get the existing HubSpot contact properties from a previous step
+                              const contact = stepResults?.getContactById?.results?.properties; 
+
+                              // --- Utility Functions ---
+
+                              /**
+                               * Safely retrieves a nested value from an object using a dot-separated path string.
+                               */
+                              function getNestedValue(obj, path) {
+                                return path
+                                  .split(".")
+                                  .reduce(
+                                    (acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined),
+                                    obj
+                                  );
+                              }
+
+                              // Set of emojis to check against
+                              const iconOptions = new Set([
+                                  "🧨","🔥","⚡️","💥","🚨","❌","⭕️","🛑","⚫️","🔴","🔵","🟢","🟡","🟣","🟤",
+                                  "😀","😅","😂","🤣","😊","😍","😎","🥳","😭","😡","😴","🤔","😇",
+                                  "💪","👍","👎","👏","🙏","🤝","👊","✌️","👌","🤙",
+                                  "🌞","🌙","⭐️","🌈","☁️","🌧️","⛈️","🌪️","🌊","🌋",
+                                  "💎","💰","💼","📱","💻","📸","🎯","🎁","🚀","🏆",
+                              ]);
+
+                              /**
+                               * Checks if a string contains any of the listed emojis.
+                               */
+                              function hasListedEmoji(str) {
+                                  if (typeof str !== 'string') return false;
+                                  for (const icon of iconOptions) {
+                                      if (str.includes(icon)) return true;
+                                  }
+                                  return false;
+                              }
+
+                              // ------------------------------------------------------------------
+                              // 🎯 CORE LOGIC: Check Existing Contact's Name Fields for Icons
+                              // ------------------------------------------------------------------
+
+                              const existingFirstName = contact?.firstname || '';
+                              const existingLastName = contact?.lastname || '';
+                              
+                              // A flag to determine if the name fields should be skipped during mapping
+                              const skipNameMapping = hasListedEmoji(existingFirstName) || hasListedEmoji(existingLastName);
+
+                              if (skipNameMapping) {
+                                  logger.warn(`Skipping NEW firstname/lastname mapping because existing contact name fields contain an icon: ${existingFirstName} / ${existingLastName}`);
+                              }
+
+                              // ------------------------------------------------------------------
+                              // Mapping Logic: Filter based on the skipNameMapping flag
+                              // ------------------------------------------------------------------
+
+                              const mappedFields = contactMapping.reduce((acc, { source, destination }) => {
+                                let value = getNestedValue(psData, source); 
+                                
+                                // Check if the property being mapped is 'firstname' or 'lastname'
+                                const isNameField = destination === 'firstname' || destination === 'lastname';
+
+                                // 1. Skip if it's a name field AND we have the 'skipNameMapping' flag
+                                if (isNameField && skipNameMapping) {
+                                    logger.warn(`🚫 Skipped: Name field '${destination}' because existing contact name has an icon.`);
+                                    return acc; // Skip this iteration
+                                }
+
+                                // 2. Only proceed if the new value is not empty/null/undefined
+                                if (value !== undefined && value !== null && value !== "") {
+                                  
+                                    // 3. For ALL fields (including name fields if not skipped above), 
+                                    //    the logic is now to simply map the value without checking for 
+                                    //    emojis in the *new* value (as per your request to remove that check)
+                                    
+                                    // Map the field
+                                    acc[destination] = value;
+                                    logger.info(`✅ Mapped: ${destination} = ${value}`);
+                                } else {
+                                    logger.debug(`Value for source path '${source}' is empty or null, skipping mapping.`);
+                                }
+
+                                return acc;
+                              }, {});
+
+                              // Create HubSpot contact payload
+                              const hubspotPayload = {
+                                properties: { ...mappedFields }
+                              };
+
+                              logger.info("HubSpot contact payload created", hubspotPayload);
+
+                              return hubspotPayload;
+                            };
+                      name: Override Payload
+                    - action:
+                        key: rawRequest
+                        component:
+                          isPublic: true
+                          key: hubspot
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 30
+                        errorHandlerType: retry
+                        ignoreFinalError: false
+                        maxAttempts: 2
+                        usesExponentialBackoff: false
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: HubSpot Private App Connection
+                        data:
+                          type: reference
+                          value: overridePayload.results
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        fileData:
+                          type: complex
+                          value: []
+                        fileDataFileNames:
+                          type: complex
+                          value: []
+                        formData:
+                          type: complex
+                          value: []
+                        headers:
+                          type: complex
+                          value: []
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        method:
+                          type: value
+                          value: PATCH
+                        queryParams:
+                          type: complex
+                          value: []
+                        responseType:
+                          type: value
+                          value: json
+                        retryAllErrors:
+                          type: value
+                          value: "false"
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: template
+                          value: /crm/v3/objects/contacts/{{$getContactById.results.id}}
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: Update Contact 2
+              description: ""
+              inputs:
+                conditions:
+                  type: complex
+                  value:
+                    - name: If ID Does Not Exist
+                      type: complex
+                      value:
+                        - and
+                        - - doesNotExist
+                          - name: ""
+                            type: reference
+                            value: getContactById.results.id
+              name: HS Contact Branch
+            - action:
+                key: selectExecutedStepResult
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              description: ""
+              inputs:
+                stepResults:
+                  type: complex
+                  value:
+                    - type: reference
+                      value: createContact.results
+                    - type: reference
+                      value: getContactByEmail.results.results.0
+                    - type: reference
+                      value: getContactById.results
+              name: Output HS Contact
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >-
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      // Get PaintScout data from the previous step results
+                      const psData = stepResults.trigger.results.body.data
+                      const quoteStatus = psData.status || "";
+                      const quoteDate = Number(psData.dates.quote) || 0;  // Ensure quoteDate is a number
+                      const quotePrice = psData.totals.price || 0;
+                      const sentStage = configVars["Bid Sent"];
+                      const acceptedStage = configVars["Customer Accepted Proposal"];
+                      const bidScheduledStage = configVars["Bid Scheduled"];
+                      const inProgressStage = configVars["Bid in Progress"];
+
+                      let status = bidScheduledStage; // Default to Bid Scheduled
+
+                      // Get today's date in epoch format at midnight
+                      const todayEpoch = new Date().setHours(0, 0, 0, 0);
+
+                      if (quoteStatus === "accepted") {
+                        status = acceptedStage;
+                      } else if (quoteStatus === "sent" || quoteStatus === "viewed") {
+                        status = sentStage;
+                      } else {
+                        // Flow Implementation using Epoch Comparison
+                        if (quoteDate >= todayEpoch) {
+                          // Quote Date is today or in the future
+                          status = bidScheduledStage;
+                        } else {
+                          // Quote Date is before today
+                          if (quotePrice > 0) {
+                            status = inProgressStage;
+                          } else {
+                            status = bidScheduledStage;
+                          }
+                        }
+                      }
+
+                      logger.log(`Quote Date (Epoch): ${quoteDate}`);
+                      logger.log(`Today (Epoch): ${todayEpoch}`);
+                      logger.log(`Quote Price: ${quotePrice}`);
+                      logger.log(`Determined Status: ${status}`);
+
+                      // Return the status
+                      return status;
+                    };
+              name: Deal Stage Logic
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >-
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      // Get PaintScout data from the previous step results
+                      const psData = stepResults.trigger.results.body.data || ""
+                      const ownerData = stepResults.getOwner.results[0] || {};
+                      const ownerId = ownerData?.fields?.["HS User ID"] || "";
+                      const dealStage = stepResults.dealStageLogic.results || configVars["Bid Scheduled"]
+                      const contactData = stepResults.outputHsContact.results
+                      const contactId = contactData.id;
+                      //const ccData = stepResults.createProject.results || {};
+                      // const ccId = ccData.id || "";
+                      // const ccPublicUrl = ccData.public_url || "";
+                      // const ccProjectUrl = ccData.project_url || "";
+
+                      // Get the mapping Config Variable
+                      const mapping = configVars["PS Quote Data to HS Properties Mapping"];
+                      const estimatedDate = configVars["Estimate Date Type"]
+
+                      // Helper function to retrieve nested properties safely
+                      function getNestedValue(obj, path) {
+                        return path.split('.').reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
+                      }
+
+                      function cleanText(htmlString) {
+                          if (typeof htmlString !== "string") return htmlString; // Ensure input is a string
+
+                          return htmlString
+                              .replace(/<\/p>\s*<p>/g, '\n')  // Replace closing & opening <p> tags with a newline
+                              .replace(/<br\s*\/?>/gi, '\n')  // Replace <br> tags with a newline
+                              .replace(/<p>\s*<\/p>/g, '')    // Remove empty <p> tags
+                              .replace(/<[^>]+>/g, '')        // Remove remaining HTML tags
+                              .replace(/\n+/g, '\n')          // Collapse multiple newlines into a single newline
+                              .trim();                        // Trim leading/trailing spaces
+                      }
+
+                      const convertUnixToISO = (unixTime) => {
+                        return new Date(Math.floor(unixTime)).toISOString().split(".")[0] + "Z";
+                      };
+
+                      // Map properties of the PaintScout data to the specified field mappings
+                      const mappedFields = mapping.reduce((acc, { source, destination }) => {
+                        let value = getNestedValue(psData, source); // Get nested value
+
+                        if (source.includes("dates")) {
+                          value = convertUnixToISO(value);
+                        }
+
+                        if (source.includes("Note") && typeof value === "string") {
+                          value = cleanText(value); // Clean HTML tags before storing
+                        }
+
+                        function checkDateType(stringDate) {
+                          const date = new Date(stringDate);
+                          return !isNaN(date.getTime());
+                        }
+                        function overrideEstimateDate(value) {
+                           const parsedDate = new Date(value);
+
+                          if (isNaN(parsedDate.getTime())) {
+                            logger.error("Invalid date:", value);
+                            return;
+                          }
+
+                          logger.info('parsedDate',parsedDate)
+                            if (estimatedDate === "Date picker") {
+                              return parsedDate.toISOString().split("T")[0];
+                            } else if (estimatedDate === "Date and time picker") {
+                              return parsedDate.toISOString();
+                            }
+                        }
+                        
+                        // Add to accumulator if the value is not null or undefined
+                        if (value !== undefined && value !== null && value !== "") {
+                          if(destination?.includes("estimate_date") && checkDateType(value)){
+                            acc[destination] = overrideEstimateDate(value)
+                          }else{
+                            acc[destination] = value;
+                          }
+                        }
+                        return acc;
+                      }, {});
+
+                      // Set deal stage based on status
+                      mappedFields["dealstage"] = dealStage
+
+                      // Assign additional fields
+                      mappedFields["hubspot_owner_id"] = ownerId;
+                      // mappedFields["companycam_project_id"] = ccId;
+                      // mappedFields["companycam_project_url"] = ccProjectUrl;
+                      // mappedFields["companycam_public_url"] = ccPublicUrl;
+                      mappedFields["contract_type"] = "Original Contract";
+                      mappedFields["paintscout_quote_url_internal"] = `https://app.paintscout.com/quotes/edit/${psData.id}`
+
+                      // Return the mapped fields in the required format
+                      return { 
+                          properties: mappedFields,
+                          "associations": [
+                            {
+                              "types": [
+                                {
+                                  "associationCategory": "HUBSPOT_DEFINED",
+                                  "associationTypeId": 3
+                                }
+                              ],
+                              "to": {
+                                "id": contactId
+                              }
+                            }
+                          ]
+                      };
+                    };
+              name: Create Deal Payload
+            - action:
+                key: rawRequest
+                component:
+                  isPublic: true
+                  key: hubspot
+                  version: LATEST
+              description: ""
+              inputs:
+                connection:
+                  type: configVar
+                  value: HubSpot Private App Connection
+                data:
+                  type: template
+                  value: |
+                    {
+                      "filterGroups": [
+                        {
+                          "filters": [
+                            {
+                              "propertyName": "raw_paintscout_estimate_number",
+                              "operator": "EQ",
+                              "value": "{{$trigger.results.body.data.number}}"
+                            }
+                          ]
+                        },
+                        {
+                          "filters": [
+                            {
+                              "propertyName": "jobestimate_number",
+                              "operator": "EQ",
+                              "value": "{{$trigger.results.body.data.number}}"
+                            }
+                          ]
+                        }
+                      ],
+                      "properties": [
+                        "dealname",
+                        "paintscout_quote_id",
+                        "companycam_project_id",
+                        "lost_reason",
+                        "hs_object_id",
+                    "raw_paintscout_estimate_number"
+                      ],
+                      "limit": 10
+                    }
+                debugRequest:
+                  type: value
+                  value: "false"
+                fileData:
+                  type: complex
+                  value: []
+                fileDataFileNames:
+                  type: complex
+                  value: []
+                formData:
+                  type: complex
+                  value: []
+                headers:
+                  type: complex
+                  value:
+                    - name:
+                        type: value
+                        value: Content-Type
+                      type: value
+                      value: application/json
+                maxRetries:
+                  type: value
+                  value: "0"
+                method:
+                  type: value
+                  value: POST
+                queryParams:
+                  type: complex
+                  value: []
+                responseType:
+                  type: value
+                  value: json
+                retryAllErrors:
+                  type: value
+                  value: "false"
+                retryDelayMS:
+                  type: value
+                  value: "0"
+                timeout:
+                  type: value
+                  value: ""
+                url:
+                  type: value
+                  value: /crm/v3/objects/deals/search
+                useExponentialBackoff:
+                  type: value
+                  value: "false"
+              name: Find Deal By Raw Estimate Number
+            - action:
+                key: branchOnExpression
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              branches:
+                - name: No Deal Found
+                  steps:
+                    - action:
+                        key: rawRequest
+                        component:
+                          isPublic: true
+                          key: hubspot
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 30
+                        errorHandlerType: retry
+                        ignoreFinalError: false
+                        maxAttempts: 2
+                        usesExponentialBackoff: false
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: HubSpot Private App Connection
+                        data:
+                          type: reference
+                          value: createDealPayload.results
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        fileData:
+                          type: complex
+                          value: []
+                        fileDataFileNames:
+                          type: complex
+                          value: []
+                        formData:
+                          type: complex
+                          value: []
+                        headers:
+                          type: complex
+                          value:
+                            - name:
+                                type: value
+                                value: Content-Type
+                              type: value
+                              value: application/json
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        method:
+                          type: value
+                          value: POST
+                        queryParams:
+                          type: complex
+                          value: []
+                        responseType:
+                          type: value
+                          value: json
+                        retryAllErrors:
+                          type: value
+                          value: "false"
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: template
+                          value: /crm/v3/objects/deals
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: Create Deal
+                    - action:
+                        key: invokeFlow
+                        component:
+                          isPublic: true
+                          key: cross-flow
+                          version: LATEST
+                      description: Naming Convention
+                      inputs:
+                        data:
+                          type: template
+                          value: '{    "hs_object_id":{{$createDeal.results.id}} }'
+                        flowName:
+                          type: value
+                          value: 90 Set/Update HS Deal Name & CompanyCam Project Name
+                      name: Invoke Flow 90
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+
+                              let dealData = stepResults.createDeal.results
+                              let dealId = dealData.id
+
+                              // Map the variables into the payload
+                              let payload = {
+                                source: {
+                                  id: dealId
+                                },
+                              };
+
+                              return payload;
+                            };
+                      name: Update Quote Payload
+                    - action:
+                        key: rawRequest
+                        component:
+                          isPublic: false
+                          key: paintScoutApi
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 10
+                        errorHandlerType: retry
+                        ignoreFinalError: false
+                        maxAttempts: 2
+                        usesExponentialBackoff: false
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: PaintScout Connection
+                        data:
+                          type: reference
+                          value: updateQuotePayload.results
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        fileData:
+                          type: complex
+                          value: []
+                        fileDataFileNames:
+                          type: complex
+                          value: []
+                        formData:
+                          type: complex
+                          value: []
+                        headers:
+                          type: complex
+                          value:
+                            - name:
+                                type: value
+                                value: Content-Type
+                              type: value
+                              value: application/json
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        method:
+                          type: value
+                          value: PUT
+                        queryParams:
+                          type: complex
+                          value: []
+                        responseType:
+                          type: value
+                          value: json
+                        retryAllErrors:
+                          type: value
+                          value: "false"
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: template
+                          value: /quotes/{{$trigger.results.body.data.id}}
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: Update Quote
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+
+                              let psData = stepResults.trigger.results.body.data || ""
+                              let firstName = psData.contact.firstName;
+                              let lastName = psData.contact.lastName;
+                              let phone = psData.contact.phoneNumber;
+                              let email = psData.contact.email;
+                              let address = psData.contact.address;
+                              let city = psData.contact.city;
+                              let state = psData.contact.state;
+                              let zip = psData.contact.zip;
+                              let ccName = stepResults.invokeFlow90?.results?.properties?.dealname
+
+                              let jobStreet = psData?.jobAddress?.address || address
+                              let jobCity = psData?.jobAddress?.city || city
+                              let jobState = psData?.jobAddress?.state || state
+                              let jobPostal = psData?.jobAddress?.zip || zip
+
+                              // Map the variables into the payload
+                              let payload = {
+                                "name": ccName,
+                                "address": {
+                                  "street_address_1": jobStreet,
+                                  "city": jobCity,
+                                  "state": jobState,
+                                  "postal_code": jobPostal,
+                                  "country": "US"
+                                },
+                                "primary_contact": {
+                                  "name": `${firstName} ${lastName}`,
+                                  "email": email,
+                                  "phone_number": phone
+                                }
+                              }
+
+                              return payload;
+                            };
+                      name: CC Payload
+                    - action:
+                        key: rawRequest
+                        component:
+                          isPublic: false
+                          key: companyCamApi
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 10
+                        errorHandlerType: retry
+                        ignoreFinalError: false
+                        maxAttempts: 1
+                        usesExponentialBackoff: false
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: CompanyCam API Connection
+                        data:
+                          type: reference
+                          value: ccPayload.results
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        fileData:
+                          type: complex
+                          value: []
+                        fileDataFileNames:
+                          type: complex
+                          value: []
+                        formData:
+                          type: complex
+                          value: []
+                        headers:
+                          type: complex
+                          value:
+                            - name:
+                                type: value
+                                value: Content-Type
+                              type: value
+                              value: application/json
+                            - name:
+                                type: value
+                                value: X_COMPANYCAM_USER
+                              type: reference
+                              value: ccPayload.results.primary_contact.email
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        method:
+                          type: value
+                          value: POST
+                        queryParams:
+                          type: complex
+                          value: []
+                        responseType:
+                          type: value
+                          value: json
+                        retryAllErrors:
+                          type: value
+                          value: "false"
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: value
+                          value: /projects
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: Create Project
+                    - action:
+                        key: listUsers
+                        component:
+                          isPublic: false
+                          key: companyCamApi
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 10
+                        errorHandlerType: retry
+                        ignoreFinalError: false
+                        maxAttempts: 1
+                        usesExponentialBackoff: false
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: CompanyCam API Connection
+                        page:
+                          type: value
+                          value: "1"
+                        perPage:
+                          type: value
+                          value: "100"
+                      name: List Users
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: null
+                        errorHandlerType: ignore
+                        ignoreFinalError: null
+                        maxAttempts: null
+                        usesExponentialBackoff: null
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              let emailPrimary = stepResults?.getEmailFromPayload?.results
+                              let active = configVars['Assign Company Cam to Project Owner']
+                              let listOfUsers = stepResults?.listUsers?.results
+                              let userFound = listOfUsers?.find((item) => item?.email_address === emailPrimary);
+
+                              return { data: {
+                                emailPrimary,
+                                listOfUsers,
+                                userFound,
+                                isOwnerAssigning:active
+                              } };
+                            };
+                      name: Find User
+                    - action:
+                        key: branchOnExpression
+                        component:
+                          isPublic: true
+                          key: branch
+                          version: LATEST
+                      branches:
+                        - name: Found User
+                          steps:
+                            - action:
+                                key: assignUserToProject
+                                component:
+                                  isPublic: false
+                                  key: companyCamApi
+                                  version: LATEST
+                              description: ""
+                              errorConfig:
+                                delaySeconds: 10
+                                errorHandlerType: retry
+                                ignoreFinalError: false
+                                maxAttempts: 1
+                                usesExponentialBackoff: false
+                              inputs:
+                                connection:
+                                  type: configVar
+                                  value: CompanyCam API Connection
+                                projectId:
+                                  type: reference
+                                  value: createProject.results.id
+                                userId:
+                                  type: reference
+                                  value: findUser.results.userFound.id
+                                xCompanycamUser:
+                                  type: reference
+                                  value: findUser.results.emailPrimary
+                              name: Assign User To Project
+                        - name: Else
+                          steps: []
+                      description: ""
+                      inputs:
+                        conditions:
+                          type: complex
+                          value:
+                            - name: Found User
+                              type: complex
+                              value:
+                                - and
+                                - - exists
+                                  - name: ""
+                                    type: reference
+                                    value: findUser.results.userFound.id
+                                - - isTrue
+                                  - name: ""
+                                    type: reference
+                                    value: findUser.results.isOwnerAssigning
+                      name: Branch on Expression
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+
+                              let ccData = stepResults.createProject.results
+                              let ccProjectId = ccData["id"]
+                              let ccProjectUrl = ccData["project_url"]
+                              let ccPublicUrl = ccData["public_url"]
+                              let quoteData = stepResults.updateQuote.results
+                              let quoteId = quoteData["id"]
+                              let quoteNumber = quoteData["number"]
+                              let quoteUrl = quoteData.urls["quote"]
+                              let quoteWorkOrderUrl = quoteData.urls["workOrder"]
+
+                              // Map the variables into the payload
+                              let payload = {
+                                "companycam_project_url": ccProjectUrl,
+                                "companycam_public_url": ccPublicUrl,
+                                "companycam_project_id": ccProjectId,
+                                "paintscout_quote_url_internal": `https://app.paintscout.com/quotes/edit/${quoteId}`,
+                                "paintscout_quote_url_external": quoteUrl,
+                                "work_order_url": quoteWorkOrderUrl,
+                                "paintscout_quote_id": quoteId,
+                                "raw_paintscout_estimate_number": quoteNumber,
+                                }
+
+                              return { properties: payload };
+                            };
+                      name: Update Deal Payload
+                    - action:
+                        key: rawRequest
+                        component:
+                          isPublic: true
+                          key: hubspot
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 30
+                        errorHandlerType: retry
+                        ignoreFinalError: false
+                        maxAttempts: 2
+                        usesExponentialBackoff: false
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: HubSpot Private App Connection
+                        data:
+                          type: reference
+                          value: updateDealPayload.results
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        fileData:
+                          type: complex
+                          value: []
+                        fileDataFileNames:
+                          type: complex
+                          value: []
+                        formData:
+                          type: complex
+                          value: []
+                        headers:
+                          type: complex
+                          value: []
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        method:
+                          type: value
+                          value: PATCH
+                        queryParams:
+                          type: complex
+                          value: []
+                        responseType:
+                          type: value
+                          value: json
+                        retryAllErrors:
+                          type: value
+                          value: "false"
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: template
+                          value: /crm/v3/objects/deals/{{$createDeal.results.id}}
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: Update PS and SS
+                - name: Else
+                  steps:
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              const deals = stepResults?.findDealByRawEstimateNumber?.results?.results || [];
+
+                              // Extract deal IDs
+                              const dealIds = deals.map(d => d.id).join(',');
+
+                               let payload = {
+                                source: {
+                                  id: dealIds
+                                },
+                              };
+
+                              return payload;
+                            };
+                      name: Update Source Payload
+                    - action:
+                        key: rawRequest
+                        component:
+                          isPublic: false
+                          key: paintScoutApi
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 10
+                        errorHandlerType: retry
+                        ignoreFinalError: false
+                        maxAttempts: 2
+                        usesExponentialBackoff: false
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: PaintScout Connection
+                        data:
+                          type: reference
+                          value: updateSourcePayload.results
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        fileData:
+                          type: complex
+                          value: []
+                        fileDataFileNames:
+                          type: complex
+                          value: []
+                        formData:
+                          type: complex
+                          value: []
+                        headers:
+                          type: complex
+                          value:
+                            - name:
+                                type: value
+                                value: Content-Type
+                              type: value
+                              value: application/json
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        method:
+                          type: value
+                          value: PUT
+                        queryParams:
+                          type: complex
+                          value: []
+                        responseType:
+                          type: value
+                          value: json
+                        retryAllErrors:
+                          type: value
+                          value: "false"
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: template
+                          value: /quotes/{{$trigger.results.body.data.id}}
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: Update Source
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            const axios = require('axios');
+
+
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              try {
+                                const access_token = configVars['HubSpot Private App Connection']?.fields?.accessToken;
+                                const estimateSources = stepResults?.trigger?.results?.body?.data?.number;
+                                const dealIds = stepResults?.findDealByRawEstimateNumber?.results?.results?.map(item => item?.id) || [];
+
+                                if (!access_token) throw new Error('Missing HubSpot access token');
+                                if (!estimateSources) throw new Error('Missing estimate source value');
+                                if (!dealIds.length) {
+                                  logger.info('No deals found to update.');
+                                  return { message: 'No deals to update', dealIds };
+                                }
+
+                                logger.info(`Updating ${dealIds.length} deal(s) with raw_paintscout_estimate_number = ${estimateSources}`);
+
+                                // Update each deal in sequence
+                                for (const dealId of dealIds) {
+                                  const url = `https://api.hubapi.com/crm/v3/objects/deals/${dealId}`;
+                                  const body = {
+                                    properties: {
+                                      raw_paintscout_estimate_number: estimateSources
+                                    }
+                                  };
+
+                                  await axios.patch(url, body, {
+                                    headers: {
+                                      Authorization: `Bearer ${access_token}`,
+                                      'Content-Type': 'application/json'
+                                    }
+                                  });
+
+                                  logger.info(`✅ Updated deal ${dealId}`);
+                                }
+
+                                return {
+                                  message: `Successfully updated ${dealIds.length} deal(s).`,
+                                  estimateSources,
+                                  dealIds
+                                };
+                              } catch (error) {
+                                logger.error('❌ Error updating deals:', error.response?.data || error.message);
+                                throw error;
+                              }
+                            };
+                      name: Update raw estimate number in Hubspot
+              description: ""
+              inputs:
+                conditions:
+                  type: complex
+                  value:
+                    - name: No Deal Found
+                      type: complex
+                      value:
+                        - and
+                        - - doesNotExist
+                          - name: ""
+                            type: reference
+                            value: findDealByRawEstimateNumber.results.results.0.id
+              name: If no deal found and raw estimate sync is turned off
+        - name: Else
+          steps:
+            - action:
+                key: writeLog
+                component:
+                  isPublic: true
+                  key: log
+                  version: LATEST
+              description: ""
+              inputs:
+                level:
+                  type: value
+                  value: info
+                message:
+                  type: value
+                  value: No recent quote updated 2 mins ago
+              name: Write Log Message 2
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Process Quote
+              type: complex
+              value:
+                - or
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: trigger.results.body.data.contact.email
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: trigger.results.body.data.contact.source.id
+      name: Contact Detail Branch

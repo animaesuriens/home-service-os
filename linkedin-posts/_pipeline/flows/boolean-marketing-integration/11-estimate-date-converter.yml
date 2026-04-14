@@ -1,0 +1,68 @@
+sourceFile: boolean-marketing-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 11 Estimate Date Converter
+  description: ""
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              let estimatedDate = configVars["Estimate Date Type"]
+
+              let properties = stepResults?.trigger?.results?.body?.data?.properties
+
+
+              function checkDateType(stringDate) {
+                let date = new Date(stringDate);
+                return !isNaN(date.getTime());
+              }
+
+              function overrideEstimateDate(value) {
+                   let parsedDate = new Date(value);
+
+                  if (isNaN(parsedDate.getTime())) {
+                    logger.error("Invalid date:", value);
+                    return;
+                  }
+
+                  logger.info('parsedDate',parsedDate)
+                    if (estimatedDate === "Date picker") {
+                      return parsedDate.toISOString().split("T")[0];
+                    } else if (estimatedDate === "Date and time picker") {
+                      return parsedDate.toISOString();
+                    }
+                }
+
+              if(properties?.estimate_date && checkDateType(properties?.estimate_date)){
+                let convertedDate = overrideEstimateDate(properties?.estimate_date)
+                properties = {
+                  ...properties,
+                  estimate_date:convertedDate
+                }
+              }
+              return {
+                properties
+              }
+            };
+      name: Convert Date Estimate

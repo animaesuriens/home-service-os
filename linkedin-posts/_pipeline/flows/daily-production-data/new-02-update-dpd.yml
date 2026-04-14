@@ -1,0 +1,342 @@
+sourceFile: daily-production-data-export.yml
+category: Boolean PaintOS
+flow:
+  name: "[New] 02 Update DPD"
+  description: Changes to some stuff + crossflow usage.
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: schedule
+        component:
+          isPublic: true
+          key: schedule-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+      schedule:
+        meta:
+          scheduleType: hour
+          timeZone: ""
+        type: value
+        value: 0 */3 * * *
+    - action:
+        key: getCurrentDateTime
+        component:
+          isPublic: true
+          key: datetime
+          version: LATEST
+      description: ""
+      inputs:
+        displayEpochInSeconds:
+          type: value
+          value: "false"
+      name: Start Stopwatch
+    - action:
+        key: adjustDateTime
+        component:
+          isPublic: true
+          key: datetime
+          version: LATEST
+      description: ""
+      inputs:
+        dateTimeInput:
+          type: reference
+          value: startStopwatch.results
+        daysInput:
+          type: value
+          value: ""
+        hoursInput:
+          type: value
+          value: ""
+        minutesInput:
+          type: value
+          value: "12"
+        secondsInput:
+          type: value
+          value: ""
+      name: Stopwatch Ending Time
+    - action:
+        key: listRecords
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 5
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 3
+        usesExponentialBackoff: false
+      inputs:
+        airtableConnection:
+          type: configVar
+          value: Airtable Connection
+        baseId:
+          type: configVar
+          value: Project Management Base
+        fields:
+          type: complex
+          value: []
+        filterByFormula:
+          type: template
+          value: AND({{{#⚙️ Daily Production Data Up-to-Date}}}="False",{Project})
+        tableName:
+          type: configVar
+          value: Time Logs Table
+        view:
+          type: value
+          value: ""
+      name: List Time Logs
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: |
+            const _ = require("lodash");
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const timelogs = stepResults.listTimeLogs.results;
+
+              const batches = _.chunk(timelogs, 50);
+
+              return { data: batches };
+            };
+      name: Chunk Timelogs
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Yes
+          steps:
+            - action:
+                key: loopOverItems
+                component:
+                  isPublic: true
+                  key: loop
+                  version: LATEST
+              description: ""
+              inputs:
+                items:
+                  type: reference
+                  value: chunkTimelogs.results
+              name: Loop Timelog Chunks
+              steps:
+                - action:
+                    key: getCurrentDateTime
+                    component:
+                      isPublic: true
+                      key: datetime
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    displayEpochInSeconds:
+                      type: value
+                      value: "false"
+                  name: Get Current Date/Time
+                - action:
+                    key: branchOnExpression
+                    component:
+                      isPublic: true
+                      key: branch
+                      version: LATEST
+                  branches:
+                    - name: Yes
+                      steps:
+                        - action:
+                            key: stopExecution
+                            component:
+                              isPublic: true
+                              key: stop-execution
+                              version: LATEST
+                          description: End before exceeding execution time
+                          inputs:
+                            contentType:
+                              type: value
+                              value: application/json
+                            headers:
+                              type: complex
+                              value: []
+                            jsonBody:
+                              type: value
+                              value: ""
+                            statusCode:
+                              type: value
+                              value: "200"
+                          name: Stop Execution 2
+                    - name: Else
+                      steps:
+                        - action:
+                            key: loopOverItems
+                            component:
+                              isPublic: true
+                              key: loop
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            items:
+                              type: reference
+                              value: loopTimelogChunks.currentItem
+                          name: Loop Time Logs
+                          steps:
+                            - action:
+                                key: runCode
+                                component:
+                                  isPublic: true
+                                  key: code
+                                  version: LATEST
+                              description: ""
+                              errorConfig:
+                                delaySeconds: null
+                                errorHandlerType: ignore
+                                ignoreFinalError: null
+                                maxAttempts: null
+                                usesExponentialBackoff: null
+                              inputs:
+                                code:
+                                  type: value
+                                  value: >
+                                    module.exports = async ({ logger, configVars
+                                    }, stepResults) => {
+                                      let listTimeLogs = stepResults.listTimeLogs.results;
+                                      let timeLogsData = stepResults.loopTimeLogs.currentItem;
+                                      let uniqeId = timeLogsData.fields["Date:Project Number"];
+                                      let clockedId = timeLogsData.fields["Clocked In"];
+
+                                      // let project = timeLogsData.fields["Project"]
+
+                                      let currentLog = listTimeLogs.filter((record) => {
+                                        return record.fields["Date:Project Number"] == uniqeId;
+                                      });
+
+                                      // logger.log(currentLog)
+
+                                      let totalHoursWorked = 0;
+                                      let totalAdjustedHours = 0;
+                                      let totalPayrollCost = 0;
+                                      let auditTrail = [];
+                                      let project = null;
+
+                                      for (let record of currentLog) {
+                                        let hoursWorked = record.fields["Hours Worked"];
+                                        let adjustedHours = record.fields["Adjusted Hours"];
+                                        let payrollCost = record.fields["Total Payroll Cost"];
+                                        let name = record.fields["Name"];
+
+                                        totalHoursWorked += hoursWorked;
+                                        totalAdjustedHours += adjustedHours;
+                                        totalPayrollCost += payrollCost;
+
+                                        auditTrail.push(
+                                          `[${name}]: Hours Worked = ${hoursWorked}, Adjusted Hours = ${adjustedHours}, Total Payroll Cost = ${payrollCost}`,
+                                        );
+
+                                        // Set the project ID based on the Project field of any record, assuming all are the same for a given Date:Project Number
+                                        if (timeLogsData.fields["Project"]) {
+                                          project = timeLogsData.fields["Project"][0];
+                                        }
+                                      }
+
+                                      return {
+                                        project: project,
+                                        uniqeId: uniqeId,
+                                        totalHoursWorked: totalHoursWorked,
+                                        totalAdjustedHours: totalAdjustedHours,
+                                        totalPayrollCost: totalPayrollCost,
+                                        auditTrail: auditTrail,
+                                        clockedIn: clockedId,
+                                        timelogId: timeLogsData.id,
+                                      };
+                                    };
+                              name: Aggregate DPD Data
+                            - action:
+                                key: branchOnExpression
+                                component:
+                                  isPublic: true
+                                  key: branch
+                                  version: LATEST
+                              branches:
+                                - name: Yes
+                                  steps:
+                                    - action:
+                                        key: invokeFlow
+                                        component:
+                                          isPublic: true
+                                          key: cross-flow
+                                          version: LATEST
+                                      description: ""
+                                      errorConfig:
+                                        delaySeconds: null
+                                        errorHandlerType: ignore
+                                        ignoreFinalError: null
+                                        maxAttempts: null
+                                        usesExponentialBackoff: null
+                                      inputs:
+                                        data:
+                                          type: reference
+                                          value: aggregateDpdData.results
+                                        flowName:
+                                          type: value
+                                          value: Process Timelog
+                                      name: Process Timelog
+                                - name: Else
+                                  steps: []
+                              description: ""
+                              inputs:
+                                conditions:
+                                  type: complex
+                                  value:
+                                    - name: Yes
+                                      type: complex
+                                      value:
+                                        - and
+                                        - - doesNotExist
+                                          - name: ""
+                                            type: reference
+                                            value: aggregateDpdData.results.error
+                              name: Payload generated succesfully?
+                  description: ""
+                  inputs:
+                    conditions:
+                      type: complex
+                      value:
+                        - name: Yes
+                          type: complex
+                          value:
+                            - and
+                            - - dateTimeAfter
+                              - name: ""
+                                type: reference
+                                value: getCurrentDateTime.results
+                              - name: ""
+                                type: reference
+                                value: stopwatchEndingTime.results
+                  name: Time exceeded?
+        - name: Else
+          steps: []
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Yes
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: listTimeLogs.results.0.id
+      name: Records fetched?

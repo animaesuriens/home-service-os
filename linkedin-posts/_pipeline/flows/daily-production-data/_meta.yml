@@ -1,0 +1,37 @@
+sourceFile: daily-production-data-export.yml
+category: Boolean PaintOS
+name: Daily Production Data
+description: This integrates seamlessly with Airtable to process daily time
+  tracking data from crew members. It generates detailed expense reports based
+  on crew work, providing accurate insights into labor costs and daily
+  production efficiency.
+configPages:
+  - elements: []
+    name: Connections
+    tagline: ""
+  - elements:
+      - type: configVar
+        value: Project Management Base
+    name: Project Management
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: configVar
+        value: Jobs Table
+      - type: configVar
+        value: Projects Table
+      - type: configVar
+        value: Daily Production Data Table
+      - type: configVar
+        value: Time Logs Table
+    name: Production Tables
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: configVar
+        value: ⚙️ Daily Production Data Up-to-Date
+      - type: configVar
+        value: ⚙️ Daily Production Data Records Last Updated
+    name: Lookup Fields
+    tagline: ""
+    userLevelConfigured: false

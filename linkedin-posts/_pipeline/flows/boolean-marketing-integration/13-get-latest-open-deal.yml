@@ -1,0 +1,873 @@
+sourceFile: boolean-marketing-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 13 Get Latest Open Deal
+  description: ""
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: HTTP
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Contact Email Found
+          steps:
+            - action:
+                key: rawRequest
+                component:
+                  isPublic: true
+                  key: hubspot
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: 10
+                errorHandlerType: retry
+                ignoreFinalError: false
+                maxAttempts: 1
+                usesExponentialBackoff: false
+              inputs:
+                connection:
+                  type: configVar
+                  value: HubSpot Private App Connection
+                data:
+                  type: value
+                  value: ""
+                fileData:
+                  type: complex
+                  value: []
+                fileDataFileNames:
+                  type: complex
+                  value: []
+                formData:
+                  type: complex
+                  value: []
+                headers:
+                  type: complex
+                  value: []
+                maxRetries:
+                  type: value
+                  value: "0"
+                method:
+                  type: value
+                  value: GET
+                queryParams:
+                  type: complex
+                  value: []
+                responseType:
+                  type: value
+                  value: json
+                retryAllErrors:
+                  type: value
+                  value: "false"
+                retryDelayMS:
+                  type: value
+                  value: "0"
+                timeout:
+                  type: value
+                  value: ""
+                url:
+                  type: value
+                  value: /crm/v3/properties/contacts?archived=false
+                useExponentialBackoff:
+                  type: value
+                  value: "false"
+              name: Get contact properties
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      let properties = stepResults.getContactProperties.results.results;
+
+                      // Filter properties
+                      let propNames = properties
+                        .filter(
+                          (prop) =>
+                            // Exclude "deal_activity" group
+                            prop.groupName !== "deal_activity" &&
+                            // Include "dealstage", "pipeline", and "hubspot_owner_id" explicitly, or exclude "dealstages" group
+                            (prop.name === "dealstage" ||
+                              prop.name === "pipeline" ||
+                              prop.name === "hubspot_owner_id" ||
+                              prop.groupName !== "dealstages")
+                        )
+                        .map((prop) => prop.name);
+
+                      return propNames?.toString();
+                    };
+              name: Contact properties
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      let properties = stepResults?.contactProperties?.results // Extract property names
+                      let hubspotToken = configVars["HubSpot Private App Connection"]?.fields?.accessToken;
+                      if (!hubspotToken) {
+                        throw new Error("HubSpot token not found in configVars");
+                      }
+
+                      const contactId = stepResults.http?.results.body.data.contact_id;
+                      const email = stepResults.http?.results.body.data.jobEmail;
+
+                      let contact = null;
+
+                      try {
+                        if (contactId) {
+                          // 🔹 Get contact by ID with properties
+                          const url = new URL(`https://api.hubapi.com/crm/v3/objects/contacts/${contactId}`);
+                          if (properties.length) {
+                            url.searchParams.append("properties", properties);
+                          }
+
+                          const response = await fetch(url, {
+                            method: "GET",
+                            headers: {
+                              Authorization: `Bearer ${hubspotToken}`,
+                              "Content-Type": "application/json",
+                            },
+                          });
+                          if (!response.ok) throw new Error(`Failed to fetch contact by ID: ${response.statusText}`);
+                          contact = await response.json();
+                        } else if (email) {
+                          // 🔹 Search contact by email with properties
+                          properties = properties.split(",")
+                          const response = await fetch("https://api.hubapi.com/crm/v3/objects/contacts/search", {
+                            method: "POST",
+                            headers: {
+                              Authorization: `Bearer ${hubspotToken}`,
+                              "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({
+                              filterGroups: [
+                                {
+                                  filters: [
+                                    {
+                                      propertyName: "email",
+                                      operator: "EQ",
+                                      value: email,
+                                    },
+                                  ],
+                                },
+                              ],
+                              properties, // request only these properties
+                              limit: 1,
+                            }),
+                          });
+
+                          if (!response.ok) throw new Error(`Failed to search contact by email: ${response.statusText}`);
+                          const data = await response.json();
+                          contact = data.results?.[0] || null;
+                        } else {
+                          throw new Error("No contactId or email provided");
+                        }
+
+                        return contact;
+                      } catch (err) {
+                        logger.error("Error fetching HubSpot contact", err);
+                        throw err;
+                      }
+                    };
+              name: Search Contact By Email or ID
+            - action:
+                key: selectExecutedStepResult
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              description: Get Contact
+              inputs:
+                stepResults:
+                  type: complex
+                  value:
+                    - type: reference
+                      value: searchContactByEmailOrId.results
+                    - type: value
+                      value: '""'
+              name: Get Contact
+            - action:
+                key: branchOnExpression
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              branches:
+                - name: Found contact
+                  steps:
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            const axios = require("axios");
+
+
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              try {
+                                const contactId = stepResults?.getContact?.results.id;
+                                const accessToken = configVars["HubSpot Private App Connection"]?.fields?.accessToken;
+                                const marketingPipeline = configVars["HubSpot Marketing Pipeline"]
+                                const marketingLost = configVars["Lead Closed Lost"]
+                                
+                                if (!contactId || !accessToken) {
+                                  throw new Error("Missing contactId or accessToken");
+                                }
+
+                                // 1️⃣ Get associated deal IDs
+                                const url = `https://api.hubapi.com/crm/v4/objects/contacts/${contactId}/associations/deals`;
+                                const response = await axios.get(url, {
+                                  headers: {
+                                    Authorization: `Bearer ${accessToken}`,
+                                    "Content-Type": "application/json",
+                                  },
+                                });
+
+                                const associations = response.data.results || [];
+                                const dealIds = associations.map((a) => a.toObjectId);
+
+                                if (dealIds.length === 0) {
+                                  return {
+                                    data: {
+                                      contactId,
+                                      dealIds: [],
+                                      dealIdString: "",
+                                      hasDeals: false,
+                                    },
+                                  };
+                                }
+
+                                // 2️⃣ Fetch deal details in chunks (HubSpot max 100 IDs per request)
+                                const chunkSize = 100;
+                                let allDeals = [];
+
+                                for (let i = 0; i < dealIds.length; i += chunkSize) {
+                                  const chunk = dealIds.slice(i, i + chunkSize);
+                                  const body = {
+                                    properties: ["dealname", "pipeline", "dealstage", "hs_lastmodifieddate"],
+                                    inputs: chunk.map((id) => ({ id: String(id) })),
+                                  };
+
+                                  try {
+                                    const dealsRes = await axios.post(
+                                      "https://api.hubapi.com/crm/v3/objects/deals/batch/read",
+                                      body,
+                                      {
+                                        headers: {
+                                          Authorization: `Bearer ${accessToken}`,
+                                          "Content-Type": "application/json",
+                                        },
+                                      }
+                                    );
+
+                                    allDeals.push(...(dealsRes.data.results || []));
+                                  } catch (batchErr) {
+                                    logger.error("Batch fetch error:", batchErr.response?.data || batchErr.message);
+                                  }
+                                }
+
+                                // 3️⃣ Filter for marketing deals only, excluding lost deals
+                                const filteredDeals = allDeals.filter((deal) => {
+                                  const { pipeline, dealstage } = deal.properties || {};
+                                  return pipeline === marketingPipeline && dealstage !== marketingLost;
+                                });
+
+                                // 4️⃣ Sort by latest modified date
+                                const sortedDeals = filteredDeals.sort(
+                                  (a, b) =>
+                                    new Date(b.properties.createdate) - new Date(a.properties.createdate)
+                                );
+
+                                const latestDealIds = sortedDeals.map((d) => d.id);
+
+                                // ✅ Return same structure as before
+                                return {
+                                  data: {
+                                    contactId,
+                                    dealIds: latestDealIds,
+                                    dealIdString: latestDealIds.join(","),
+                                    hasDeals: latestDealIds.length > 0,
+                                  },
+                                };
+                              } catch (error) {
+                                logger.error(`Failed to check deals for contact: ${error.message}`);
+                                return {
+                                  data: {
+                                    error: error.message,
+                                  },
+                                };
+                              }
+                            };
+                      name: Get Previous Deal
+                    - action:
+                        key: branchOnExpression
+                        component:
+                          isPublic: true
+                          key: branch
+                          version: LATEST
+                      branches:
+                        - name: Deal found
+                          steps:
+                            - action:
+                                key: rawRequest
+                                component:
+                                  isPublic: true
+                                  key: hubspot
+                                  version: LATEST
+                              description: ""
+                              errorConfig:
+                                delaySeconds: 10
+                                errorHandlerType: retry
+                                ignoreFinalError: false
+                                maxAttempts: 1
+                                usesExponentialBackoff: false
+                              inputs:
+                                connection:
+                                  type: configVar
+                                  value: HubSpot Private App Connection
+                                data:
+                                  type: value
+                                  value: ""
+                                fileData:
+                                  type: complex
+                                  value: []
+                                fileDataFileNames:
+                                  type: complex
+                                  value: []
+                                formData:
+                                  type: complex
+                                  value: []
+                                headers:
+                                  type: complex
+                                  value: []
+                                maxRetries:
+                                  type: value
+                                  value: "0"
+                                method:
+                                  type: value
+                                  value: GET
+                                queryParams:
+                                  type: complex
+                                  value: []
+                                responseType:
+                                  type: value
+                                  value: json
+                                retryAllErrors:
+                                  type: value
+                                  value: "false"
+                                retryDelayMS:
+                                  type: value
+                                  value: "0"
+                                timeout:
+                                  type: value
+                                  value: ""
+                                url:
+                                  type: value
+                                  value: /crm/v3/properties/deals?archived=false
+                                useExponentialBackoff:
+                                  type: value
+                                  value: "false"
+                              name: Get deal properties
+                            - action:
+                                key: runCode
+                                component:
+                                  isPublic: true
+                                  key: code
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                code:
+                                  type: value
+                                  value: >
+                                    module.exports = async ({ logger, configVars
+                                    }, stepResults) => {
+                                      let properties = stepResults.getDealProperties.results.results;
+
+                                      // Filter properties
+                                      let propNames = properties
+                                        .filter(
+                                          (prop) =>
+                                            // Exclude "deal_activity" group
+                                            prop.groupName !== "deal_activity" &&
+                                            // Include "dealstage" explicitly, or exclude "dealstages" group
+                                            (prop.name === "dealstage" || prop.groupName !== "dealstages")
+                                        )
+                                        .map((prop) => prop.name);
+
+                                      // Ensure "pipeline" is always included
+                                      //dealstage
+                                      if (!propNames.includes("pipeline")) {
+                                        propNames.push("pipeline");
+                                      }
+                                       if (!propNames.includes("dealstage")) {
+                                        propNames.push("dealstage");
+                                      }
+
+                                      return propNames;
+                                    };
+                              name: List Deal Properties
+                            - action:
+                                key: rawRequest
+                                component:
+                                  isPublic: true
+                                  key: hubspot
+                                  version: LATEST
+                              description: ""
+                              errorConfig:
+                                delaySeconds: 10
+                                errorHandlerType: retry
+                                ignoreFinalError: false
+                                maxAttempts: 1
+                                usesExponentialBackoff: false
+                              inputs:
+                                connection:
+                                  type: configVar
+                                  value: HubSpot Private App Connection
+                                data:
+                                  type: template
+                                  value: >
+                                    {
+                                      "limit": 100,
+                                      "properties": {{$listDealProperties.results}},
+                                      "filterGroups": [
+                                        {
+                                          "filters": [
+                                            {
+                                              "propertyName": "hs_object_id",
+                                              "values": {{$getPreviousDeal.results.dealIds}},
+                                              "operator": "IN"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                fileData:
+                                  type: complex
+                                  value: []
+                                fileDataFileNames:
+                                  type: complex
+                                  value: []
+                                formData:
+                                  type: complex
+                                  value: []
+                                headers:
+                                  type: complex
+                                  value:
+                                    - name:
+                                        type: value
+                                        value: Content-Type
+                                      type: value
+                                      value: application/json
+                                maxRetries:
+                                  type: value
+                                  value: "0"
+                                method:
+                                  type: value
+                                  value: POST
+                                queryParams:
+                                  type: complex
+                                  value: []
+                                responseType:
+                                  type: value
+                                  value: json
+                                retryAllErrors:
+                                  type: value
+                                  value: "false"
+                                retryDelayMS:
+                                  type: value
+                                  value: "0"
+                                timeout:
+                                  type: value
+                                  value: ""
+                                url:
+                                  type: value
+                                  value: /crm/v3/objects/deals/search
+                                useExponentialBackoff:
+                                  type: value
+                                  value: "false"
+                              name: Get Deals
+                            - action:
+                                key: runCode
+                                component:
+                                  isPublic: true
+                                  key: code
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                code:
+                                  type: value
+                                  value: >
+                                    module.exports = async ({ logger, configVars
+                                    }, stepResults) => {
+                                      try {
+                                        let dealList = stepResults?.getDeals?.results?.results || [];
+                                        let currentPipeline = configVars['HubSpot Marketing Pipeline'];
+                                        let currentStage = configVars['Lead Closed Lost'];
+
+                                        // Filter deals that belong to the marketing pipeline
+                                        // AND exclude deals with the current stage
+                                        let marketingDeals = dealList.filter(
+                                          (deal) =>
+                                            deal.properties?.pipeline === currentPipeline &&
+                                            deal.properties?.dealstage !== currentStage
+                                        );
+
+                                        // Sort by createdate (descending: latest first)
+                                        marketingDeals.sort(
+                                          (a, b) => new Date(b.properties.createdate) - new Date(a.properties.createdate)
+                                        );
+
+                                        // Get the latest deal (if any)
+                                        let latestDeal = marketingDeals[0] || null;
+
+                                        return { 
+                                          data: {
+                                            currentPipeline,
+                                            latestDeal,
+                                            hasDeal: !!latestDeal
+                                          } 
+                                        };
+                                      } catch (error) {
+                                        logger.error(`Failed to get latest marketing deal: ${error.message}`);
+                                        return { data: { error: error.message } };
+                                      }
+                                    };
+                              name: Get latest open deal
+                            - action:
+                                key: rawRequest
+                                component:
+                                  isPublic: true
+                                  key: hubspot
+                                  version: LATEST
+                              description: ""
+                              errorConfig:
+                                delaySeconds: 10
+                                errorHandlerType: retry
+                                ignoreFinalError: false
+                                maxAttempts: 1
+                                usesExponentialBackoff: false
+                              inputs:
+                                connection:
+                                  type: configVar
+                                  value: HubSpot Private App Connection
+                                data:
+                                  type: value
+                                  value: ""
+                                fileData:
+                                  type: complex
+                                  value: []
+                                fileDataFileNames:
+                                  type: complex
+                                  value: []
+                                formData:
+                                  type: complex
+                                  value: []
+                                headers:
+                                  type: complex
+                                  value: []
+                                maxRetries:
+                                  type: value
+                                  value: "0"
+                                method:
+                                  type: value
+                                  value: GET
+                                queryParams:
+                                  type: complex
+                                  value: []
+                                responseType:
+                                  type: value
+                                  value: json
+                                retryAllErrors:
+                                  type: value
+                                  value: "false"
+                                retryDelayMS:
+                                  type: value
+                                  value: "0"
+                                timeout:
+                                  type: value
+                                  value: ""
+                                url:
+                                  type: template
+                                  value: /crm/v4/objects/deals/{{$getLatestOpenDeal.results.latestDeal.id}}/associations/companies
+                                useExponentialBackoff:
+                                  type: value
+                                  value: "false"
+                              name: Get Associated Company
+                            - action:
+                                key: getCompany
+                                component:
+                                  isPublic: true
+                                  key: hubspot
+                                  version: LATEST
+                              description: ""
+                              errorConfig:
+                                delaySeconds: 10
+                                errorHandlerType: retry
+                                ignoreFinalError: true
+                                maxAttempts: 1
+                                usesExponentialBackoff: false
+                              inputs:
+                                additionalProperties:
+                                  type: complex
+                                  value: []
+                                archived:
+                                  type: value
+                                  value: "false"
+                                associationsList:
+                                  type: complex
+                                  value: []
+                                companyId:
+                                  type: reference
+                                  value: getAssociatedCompany.results.results.0.toObjectId
+                                companyName:
+                                  type: value
+                                  value: ""
+                                domain:
+                                  type: value
+                                  value: ""
+                                hubspotConnection:
+                                  type: configVar
+                                  value: HubSpot Private App Connection
+                                timeout:
+                                  type: value
+                                  value: ""
+                              name: Get Company
+                            - action:
+                                key: runCode
+                                component:
+                                  isPublic: true
+                                  key: code
+                                  version: LATEST
+                              description: Get item in People Table AT
+                              inputs:
+                                code:
+                                  type: value
+                                  value: >
+                                    const axios = require("axios");
+
+
+                                    module.exports = async ({ logger, configVars
+                                    }, stepResults) => {
+                                      try {
+                                        const hubspotToken = configVars["HubSpot Private App Connection"]?.fields?.accessToken;
+                                        if (!hubspotToken) {
+                                          throw new Error("HubSpot token not found in configVars");
+                                        }
+
+                                        // Get the contact owner's ID from previous step
+                                        let contactOwnerId = stepResults?.searchContactByEmailOrId?.results?.properties?.hubspot_owner_id;
+
+                                        if (!contactOwnerId) {
+                                          throw new Error("No hubspot_owner_id found in contact data");
+                                        }
+
+                                        // Fetch owner details
+                                        const ownerRes = await axios.get(
+                                          `https://api.hubapi.com/crm/v3/owners/${contactOwnerId}`,
+                                          {
+                                            headers: {
+                                              Authorization: `Bearer ${hubspotToken}`,
+                                              "Content-Type": "application/json",
+                                            },
+                                          }
+                                        );
+                                        const ownerData = ownerRes.data;
+
+                                        // Fetch user details (for phone number)
+                                        const userRes = await axios.get(
+                                          `https://api.hubapi.com/settings/v3/users/${contactOwnerId}`,
+                                          {
+                                            headers: {
+                                              Authorization: `Bearer ${hubspotToken}`,
+                                              "Content-Type": "application/json",
+                                            },
+                                          }
+                                        );
+                                        const userData = userRes.data;
+
+                                        return {
+                                          ownerId: contactOwnerId,
+                                          firstName: ownerData.firstName || null,
+                                          lastName: ownerData.lastName || null,
+                                          email: ownerData.email || null,
+                                          phone: userData.phone || null, // 📞 user's phone number
+                                          active: ownerData.active,
+                                          ownerType: ownerData.type,
+                                          raw: {
+                                            owner: ownerData,
+                                            user: userData
+                                          }
+                                        };
+                                      } catch (error) {
+                                        logger.error(`Failed to fetch HubSpot owner: ${error.message}`);
+                                        return {
+                                          results: [],
+                                          error: error.message,
+                                        };
+                                      }
+                                    };
+                              name: Get Owner
+                        - name: Else
+                          steps:
+                            - action:
+                                key: writeLog
+                                component:
+                                  isPublic: true
+                                  key: log
+                                  version: LATEST
+                              description: |-
+                                
+                                No previous deal found
+                              inputs:
+                                level:
+                                  type: value
+                                  value: info
+                                message:
+                                  type: value
+                                  value: |-
+                                    
+                                    No previous deal found
+                              name: No previous deal found
+                      description: ""
+                      inputs:
+                        conditions:
+                          type: complex
+                          value:
+                            - name: Deal found
+                              type: complex
+                              value:
+                                - and
+                                - - isTrue
+                                  - name: ""
+                                    type: reference
+                                    value: getPreviousDeal.results.hasDeals
+                      name: Branch on Expression 2
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                                // Extract results safely using optional chaining
+                                const dealData = stepResults?.getLatestOpenDeal?.results?.latestDeal || {};
+                                const contactData = stepResults?.getContact?.results?.properties || {};
+                                const companyData = stepResults?.getCompany?.results?.properties || {};
+                                const ownerData = stepResults?.getOwner?.results || {};
+
+                                return {
+                                  dealData,
+                                  contactData,
+                                  companyData,
+                                  ownerData
+                                }
+                            };
+                      name: Return Value
+                - name: Else
+                  steps:
+                    - action:
+                        key: writeLog
+                        component:
+                          isPublic: true
+                          key: log
+                          version: LATEST
+                      description: No contact found
+                      inputs:
+                        level:
+                          type: value
+                          value: info
+                        message:
+                          type: value
+                          value: No contact found
+                      name: No contact found
+              description: ""
+              inputs:
+                conditions:
+                  type: complex
+                  value:
+                    - name: Found contact
+                      type: complex
+                      value:
+                        - and
+                        - - exists
+                          - name: ""
+                            type: reference
+                            value: getContact.results.id
+              name: Branch on Expression 4
+        - name: Else
+          steps:
+            - action:
+                key: writeLog
+                component:
+                  isPublic: true
+                  key: log
+                  version: LATEST
+              description: No contact email found
+              inputs:
+                level:
+                  type: value
+                  value: info
+                message:
+                  type: value
+                  value: No contact email found
+              name: No contact email found
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Contact Email Found
+              type: complex
+              value:
+                - or
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: http.results.body.data.jobEmail
+                - - and
+                  - - exists
+                    - name: ""
+                      type: reference
+                      value: http.results.body.data.contact_id
+      name: Branch on Expression

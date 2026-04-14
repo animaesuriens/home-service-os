@@ -1,0 +1,161 @@
+sourceFile: boolean-sales-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 11 Change Order Label Processor
+  description: Counts the number of CO in HS
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: HTTP
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: Get Deal Payload
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports  = async ({ logger, configVars }, stepResults) => {
+              
+              let configAirtableRecordId = configVars["Airtable Job Record ID Property"];
+              let airtableJobRecordId = stepResults?.http?.results?.body?.data?.payload?.[configAirtableRecordId];
+              logger?.info(configAirtableRecordId)
+              return { data: {
+                "filterGroups": [
+                  {
+                    "filters": [
+                      {
+                        "propertyName": configAirtableRecordId,
+                        "operator": "CONTAINS_TOKEN",
+                        "value": airtableJobRecordId
+                      }
+                    ]
+                  }
+                ],
+                "properties": ["dealname","contract_type","raw_paintscout_estimate_number"],
+                "limit": 100,
+              }
+             };
+            };
+      name: Get Deal Payload
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: Get Deals with same job record id
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: true
+        maxAttempts: 1
+        usesExponentialBackoff: false
+      inputs:
+        connection:
+          type: configVar
+          value: HubSpot Private App Connection
+        data:
+          type: reference
+          value: getDealPayload.results
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value: []
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: POST
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: /crm/v3/objects/deals/search
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Deals with same job record id
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: CO count logic
+      inputs:
+        code:
+          type: value
+          value: >
+            /*
+              Access config variables by name through the configVars object. e.g.
+                const apiEndpoint = `${configVars["App Base URL"]}/api`;
+
+              Access previous steps' results through the stepResults object. Trigger
+              and step names are camelCased. If the step "Get Data from API" returned
+              {"foo": "bar", "baz": 123}, you could destructure that data with:
+                const { foo, baz } = stepResults.getDataFromApi.results;
+
+              You can return string, number or complex object data. e.g.
+                return { data: { foo: "Hello", bar: 123.45, baz: true } };
+            */
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              let deals = stepResults?.getDealsWithSameJobRecordId?.results?.results || []
+              let numberCO = 1
+              let originalDeal = {}
+
+              for(let item of deals){
+                if(item?.properties?.dealname?.includes('_CO')){
+                  numberCO += 1
+                }
+                 if(item?.properties?.contract_type?.toLowerCase()?.includes('original contract')){
+                  originalDeal = item
+                }
+              }
+
+
+              return { data: {
+                count:numberCO,
+                originalDeal:originalDeal
+              } };
+            };
+      name: CO count

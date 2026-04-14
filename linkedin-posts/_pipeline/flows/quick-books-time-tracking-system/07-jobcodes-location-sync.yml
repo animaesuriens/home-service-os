@@ -1,0 +1,776 @@
+sourceFile: quick-books-time-tracking-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 07 Jobcodes Location Sync
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: schedule
+        component:
+          isPublic: true
+          key: schedule-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+      schedule:
+        meta:
+          scheduleType: minute
+          timeZone: ""
+        type: value
+        value: "*/5 * * * *"
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: IF QB Time Jobcode ID exist and QB Time Location ID is empty
+      inputs:
+        code:
+          type: value
+          value: >-
+            const axios = require('axios');
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const projectTable = configVars["Projects Table"];
+              const base = configVars["Project Management Base"];
+              const { apiKey } = configVars["Airtable Connection"].fields;
+
+              // Initialize Airtable client.
+              const airtableClient = axios.create({
+                baseURL: `https://api.airtable.com/v0/${base}`,
+                headers: {
+                  Authorization: `Bearer ${apiKey}`,
+                  'Content-Type': 'application/json'
+                },
+              });
+
+              const formula = `AND({QB Time Jobcode ID},{QB Time Location ID}="")`;
+              const encodedFormula = encodeURIComponent(formula);
+              let allProjects = [];
+              let offset = null;
+              const pageSize = 100; // Airtable page size
+
+              do {
+                // Build the URL with pageSize and offset (if available)
+                let url = `/${encodeURIComponent(projectTable)}?pageSize=${pageSize}&filterByFormula=${encodedFormula}`;
+                if (offset) {
+                  url += `&offset=${encodeURIComponent(offset)}`;
+                }
+                
+                try {
+                  // Use retryOperation for robust API call.
+                  const response = await retryOperation(
+                    () => airtableClient.get(url),
+                    [3, 3, 3]
+                  );
+                  
+                  const records = response.data.records || [];
+                  allProjects = allProjects.concat(records);
+                  logger.log(`Retrieved ${records.length} records; offset: ${response.data.offset || "none"}`);
+                  
+                  offset = response.data.offset;
+                } catch (error) {
+                  logger.error("Error retrieving projects:", error.message);
+                  break;
+                }
+              } while (offset);
+
+              logger.log("Total Projects Retrieved:", allProjects.length);
+              return allProjects;
+            };
+
+
+            //
+
+            // --- Retry Operation Function and Sleep Helper ---
+
+            //
+
+
+            function sleep(ms) {
+              return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+
+            /**
+             * Retries an async operation using specified delays (in seconds).
+             *
+             * @param {Function} operationFn - The async function to execute.
+             * @param {Array<number>} retryDelaysInSeconds - Delays (in seconds) between retries.
+             * @returns {Promise<any>} - The result of the async function if successful.
+             */
+            async function retryOperation(operationFn, retryDelaysInSeconds =
+            [5, 5, 5]) {
+              let lastError;
+              for (const delayInSeconds of retryDelaysInSeconds) {
+                try {
+                  return await operationFn();
+                } catch (error) {
+                  lastError = error;
+                  console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                  await sleep(delayInSeconds * 1000);
+                }
+              }
+              throw lastError;
+            }
+      name: Retrieve Eligible Projects
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: From QuickBooks Time Jobcodes
+      inputs:
+        code:
+          type: value
+          value: >
+            const axios = require("axios");
+
+
+            module.exports = async ({ logger, configVars }) => {
+              const tsheetToken = configVars["QuickBooks Time Token"];
+              const tsheetClient = axios.create({
+                baseURL: `https://rest.tsheets.com/api/v1`,
+                headers: {
+                  Authorization: `Bearer ${tsheetToken}`,
+                  "Content-Type": "application/json",
+                },
+              });
+
+              // Define the date filter in ISO-8601 format (without milliseconds)
+              const modifiedSince = (() => {
+                const dateStr = configVars?.["Location Last Modified Date"];
+                if (!dateStr || dateStr === "none") return null;
+
+                const date = new Date(dateStr);
+                return isNaN(date) ? null : date.toISOString().split(".")[0] + "Z";
+              })();
+
+              let allLocations = [];
+              let page = 1;
+              const pageSize = 200;
+
+              while (true) {
+                try {
+                  logger.log(`Fetching locations, page ${page}`);
+
+                  const params = new URLSearchParams({
+                    page: page,
+                    per_page: pageSize,
+                    ...(modifiedSince && { modified_since: modifiedSince }),
+                    //active: "yes",
+                  }).toString();
+
+                  const response = await retryOperation(
+                    () => tsheetClient.get(`/locations?${params}`),
+                    [5, 10, 15], // Set waiting times for retries. First 5, then 10, 15... etc.
+                  );
+
+                  // The API returns an object keyed by location-ID
+                  const locationsPage = response.data?.results?.locations
+                    ? Object.values(response.data.results.locations)
+                    : [];
+
+                  logger.log(` → Retrieved ${locationsPage.length} locations this page`);
+                  allLocations = allLocations.concat(locationsPage);
+
+                  // Stop if we got fewer than a full page
+                  if (locationsPage.length < pageSize) break;
+                  page++;
+                } catch (err) {
+                  logger.error(
+                    `Error fetching locations on page ${page} after retries:`,
+                    err.message,
+                  );
+                  break;
+                }
+              }
+
+              const filterLocations = allLocations.filter((loc) => {
+                return loc.linked_objects["jobcodes"] != "";
+              });
+
+              logger.info(`✅ Total locations fetched: ${filterLocations.length}`);
+              return filterLocations;
+            };
+
+
+            //
+
+            // --- Retry Operation Function and Sleep Helper ---
+
+            //
+
+
+            function sleep(ms) {
+              return new Promise((resolve) => setTimeout(resolve, ms));
+            }
+
+
+            /**
+             * Retries an async operation using specified delays (in seconds).
+             * Handles rate limiting with exponential backoff.
+             *
+             * @param {Function} operationFn - The async function to execute.
+             * @param {Array<number>} retryDelaysInSeconds - Delays (in seconds) between retries.
+             * @returns {Promise<any>} - The result of the async function if successful.
+             */
+            async function retryOperation(operationFn, retryDelaysInSeconds =
+            [5, 10, 15]) {
+              let lastError;
+
+              // First attempt
+              try {
+                return await operationFn();
+              } catch (error) {
+                lastError = error;
+
+                // Check if it's a rate limiting error
+                const isRateLimit =
+                  error.response?.status === 429 ||
+                  error.response?.status === 503 ||
+                  error.message?.toLowerCase().includes("rate limit");
+
+                if (isRateLimit) {
+                  console.warn(`Rate limit hit: ${error.message}`);
+                } else {
+                  console.warn(`Operation failed: ${error.message}`);
+                }
+              }
+
+              // Retry attempts
+              for (let i = 0; i < retryDelaysInSeconds.length; i++) {
+                const delayInSeconds = retryDelaysInSeconds[i];
+                console.warn(`Retrying in ${delayInSeconds} seconds... (attempt ${i + 2})`);
+                await sleep(delayInSeconds * 1000);
+
+                try {
+                  return await operationFn();
+                } catch (error) {
+                  lastError = error;
+
+                  const isRateLimit =
+                    error.response?.status === 429 ||
+                    error.response?.status === 503 ||
+                    error.message?.toLowerCase().includes("too many requests");
+
+                  if (isRateLimit) {
+                    console.warn(`Rate limit hit again: ${error.message}`);
+                  } else {
+                    console.warn(`Retry ${i + 2} failed: ${error.message}`);
+                  }
+                }
+              }
+
+              throw lastError;
+            }
+      name: Retrieve Locations
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            const axios = require("axios");
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              // Retrieve projects data and existing locations from step results.
+              const projectsData = stepResults.retrieveEligibleProjects.results || [];
+              const locationsData = stepResults.retrieveLocations.results || [];
+
+              if (!projectsData.length) {
+                logger.info("All existing projects have locations. Nothing to do here.");
+                return { createdLocations: [], retrievedLocations: [] };
+              }
+
+              // Read configuration.
+              const projectTable = configVars["Projects Table"];
+              const base = configVars["Project Management Base"];
+              const { apiKey } = configVars["Airtable Connection"].fields;
+              const tsheetToken = configVars["QuickBooks Time Token"];
+
+              // Initialize clients.
+              const airtableClient = axios.create({
+                baseURL: `https://api.airtable.com/v0/${base}`,
+                headers: {
+                  Authorization: `Bearer ${apiKey}`,
+                  "Content-Type": "application/json",
+                },
+              });
+              const tsheetClient = axios.create({
+                baseURL: `https://rest.tsheets.com/api/v1`,
+                headers: {
+                  Authorization: `Bearer ${tsheetToken}`,
+                  "Content-Type": "application/json",
+                },
+              });
+
+              const existingAirtableUpdates = []; // For existing locations
+              const toCreate = []; // New locations to create
+              const retrievedLocations = []; // Existing location objects
+              const createdLocations = []; // Newly created location objects
+
+              // 1️⃣ Determine existing vs new locations
+              for (const project of projectsData) {
+                const jobCodeId = project.fields["QB Time Jobcode ID"] || "";
+                const payload = new LocationPayload(project, jobCodeId).data[0];
+                logger.log(payload);
+
+                // Skip if address is incomplete
+                if (!payload.addr1 || !payload.city || !payload.state || !payload.zip) {
+                  logger.warn(`❌ Skipping project ${project.id} — incomplete address`);
+                  existingAirtableUpdates.push({
+                    id: project.id,
+                    fields: {
+                      "⚙️ Boolean Automation System Status":
+                        "❌ Missing address fields; no location created.",
+                    },
+                  });
+                  continue;
+                }
+
+                // Check for existing location
+                const existing = findLocationByJobcode(locationsData, jobCodeId);
+                if (existing) {
+                  logger.log(
+                    `🔎 Found valid existing location ${existing.id} for project ${project.id}`,
+                  );
+                  retrievedLocations.push(existing);
+                  existingAirtableUpdates.push({
+                    id: project.id,
+                    fields: {
+                      "QB Time Location ID": String(existing.id),
+                      "⚙️ Boolean Automation System Status": "✅ Using existing location",
+                    },
+                  });
+                } else {
+                  toCreate.push({ projectId: project.id, payload });
+                }
+              }
+
+              logger.info(
+                `✅ ${retrievedLocations.length} projects reused existing locations`,
+              );
+              logger.info(`🆕 ${toCreate.length} projects need new locations`);
+
+              // 2️⃣ Update Airtable for existing locations first
+              if (existingAirtableUpdates.length > 0) {
+                logger.info("Updating Airtable for existing locations...");
+                const existingUpdateChunks = chunkArray(existingAirtableUpdates, 10);
+
+                for (const [i, batch] of existingUpdateChunks.entries()) {
+                  const payload = { records: batch };
+                  logger.log(
+                    `Existing locations Airtable update ${i + 1}/${existingUpdateChunks.length}`,
+                  );
+
+                  try {
+                    await retryOperation(
+                      () => bulkUpdate(airtableClient, projectTable, payload),
+                      [3, 3, 3],
+                    );
+                    logger.log(`✅ Updated ${batch.length} existing location records`);
+                  } catch (err) {
+                    logger.error(
+                      `❌ Failed to update existing locations batch ${i + 1}:`,
+                      err.message,
+                    );
+                  }
+                }
+              }
+
+              // Process chunk -> Update in Airtable -> Repeat until done.
+              if (toCreate.length > 0) {
+                const locationChunks = chunkArray(toCreate, 50);
+
+                for (const [i, chunk] of locationChunks.entries()) {
+                  logger.info(
+                    `\n🔄 Processing chunk ${i + 1}/${locationChunks.length} (${chunk.length} new locations)`,
+                  );
+
+                  // Step A: Create locations in QBO for this chunk
+                  const bulkPayload = { data: chunk.map((x) => x.payload) };
+                  logger.log(`Creating QBO locations chunk ${i + 1}:`, bulkPayload);
+
+                  let chunkCreatedLocations;
+                  try {
+                    chunkCreatedLocations = await retryOperation(
+                      () => createLocations(tsheetClient, "/locations", bulkPayload),
+                      [3, 3, 3],
+                    );
+                    logger.log(
+                      `✅ QBO chunk ${i + 1} created ${chunkCreatedLocations.length} locations`,
+                    );
+                  } catch (err) {
+                    logger.error(
+                      `❌ Failed to create QBO locations chunk ${i + 1}:`,
+                      err.message,
+                    );
+
+                    // Mark these projects as failed in Airtable
+                    const failedAirtableUpdates = chunk.map((item) => ({
+                      id: item.projectId,
+                      fields: {
+                        "⚙️ Boolean Automation System Status": `❌ QBO location creation failed: ${err.message}`,
+                      },
+                    }));
+
+                    // Update Airtable with failure status
+                    try {
+                      const failedChunks = chunkArray(failedAirtableUpdates, 10);
+                      for (const failedBatch of failedChunks) {
+                        await retryOperation(
+                          () =>
+                            bulkUpdate(airtableClient, projectTable, {
+                              records: failedBatch,
+                            }),
+                          [3, 3, 3],
+                        );
+                      }
+                      logger.log(
+                        `Updated Airtable with failure status for ${failedAirtableUpdates.length} projects`,
+                      );
+                    } catch (airtableErr) {
+                      logger.error(
+                        `Failed to update Airtable with error status:`,
+                        airtableErr.message,
+                      );
+                    }
+
+                    continue; // Skip to next chunk
+                  }
+
+                  // Step B: Immediately update Airtable with the new QBO location IDs
+                  const chunkAirtableUpdates = chunkCreatedLocations.map(
+                    (location, idx) => {
+                      const projectId = chunk[idx].projectId;
+                      createdLocations.push(location); // Track all successfully created locations
+
+                      return {
+                        id: projectId,
+                        fields: {
+                          "QB Time Location ID": String(location.id),
+                          "⚙️ Boolean Automation System Status":
+                            "✅ Location created successfully",
+                        },
+                      };
+                    },
+                  );
+
+                  // Update Airtable for this chunk's locations
+                  const airtableChunks = chunkArray(chunkAirtableUpdates, 10);
+
+                  for (const [j, airtableBatch] of airtableChunks.entries()) {
+                    const payload = { records: airtableBatch };
+                    logger.log(
+                      `Updating Airtable for chunk ${i + 1}, batch ${j + 1}/${airtableChunks.length}`,
+                    );
+
+                    try {
+                      await retryOperation(
+                        () => bulkUpdate(airtableClient, projectTable, payload),
+                        [3, 3, 3],
+                      );
+                      logger.log(
+                        `✅ Airtable updated for chunk ${i + 1}, batch ${j + 1} (${airtableBatch.length} records)`,
+                      );
+                    } catch (err) {
+                      logger.error(
+                        `❌ Airtable update failed for chunk ${i + 1}, batch ${j + 1}:`,
+                        err.message,
+                      );
+
+                      // Critical: QBO locations exist but Airtable update failed
+                      const orphanedLocations = airtableBatch.map((record) => ({
+                        projectId: record.id,
+                        locationId: record.fields["QB Time Location ID"],
+                      }));
+
+                      logger.error(
+                        `⚠️ MANUAL REVIEW REQUIRED - Orphaned QBO locations:`,
+                        orphanedLocations,
+                      );
+                    }
+                  }
+
+                  logger.info(
+                    `✅ Completed processing chunk ${i + 1}/${locationChunks.length}`,
+                  );
+                }
+              }
+
+              // 4️⃣ Final Summary
+              logger.info(`\n🎉 PROCESSING COMPLETE:`);
+              logger.info(`   📍 Existing locations reused: ${retrievedLocations.length}`);
+              logger.info(`   🆕 New locations created: ${createdLocations.length}`);
+              logger.info(
+                `   📊 Total locations processed: ${retrievedLocations.length + createdLocations.length}`,
+              );
+
+              return { createdLocations, retrievedLocations };
+            };
+
+
+            // ————— Helper Functions —————
+
+
+            function chunkArray(array, size) {
+              const out = [];
+              for (let i = 0; i < array.length; i += size) {
+                out.push(array.slice(i, i + size));
+              }
+              return out;
+            }
+
+
+            async function createLocations(client, endpoint, payload) {
+              const res = await client.post(endpoint, payload);
+              return res.data?.results?.locations
+                ? Object.values(res.data.results.locations)
+                : [];
+            }
+
+
+            async function bulkUpdate(client, tableName, data) {
+              const res = await client.patch(`/${encodeURIComponent(tableName)}`, data);
+              return res.data;
+            }
+
+
+            function sleep(ms) {
+              return new Promise((r) => setTimeout(r, ms));
+            }
+
+
+            async function retryOperation(fn, delays = [5, 5, 5]) {
+              let err;
+              for (const d of delays) {
+                try {
+                  return await fn();
+                } catch (e) {
+                  err = e;
+                  console.warn(`Retry in ${d}s:`, e.message);
+                  await sleep(d * 1000);
+                }
+              }
+              throw err;
+            }
+
+
+            /**
+             * Find the QBT location object linked to a given jobcode.
+             * @param {Array<Object>} locations
+             * @param {string|number} jobCodeId
+             * @returns {Object|null}
+             */
+            function findLocationByJobcode(locations, jobCodeId) {
+              const target = String(jobCodeId);
+              const match = locations.find((loc) => {
+                const codes = loc.linked_objects?.jobcodes;
+                return Array.isArray(codes) && codes.map(String).includes(target);
+              });
+              return match || null;
+            }
+
+
+            // ————— Payload Class —————
+
+
+            class LocationPayload {
+              constructor(project, jobCodeId) {
+                this.data = [
+                  {
+                    addr1: normalize(project.fields["Job Site Street Address"]),
+                    city: normalize(project.fields["Job Site City"]),
+                    state: normalize(project.fields["Job Site State"]),
+                    zip: normalize(project.fields["Job Site Postal Code"]),
+                    label: normalize(project.fields["Full Job Site Address"]) + " USA",
+                    linked_objects: { jobcodes: jobCodeId ? [jobCodeId] : [] },
+                  },
+                ];
+              }
+            }
+
+
+            function normalize(field) {
+              if (!field) return "";
+              if (Array.isArray(field)) {
+                return field.length ? field[0] : "";
+              }
+              return field; // it's already a string (or scalar)
+            }
+      name: Upsert Location
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: "To Quickbooks Time "
+      inputs:
+        code:
+          type: value
+          value: >-
+            const axios = require('axios');
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              // 1️⃣ Grab the list of existing locations from the previous step
+              //    and the Airtable projects so we can pull fresh addresses.
+              const retrievedLocations = stepResults.upsertLocation.results?.retrievedLocations || [];
+              const projectsData = stepResults.retrieveEligibleProjects.results || [];
+
+              if (!retrievedLocations.length) {
+                logger.info("No existing locations to update – nothing to do.");
+                return [];
+              }
+
+              function normalize(field) {
+                if (!field) return "";
+                if (Array.isArray(field)) {
+                  return field.length ? field[0] : "";
+                }
+                return field;  // it's already a string (or scalar)
+              }
+
+              // 2️⃣ Build our “to‐update” list by matching each loc → project
+              const locationUpdates = retrievedLocations
+                .map(loc => {
+                  const linked = (loc.linked_objects?.jobcodes || []).map(String);
+                  const proj  = projectsData.find(p => linked.includes(String(p.fields["QB Time Jobcode ID"])));
+                  if (!proj) {
+                    logger.warn(`No project for loc ${loc.id} (jobcodes: ${linked}), skipping.`);
+                    return null;
+                  }
+                  const f = proj.fields;
+                  return { 
+                    id: loc.id,
+                    addr1: normalize(f["Job Site Street Address"]),
+                    city:  normalize(f["Job Site City"]),
+                    state: normalize(f["Job Site State"]),
+                    zip:   normalize(f["Job Site Postal Code"]),
+                    label: normalize(f["Full Job Site Address"]) + " USA"
+                  };
+                })
+                .filter(Boolean);
+
+              if (!locationUpdates.length) {
+                logger.info("No location/address pairs to update after matching.");
+                return [];
+              }
+
+              // 3️⃣ Initialize your QuickBooks Time client
+              const tsheetToken = configVars["QuickBooks Time Token"];
+              const tsheetClient = axios.create({
+                baseURL: `https://rest.tsheets.com/api/v1`,
+                headers: {
+                  Authorization: `Bearer ${tsheetToken}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+
+              // 4️⃣ Chunk into batches of 50 (QBT limit)
+              const chunks = chunkArray(locationUpdates, 50);
+              const updatedLocations = [];
+
+              for (const [i, batch] of chunks.entries()) {
+                const payload = {
+                  data: batch.map(loc => ({
+                    id:    loc.id,
+                    addr1: loc.addr1,
+                    city:  loc.city,
+                    state: loc.state,
+                    zip:   loc.zip,
+                    label: loc.label
+                  }))
+                };
+                logger.log(`Updating locations chunk ${i + 1}/${chunks.length}`, payload);
+
+                let results;
+                try {
+                  results = await retryOperation(
+                    () => updateLocations(tsheetClient, '/locations', payload),
+                    [3, 3, 3]
+                  );
+                  logger.log(`→ Chunk ${i + 1} updated ${results.length} locations`);
+                } catch (err) {
+                  logger.error(`Failed to update chunk ${i + 1}:`, err.message);
+                  continue;
+                }
+
+                // build a lookup from ID → original address payload
+                const originalMap = new Map(
+                  batch.map(loc => [ String(loc.id), loc ])
+                );
+
+                // now log each change
+                for (const updatedLoc of results) {
+                  const orig = originalMap.get(String(updatedLoc.id));
+                  if (!orig) continue;
+                  const oldFull = `${orig.addr1}, ${orig.city}, ${orig.state} ${orig.zip}`;
+                  const newFull = `${updatedLoc.addr1}, ${updatedLoc.city}, ${updatedLoc.state} ${updatedLoc.zip}`;
+                  logger.log(`  ${oldFull} → ${newFull}`);
+                }
+
+                updatedLocations.push(...results);
+              }
+              logger.info(`✅ Total locations updated: ${updatedLocations.length}`);
+              logger.info(`⚠️ Skipped ${retrievedLocations.length - locationUpdates.length} locations with no matching project.`);
+              return updatedLocations;
+            };
+
+
+            // ————— Helper: bulk‐update QBT locations —————
+
+            async function updateLocations(client, endpoint, payload) {
+              const res = await client.put(endpoint, payload);
+              if (!res.data?.results?.locations) return [];
+              return Object.values(res.data.results.locations);
+            }
+
+
+            // ————— Helper: chunk an array —————
+
+            function chunkArray(array, size) {
+              const out = [];
+              for (let i = 0; i < array.length; i += size) {
+                out.push(array.slice(i, i + size));
+              }
+              return out;
+            }
+
+
+            // ————— Helper: retry with simple backoff —————
+
+            function sleep(ms) {
+              return new Promise(r => setTimeout(r, ms));
+            }
+
+            async function retryOperation(fn, delays = [5,5,5]) {
+              let lastErr;
+              for (const d of delays) {
+                try {
+                  return await fn();
+                } catch (err) {
+                  lastErr = err;
+                  console.warn(`Retrying in ${d}s: ${err.message}`);
+                  await sleep(d * 1000);
+                }
+              }
+              // final attempt
+              return await fn();
+            }
+      name: Update Location Address

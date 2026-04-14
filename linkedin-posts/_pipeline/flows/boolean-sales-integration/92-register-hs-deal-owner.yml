@@ -1,0 +1,267 @@
+sourceFile: boolean-sales-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 92 Register HS Deal Owner
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: schedule
+        component:
+          isPublic: true
+          key: schedule-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger Daily
+      schedule:
+        meta:
+          scheduleType: day
+          timeZone: Asia/Manila
+        type: value
+        value: 00 12 */1 * *
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 2
+        usesExponentialBackoff: false
+      inputs:
+        connection:
+          type: configVar
+          value: HubSpot Private App Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value: []
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: /crm/v3/owners/
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Owner
+    - action:
+        key: listRecords
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 5
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 2
+        usesExponentialBackoff: false
+      inputs:
+        airtableConnection:
+          type: configVar
+          value: Airtable Connection
+        baseId:
+          type: configVar
+          value: Project Management Base
+        fields:
+          type: complex
+          value: []
+        filterByFormula:
+          type: value
+          value: ""
+        tableName:
+          type: configVar
+          value: People Table
+        view:
+          type: value
+          value: ""
+      name: List People
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >-
+            const axios = require('axios');
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              try {
+                // 1. Get HubSpot owners and existing Airtable people
+                const owners = stepResults.getOwner.results?.results || [];
+                const people = stepResults.listPeople?.results || [];
+
+                // 2. Airtable config
+                const AIRTABLE_BASE_ID = configVars["Project Management Base"];
+                const peopleTable      = configVars["People Table"];
+                const { apiKey }       = configVars["Airtable Connection"].fields;
+
+                // 3. Init Airtable client
+                const client = axios.create({
+                  baseURL: `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}`,
+                  headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    'Content-Type':  'application/json'
+                  }
+                });
+
+                // 4. Build your upsert list, with separate ID/email lookups
+                const upsertRecords = owners.map(owner => {
+                  const hsId  = String(owner.id);
+                  const email = owner.email || "";
+
+                  // 4a. Try matching on HS User ID
+                  const byId = people.find(r =>
+                    String(r.fields["HS User ID"] || "") === hsId
+                  );
+
+                  // 4b. If no ID match, try matching on Email
+                  const byEmail = !byId && people.find(r =>
+                    String(r.fields["Work Email"] || "") === email
+                  );
+
+                  const existing = byId || byEmail;
+
+                  // Debug logs so you can see exactly which branch fired
+                  logger.info(`Owner ${hsId} / ${email}: ` +
+                    `foundById=${!!byId}, foundByEmail=${!!byEmail}`);
+
+                  // 4c. Build the record payload
+                  const rec = {
+                    fields: {
+                      "First Name": owner.firstName,
+                      "Last Name":  owner.lastName,
+                      "Work Email": email,
+                      "HS User ID": hsId
+                    }
+                  };
+                  if (existing?.id) {
+                    rec.id = existing.id;    // PATCH path
+                  }
+                  return rec;                // POST path when rec.id is undefined
+                });
+
+                // 5. Split into update vs create
+                const toUpdate = upsertRecords.filter(r => r.id);
+                const toCreate = upsertRecords.filter(r => !r.id);
+                const responses = [];
+
+                // 6a. PATCH existing in batches of 10
+                for (const batch of chunkArray(toUpdate, 10)) {
+                  try {
+                    const resp = await retryOperation(
+                      () => client.patch(`/${encodeURIComponent(peopleTable)}`, { records: batch }),
+                      [5, 5, 5]
+                    );
+                    responses.push({ action: 'update', count: resp.data.records.length });
+                    logger.info(`Updated ${resp.data.records.length} records`);
+                  } catch (err) {
+                    logger.error('Error updating batch:', err.message);
+                    responses.push({ action: 'update', error: err.message });
+                  }
+                }
+
+                // 6b. POST new in batches of 10
+                for (const batch of chunkArray(toCreate, 10)) {
+                  try {
+                    const resp = await retryOperation(
+                      () => client.post(`/${encodeURIComponent(peopleTable)}`, { records: batch }),
+                      [5, 5, 5]
+                    );
+                    responses.push({ action: 'create', count: resp.data.records.length });
+                    logger.info(`Created ${resp.data.records.length} records`);
+                  } catch (err) {
+                    logger.error('Error creating batch:', err.message);
+                    responses.push({ action: 'create', error: err.message });
+                  }
+                }
+
+                logger.log('People sync complete', responses);
+                return responses;
+
+              } catch (err) {
+                logger.error('Unhandled error in people-sync module:', err);
+                return { error: err.message };
+              }
+            };
+
+
+            // --- Helpers ---
+
+
+            function sleep(ms) {
+              return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+
+            async function retryOperation(operationFn, retryDelaysInSeconds =
+            [5,5,5]) {
+              let lastError;
+              for (const delay of retryDelaysInSeconds) {
+                try {
+                  return await operationFn();
+                } catch (err) {
+                  lastError = err;
+                  logger && logger.warn && logger.warn(`Retry in ${delay}s due to: ${err.message}`);
+                  await sleep(delay * 1000);
+                }
+              }
+              throw lastError;
+            }
+
+
+            function chunkArray(array, size) {
+              const chunks = [];
+              for (let i = 0; i < array.length; i += size) {
+                chunks.push(array.slice(i, i + size));
+              }
+              return chunks;
+            }
+      name: Upsert Deal Owners

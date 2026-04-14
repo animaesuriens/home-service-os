@@ -1,0 +1,147 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: Sync Payment
+  description: ""
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Update
+          steps:
+            - action:
+                key: findResource
+                component:
+                  isPublic: true
+                  key: quickbooks
+                  version: LATEST
+              description: ""
+              inputs:
+                debug:
+                  type: value
+                  value: "false"
+                quickbooksConnection:
+                  type: configVar
+                  value: QuickBooks Connection
+                resourceId:
+                  type: reference
+                  value: trigger.results.body.data.id
+                resourceType:
+                  type: value
+                  value: payment
+              name: Get Payment
+        - name: Delete
+          steps:
+            - action:
+                key: listRecords
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: that match Payment ID
+              inputs:
+                airtableConnection:
+                  type: configVar
+                  value: Airtable Connection
+                baseId:
+                  type: configVar
+                  value: Project Management Base
+                fields:
+                  type: complex
+                  value: []
+                filterByFormula:
+                  type: template
+                  value: "{Payment ID/Check No} = '{{$trigger.results.body.data.id}}'"
+                tableName:
+                  type: configVar
+                  value: Customer Transactions Table
+                view:
+                  type: value
+                  value: ""
+              name: List Customer Transactions
+            - action:
+                key: loopOverItems
+                component:
+                  isPublic: true
+                  key: loop
+                  version: LATEST
+              description: ""
+              inputs:
+                items:
+                  type: reference
+                  value: listCustomerTransactions.results
+              name: Loop Over Transactions
+              steps:
+                - action:
+                    key: deleteRecord
+                    component:
+                      isPublic: true
+                      key: airtable
+                      version: LATEST
+                  description: ""
+                  errorConfig:
+                    delaySeconds: 10
+                    errorHandlerType: retry
+                    ignoreFinalError: false
+                    maxAttempts: 3
+                    usesExponentialBackoff: false
+                  inputs:
+                    airtableConnection:
+                      type: configVar
+                      value: Airtable Connection
+                    baseId:
+                      type: configVar
+                      value: Project Management Base
+                    recordId:
+                      type: reference
+                      value: loopOverTransactions.currentItem.id
+                    tableName:
+                      type: configVar
+                      value: Customer Transactions Table
+                  name: Delete Transaction
+        - name: Else
+          steps: []
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Update
+              type: complex
+              value:
+                - and
+                - - equal
+                  - name: ""
+                    type: reference
+                    value: trigger.results.body.data.operation
+                  - name: ""
+                    type: value
+                    value: Update
+            - name: Delete
+              type: complex
+              value:
+                - and
+                - - equal
+                  - name: ""
+                    type: reference
+                    value: trigger.results.body.data.operation
+                  - name: ""
+                    type: value
+                    value: Delete
+      name: Check Operation

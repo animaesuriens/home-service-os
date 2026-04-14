@@ -1,0 +1,192 @@
+sourceFile: job-management-integration-export.yml
+category: Boolean PaintOS
+flow:
+  name: 09 Subflow Company Sync
+  description: Subflow Sync Companies between HubSpot and Airtable
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Cron
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Has Company ID
+          steps:
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      const hubspotData = Array.isArray(stepResults?.cron?.results?.body?.data)
+                        ? stepResults?.cron?.results?.body?.data?.[0]
+                        : stepResults?.cron?.results?.body?.data;
+                        
+                      return { data: hubspotData?.properties?.["name"] || "" };
+                    };
+              name: HS Client Name
+            - action:
+                key: listRecords
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: ""
+              inputs:
+                airtableConnection:
+                  type: configVar
+                  value: Airtable Connection
+                baseId:
+                  type: configVar
+                  value: Project Management Base
+                fields:
+                  type: complex
+                  value: []
+                filterByFormula:
+                  type: template
+                  value: '{Client Name}="{{$hsClientName.results}}"'
+                tableName:
+                  type: configVar
+                  value: Company Table
+                view:
+                  type: value
+                  value: ""
+              name: Get AT Company
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      // Get HubSpot data from the previous step results
+                      const hubspotData = Array.isArray(stepResults?.cron?.results?.body?.data)
+                        ? stepResults?.cron?.results?.body?.data?.[0]
+                        : stepResults?.cron?.results?.body?.data;
+
+                      // Log the HubSpot Account properties for debugging
+                      logger.info(`HubSpot Account Properties: ${JSON.stringify(hubspotData)}`);
+
+                      let payload = {
+                        performUpsert: {
+                          fieldsToMergeOn: ["Client Name"],
+                        },
+                        records: [
+                          {
+                            fields: {
+                              "Client Name": hubspotData?.properties?.["name"] || "",
+                              Email: hubspotData?.properties?.["owneremail"] || "",
+                              "Phone Number": hubspotData?.properties?.["phone"] || "",
+                              Address: hubspotData?.properties?.["address"] || "",
+                              City: hubspotData?.properties?.["city"] || "",
+                              State: hubspotData?.properties?.["state"] || "",
+                              "Postal Code": hubspotData?.properties?.["zip"] || "",
+                              "Date Added": new Date().toISOString().split("T")[0]
+                            },
+                          },
+                        ],
+                      };
+
+                      // Return the mapped fields in the required format
+                      return payload;
+                    };
+              name: Upsert Company Payload
+            - action:
+                key: rawRequest
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: ""
+              inputs:
+                connection:
+                  type: configVar
+                  value: Airtable Connection
+                data:
+                  type: reference
+                  value: upsertCompanyPayload.results
+                debugRequest:
+                  type: value
+                  value: "false"
+                fileData:
+                  type: complex
+                  value: []
+                fileDataFileNames:
+                  type: complex
+                  value: []
+                formData:
+                  type: complex
+                  value: []
+                headers:
+                  type: complex
+                  value: []
+                maxRetries:
+                  type: value
+                  value: "0"
+                method:
+                  type: value
+                  value: PATCH
+                queryParams:
+                  type: complex
+                  value: []
+                responseType:
+                  type: value
+                  value: json
+                retryAllErrors:
+                  type: value
+                  value: "false"
+                retryDelayMS:
+                  type: value
+                  value: "0"
+                timeout:
+                  type: value
+                  value: ""
+                url:
+                  type: template
+                  value: /v0/{{#Project Management Base}}/{{#Company Table}}
+                useExponentialBackoff:
+                  type: value
+                  value: "false"
+              name: Upsert Company
+        - name: Else
+          steps: []
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Has Company ID
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: cron.results.body.data.id
+      name: Company ID Found

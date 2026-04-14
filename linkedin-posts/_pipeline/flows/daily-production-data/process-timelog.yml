@@ -1,0 +1,255 @@
+sourceFile: daily-production-data-export.yml
+category: Boolean PaintOS
+flow:
+  name: Process Timelog
+  description: ""
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Yes
+          steps:
+            - action:
+                key: listRecords
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: 2
+                errorHandlerType: retry
+                ignoreFinalError: true
+                maxAttempts: 5
+                usesExponentialBackoff: true
+              inputs:
+                airtableConnection:
+                  type: configVar
+                  value: Airtable Connection
+                baseId:
+                  type: configVar
+                  value: Project Management Base
+                fields:
+                  type: complex
+                  value: []
+                filterByFormula:
+                  type: template
+                  value: '{Date:Project Number}="{{$trigger.results.body.data.uniqeId}}"'
+                tableName:
+                  type: configVar
+                  value: Daily Production Data Table
+                view:
+                  type: value
+                  value: ""
+              name: Get DPD
+            - action:
+                key: branchOnExpression
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              branches:
+                - name: Yes
+                  steps:
+                    - action:
+                        key: updateRecord
+                        component:
+                          isPublic: true
+                          key: airtable
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 2
+                        errorHandlerType: retry
+                        ignoreFinalError: true
+                        maxAttempts: 5
+                        usesExponentialBackoff: false
+                      inputs:
+                        airtableConnection:
+                          type: configVar
+                          value: Airtable Connection
+                        baseId:
+                          type: configVar
+                          value: Project Management Base
+                        dynamicFields:
+                          type: value
+                          value: ""
+                        record:
+                          type: reference
+                          value: getDpd.results.0.id
+                        recordFields:
+                          type: complex
+                          value:
+                            - name:
+                                type: value
+                                value: Actual Daily Hours Worked
+                              type: reference
+                              value: trigger.results.body.data.totalHoursWorked
+                            - name:
+                                type: value
+                                value: Actual Daily Adjusted Hours Worked
+                              type: reference
+                              value: trigger.results.body.data.totalAdjustedHours
+                            - name:
+                                type: value
+                                value: Actual Daily Hourly Labor Expense
+                              type: reference
+                              value: trigger.results.body.data.totalPayrollCost
+                            - name:
+                                type: value
+                                value: Contributing Time Log Records - Audit
+                              type: reference
+                              value: trigger.results.body.data.auditTrail
+                        tableName:
+                          type: configVar
+                          value: Daily Production Data Table
+                      name: Update DPD
+                    - action:
+                        key: updateRecord
+                        component:
+                          isPublic: true
+                          key: airtable
+                          version: LATEST
+                      description: ⚙️ Daily Production Data Records Last Updated
+                      errorConfig:
+                        delaySeconds: 2
+                        errorHandlerType: retry
+                        ignoreFinalError: true
+                        maxAttempts: 5
+                        usesExponentialBackoff: true
+                      inputs:
+                        airtableConnection:
+                          type: configVar
+                          value: Airtable Connection
+                        baseId:
+                          type: configVar
+                          value: Project Management Base
+                        dynamicFields:
+                          type: value
+                          value: ""
+                        record:
+                          type: reference
+                          value: trigger.results.body.data.timelogId
+                        recordFields:
+                          type: complex
+                          value:
+                            - name:
+                                type: configVar
+                                value: ⚙️ Daily Production Data Records Last Updated
+                              type: reference
+                              value: trigger.results.startedAt
+                            - name:
+                                type: value
+                                value: DPD Automation Status
+                              type: value
+                              value: Processed Correctly
+                        tableName:
+                          type: configVar
+                          value: Time Logs Table
+                      name: Update Time Log
+                - name: Else
+                  steps:
+                    - action:
+                        key: updateRecord
+                        component:
+                          isPublic: true
+                          key: airtable
+                          version: LATEST
+                      description: ⚙️ Daily Production Data Records Last Updated
+                      errorConfig:
+                        delaySeconds: 2
+                        errorHandlerType: retry
+                        ignoreFinalError: true
+                        maxAttempts: 5
+                        usesExponentialBackoff: true
+                      inputs:
+                        airtableConnection:
+                          type: configVar
+                          value: Airtable Connection
+                        baseId:
+                          type: configVar
+                          value: Project Management Base
+                        dynamicFields:
+                          type: value
+                          value: ""
+                        record:
+                          type: reference
+                          value: trigger.results.body.data.timelogId
+                        recordFields:
+                          type: complex
+                          value:
+                            - name:
+                                type: configVar
+                                value: ⚙️ Daily Production Data Records Last Updated
+                              type: reference
+                              value: trigger.results.startedAt
+                            - name:
+                                type: value
+                                value: DPD Automation Status
+                              type: value
+                              value: No DPD. Timelog Skipped.
+                        tableName:
+                          type: configVar
+                          value: Time Logs Table
+                      name: Update Time Log 2
+              description: ""
+              inputs:
+                conditions:
+                  type: complex
+                  value:
+                    - name: Yes
+                      type: complex
+                      value:
+                        - and
+                        - - exists
+                          - name: ""
+                            type: reference
+                            value: getDpd.results.0.id
+              name: DPD Exists?
+        - name: Else
+          steps:
+            - action:
+                key: writeLog
+                component:
+                  isPublic: true
+                  key: log
+                  version: LATEST
+              description: ""
+              inputs:
+                level:
+                  type: value
+                  value: warn
+                message:
+                  type: value
+                  value: Project ID is missing for the specified Date:Project Number.
+              name: Missing Project ID
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Yes
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: trigger.results.body.data.project
+      name: Project exists?

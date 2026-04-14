@@ -1,0 +1,546 @@
+sourceFile: boolean-marketing-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 03.3 Update/Create HubSpot Contact
+  description: Pass on HubSpot contact payload to process creation or update, then
+    return the final HS contact details.
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              let payload = stepResults?.trigger?.results?.body?.data;
+
+              function formatPhoneNumber(rawPhone) {
+                if (!rawPhone) return rawPhone;
+
+                // ✅ Skip if already formatted like +1 (XXX) XXX-XXXX
+                const alreadyFormatted = /^\+1\s?\(\d{3}\)\s?\d{3}-\d{4}$/.test(rawPhone);
+                if (alreadyFormatted) return rawPhone;
+
+                // Extract digits only
+                let digits = rawPhone.replace(/\D/g, "");
+
+                // Ensure it starts with country code 1
+                if (!digits.startsWith("1")) {
+                  digits = "1" + digits;
+                }
+
+                // Apply +1 (XXX) XXX-XXXX format
+                const formatted = `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7, 11)}`;
+                return formatted;
+              }
+
+              // ✅ Format phone fields if they exist
+              if (payload?.properties?.phone) {
+                payload.properties.phone = formatPhoneNumber(payload.properties.phone);
+              }
+
+              if (payload?.properties?.mobilephone) {
+                payload.properties.mobilephone = formatPhoneNumber(payload.properties.mobilephone);
+              }
+
+              return payload;
+            };
+      name: Override payload
+    - action:
+        key: getContact
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: Search Contact by id
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: true
+        maxAttempts: 1
+        usesExponentialBackoff: false
+      inputs:
+        additionalProperties:
+          type: complex
+          value: []
+        archived:
+          type: value
+          value: "false"
+        associationsList:
+          type: complex
+          value: []
+        contactEmail:
+          type: value
+          value: ""
+        contactId:
+          type: reference
+          value: trigger.results.body.data.id
+        hubspotConnection:
+          type: configVar
+          value: HubSpot Private App Connection
+        timeout:
+          type: value
+          value: ""
+      name: Search Contact by id
+    - action:
+        key: getContact
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: Search Contact by email
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: true
+        maxAttempts: 1
+        usesExponentialBackoff: false
+      inputs:
+        additionalProperties:
+          type: complex
+          value: []
+        archived:
+          type: value
+          value: "false"
+        associationsList:
+          type: complex
+          value: []
+        contactEmail:
+          type: reference
+          value: trigger.results.body.data.properties.email
+        contactId:
+          type: value
+          value: ""
+        hubspotConnection:
+          type: configVar
+          value: HubSpot Private App Connection
+        timeout:
+          type: value
+          value: ""
+      name: Search Contact by email
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              let dealById = stepResults?.searchContactById?.results
+              let dealByEmail = stepResults?.searchContactByEmail?.results?.results?.[0] || {}
+
+              if(dealById?.id){
+                return dealById
+              }
+              return dealByEmail
+            };
+      name: Select Executed Step Result
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const overridePayload = stepResults?.overridePayload?.results || {};
+              const contactData = stepResults?.selectExecutedStepResult?.results || {};
+
+              const formatPhone = (phone) => {
+                if (!phone) return phone;
+
+                // Skip if already formatted correctly
+                if (phone.startsWith("+1 (") || phone.includes("(")) return phone;
+
+                // Extract only digits
+                const digits = phone.replace(/\D/g, "");
+
+                // If it starts with 1 and has at least 11 digits
+                if (digits.startsWith("1") && digits.length >= 11) {
+                  const area = digits.slice(1, 4);
+                  const prefix = digits.slice(4, 7);
+                  const line = digits.slice(7, 11);
+                  return `+1 (${area}) ${prefix}-${line}`;
+                }
+
+                // If exactly 10 digits
+                if (digits.length === 10) {
+                  const area = digits.slice(0, 3);
+                  const prefix = digits.slice(3, 6);
+                  const line = digits.slice(6, 10);
+                  return `+1 (${area}) ${prefix}-${line}`;
+                }
+
+                return phone;
+              };
+
+              // Merge objects with overridePayload taking priority
+              const merged = {
+                ...contactData,
+                ...overridePayload,
+                properties: {
+                  ...contactData?.properties,
+                  ...overridePayload?.properties,
+                },
+              };
+
+              // Set of emojis to check against
+              const iconOptions = new Set([
+                "🧨","🔥","⚡️","💥","🚨","❌","⭕️","🛑","⚫️","🔴","🔵","🟢","🟡","🟣","🟤",
+                "😀","😅","😂","🤣","😊","😍","😎","🥳","😭","😡","😴","🤔","😇",
+                "💪","👍","👎","👏","🙏","🤝","👊","✌️","👌","🤙",
+                "🌞","🌙","⭐️","🌈","☁️","🌧️","⛈️","🌪️","🌊","🌋",
+                "💎","💰","💼","📱","💻","📸","🎯","🎁","🚀","🏆",
+              ]);
+
+              // Function to check if string contains any emoji from iconOptions
+              const hasListedEmoji = (str) => {
+                if (typeof str !== "string") return false;
+                for (const icon of iconOptions) {
+                  if (str.includes(icon)) return true;
+                }
+                return false;
+              };
+
+              // Remove firstName / lastName from properties if they contain emojis
+              logger.info('contactData:',contactData)
+              if (hasListedEmoji(contactData?.properties?.firstname)) {
+                delete merged?.properties?.firstname;
+              }
+              if (hasListedEmoji(contactData?.properties?.lastname)) {
+                delete merged?.properties?.lastname;
+              }
+
+              // Format any phone-like field inside merged.properties
+              if (merged?.properties) {
+                for (const key in merged.properties) {
+                  if (key.toLowerCase().includes("phone")) {
+                    merged.properties[key] = formatPhone(merged.properties[key]);
+                  }
+                }
+              }
+
+              // Remove read-only HubSpot fields
+              const readOnlyFields = [
+                "hs_object_id",
+                "createdate",
+                "hs_lastmodifieddate",
+                "hs_all_contact_vids",
+                "hs_additional_emails",
+                "hs_is_contact",
+                "hs_object_source",
+              ];
+
+              for (const field of readOnlyFields) {
+                delete merged.properties?.[field];
+              }
+
+              return { data: merged };
+            };
+      name: Merged Payload
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Contact Don't Exist
+          steps:
+            - action:
+                key: rawRequest
+                component:
+                  isPublic: true
+                  key: hubspot
+                  version: LATEST
+              description: Ignores if contact already created
+              errorConfig:
+                delaySeconds: 10
+                errorHandlerType: retry
+                ignoreFinalError: true
+                maxAttempts: 1
+                usesExponentialBackoff: false
+              inputs:
+                connection:
+                  type: configVar
+                  value: HubSpot Private App Connection
+                data:
+                  type: reference
+                  value: mergedPayload.results
+                fileData:
+                  type: complex
+                  value: []
+                fileDataFileNames:
+                  type: complex
+                  value: []
+                formData:
+                  type: complex
+                  value: []
+                headers:
+                  type: complex
+                  value:
+                    - name:
+                        type: value
+                        value: Content-Type
+                      type: value
+                      value: application/json
+                maxRetries:
+                  type: value
+                  value: "0"
+                method:
+                  type: value
+                  value: POST
+                queryParams:
+                  type: complex
+                  value: []
+                responseType:
+                  type: value
+                  value: json
+                retryAllErrors:
+                  type: value
+                  value: "false"
+                retryDelayMS:
+                  type: value
+                  value: "0"
+                timeout:
+                  type: value
+                  value: ""
+                url:
+                  type: value
+                  value: /crm/v3/objects/contacts
+                useExponentialBackoff:
+                  type: value
+                  value: "false"
+              name: Create Contact
+            - action:
+                key: branchOnExpression
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              branches:
+                - name: If Contact Exist
+                  steps:
+                    - action:
+                        key: match
+                        component:
+                          isPublic: true
+                          key: text-manipulation
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        regex:
+                          type: value
+                          value: "(?<=Existing ID: )\\d+"
+                        regexFlags:
+                          type: value
+                          value: g
+                        text:
+                          type: reference
+                          value: createContact.results.error.data.message
+                      name: Extract Contact ID
+                    - action:
+                        key: rawRequest
+                        component:
+                          isPublic: true
+                          key: hubspot
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 10
+                        errorHandlerType: retry
+                        ignoreFinalError: true
+                        maxAttempts: 1
+                        usesExponentialBackoff: false
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: HubSpot Private App Connection
+                        data:
+                          type: reference
+                          value: mergedPayload.results
+                        fileData:
+                          type: complex
+                          value: []
+                        fileDataFileNames:
+                          type: complex
+                          value: []
+                        formData:
+                          type: complex
+                          value: []
+                        headers:
+                          type: complex
+                          value:
+                            - name:
+                                type: value
+                                value: Content-Type
+                              type: value
+                              value: application/json
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        method:
+                          type: value
+                          value: PATCH
+                        queryParams:
+                          type: complex
+                          value: []
+                        responseType:
+                          type: value
+                          value: json
+                        retryAllErrors:
+                          type: value
+                          value: "false"
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: template
+                          value: /crm/v3/objects/contacts/{{$extractContactId.results.0}}
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: Update Contact 2
+                - name: Else
+                  steps: []
+              description: ""
+              inputs:
+                conditions:
+                  type: complex
+                  value:
+                    - name: If Contact Exist
+                      type: complex
+                      value:
+                        - and
+                        - - exists
+                          - name: ""
+                            type: reference
+                            value: createContact.results.error
+              name: Contact Exist
+        - name: Else
+          steps:
+            - action:
+                key: rawRequest
+                component:
+                  isPublic: true
+                  key: hubspot
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: 10
+                errorHandlerType: retry
+                ignoreFinalError: true
+                maxAttempts: 1
+                usesExponentialBackoff: false
+              inputs:
+                connection:
+                  type: configVar
+                  value: HubSpot Private App Connection
+                data:
+                  type: reference
+                  value: mergedPayload.results
+                fileData:
+                  type: complex
+                  value: []
+                fileDataFileNames:
+                  type: complex
+                  value: []
+                formData:
+                  type: complex
+                  value: []
+                headers:
+                  type: complex
+                  value:
+                    - name:
+                        type: value
+                        value: Content-Type
+                      type: value
+                      value: application/json
+                maxRetries:
+                  type: value
+                  value: "0"
+                method:
+                  type: value
+                  value: PATCH
+                queryParams:
+                  type: complex
+                  value: []
+                responseType:
+                  type: value
+                  value: json
+                retryAllErrors:
+                  type: value
+                  value: "false"
+                retryDelayMS:
+                  type: value
+                  value: "0"
+                timeout:
+                  type: value
+                  value: ""
+                url:
+                  type: template
+                  value: /crm/v3/objects/contacts/{{$selectExecutedStepResult.results.id}}
+                useExponentialBackoff:
+                  type: value
+                  value: "false"
+              name: Update Contact
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Contact Don't Exist
+              type: complex
+              value:
+                - and
+                - - doesNotExist
+                  - name: ""
+                    type: reference
+                    value: selectExecutedStepResult.results.id
+      name: Contact Branch
+    - action:
+        key: selectExecutedStepResult
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      description: ""
+      inputs:
+        stepResults:
+          type: complex
+          value:
+            - type: reference
+              value: updateContact2.results
+            - type: reference
+              value: createContact.results
+            - type: reference
+              value: updateContact.results
+      name: HS Contact Final Output

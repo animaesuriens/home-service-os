@@ -1,0 +1,186 @@
+sourceFile: job-management-integration-export.yml
+category: Boolean PaintOS
+flow:
+  name: 06 Contract Signed
+  description: Watch Signed eSignature Contract for all Addendum Type
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: webhook
+        component:
+          isPublic: true
+          key: webhook-triggers
+          version: LATEST
+      description: ""
+      inputs:
+        body:
+          type: value
+          value: ""
+        contentType:
+          type: value
+          value: application/json
+        headers:
+          type: complex
+          value: []
+        statusCode:
+          type: value
+          value: "202"
+      isTrigger: true
+      name: Contract Signed Trigger
+    - action:
+        key: convertToISOString
+        component:
+          isPublic: true
+          key: datetime
+          version: LATEST
+      description: ""
+      inputs:
+        dateTimeInput:
+          type: reference
+          value: contractSignedTrigger.results.body.data.data.contract.finalized_at
+        timeZoneInput:
+          type: value
+          value: ""
+      name: Format Date
+    - action:
+        key: getRecord
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 5
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 3
+        usesExponentialBackoff: false
+      inputs:
+        airtableConnection:
+          type: configVar
+          value: Airtable Connection
+        baseId:
+          type: configVar
+          value: Project Management Base
+        record:
+          type: reference
+          value: contractSignedTrigger.results.body.data.data.contract.metadata
+        tableName:
+          type: configVar
+          value: Addendums Table
+      name: Get Addendum Record
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: If Contract Signed
+          steps:
+            - action:
+                key: rawRequest
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: 5
+                errorHandlerType: retry
+                ignoreFinalError: false
+                maxAttempts: 3
+                usesExponentialBackoff: false
+              inputs:
+                connection:
+                  type: configVar
+                  value: Airtable Connection
+                data:
+                  type: template
+                  value: >
+                    {
+                      "records": [
+                        {
+                          "id": "{{$contractSignedTrigger.results.body.data.data.contract.metadata}}",
+                          "fields": {
+                            "Signed Addendum": [
+                              {
+                                "url": "{{$contractSignedTrigger.results.body.data.data.contract.contract_pdf_url}}",
+                                "filename": "{{$contractSignedTrigger.results.body.data.data.contract.title}}"
+                              }
+                            ],
+                            "Status": "Accepted",
+                            "Addendum Accepted Date": "{{$formatDate.results}}"
+                          }
+                        }
+                      ]
+                    }
+                debugRequest:
+                  type: value
+                  value: "false"
+                fileData:
+                  type: complex
+                  value: []
+                fileDataFileNames:
+                  type: complex
+                  value: []
+                formData:
+                  type: complex
+                  value: []
+                headers:
+                  type: complex
+                  value:
+                    - name:
+                        type: value
+                        value: Content-Type
+                      type: value
+                      value: application/json
+                maxRetries:
+                  type: value
+                  value: "0"
+                method:
+                  type: value
+                  value: PATCH
+                queryParams:
+                  type: complex
+                  value: []
+                responseType:
+                  type: value
+                  value: json
+                retryAllErrors:
+                  type: value
+                  value: "false"
+                retryDelayMS:
+                  type: value
+                  value: "0"
+                timeout:
+                  type: value
+                  value: ""
+                url:
+                  type: template
+                  value: https://api.airtable.com/v0/{{#Project Management Base}}/{{#Addendums
+                    Table}}
+                useExponentialBackoff:
+                  type: value
+                  value: "false"
+              name: Update Record
+        - name: Else
+          steps: []
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: If Contract Signed
+              type: complex
+              value:
+                - and
+                - - equal
+                  - name: ""
+                    type: reference
+                    value: contractSignedTrigger.results.body.data.status
+                  - name: ""
+                    type: value
+                    value: contract-signed
+      name: Branch on Expression

@@ -1,0 +1,701 @@
+sourceFile: job-management-integration-export.yml
+category: Boolean PaintOS
+flow:
+  name: Subflow - 07 Create Addendums
+  description: Creates new Addendums deal in HubSpot for field types.
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Create Addendums Trigger
+    - action:
+        key: sleep
+        component:
+          isPublic: true
+          key: sleep
+          version: LATEST
+      description: ""
+      inputs:
+        ms:
+          type: value
+          value: "10000"
+      name: Sleep
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Has Job Assigned
+          steps:
+            - action:
+                key: branchOnExpression
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              branches:
+                - name: Deal ID Do Not Exist
+                  steps:
+                    - action:
+                        key: listRecords
+                        component:
+                          isPublic: true
+                          key: airtable
+                          version: LATEST
+                      description: Count how many have the same job record id
+                      errorConfig:
+                        delaySeconds: 10
+                        errorHandlerType: retry
+                        ignoreFinalError: true
+                        maxAttempts: 5
+                        usesExponentialBackoff: false
+                      inputs:
+                        airtableConnection:
+                          type: configVar
+                          value: Airtable Connection
+                        baseId:
+                          type: configVar
+                          value: Project Management Base
+                        fields:
+                          type: complex
+                          value: []
+                        filterByFormula:
+                          type: template
+                          value: '{Job Record
+                            ID}="{{$createAddendumsTrigger.results.body.data.currentItem.fields.Jobs[0]}}"'
+                        tableName:
+                          type: configVar
+                          value: Addendums Table
+                        view:
+                          type: value
+                          value: ""
+                      name: List Change Order
+                    - action:
+                        key: getRecord
+                        component:
+                          isPublic: true
+                          key: airtable
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 10
+                        errorHandlerType: retry
+                        ignoreFinalError: true
+                        maxAttempts: 5
+                        usesExponentialBackoff: false
+                      inputs:
+                        airtableConnection:
+                          type: configVar
+                          value: Airtable Connection
+                        baseId:
+                          type: configVar
+                          value: Project Management Base
+                        record:
+                          type: reference
+                          value: createAddendumsTrigger.results.body.data.currentItem.fields.Project
+                            Type.0
+                        tableName:
+                          type: configVar
+                          value: Objects Table
+                      name: Get Project Type
+                    - action:
+                        key: getRecord
+                        component:
+                          isPublic: true
+                          key: airtable
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        airtableConnection:
+                          type: configVar
+                          value: Airtable Connection
+                        baseId:
+                          type: configVar
+                          value: Project Management Base
+                        record:
+                          type: reference
+                          value: createAddendumsTrigger.results.body.data.currentItem.fields.Jobs.0
+                        tableName:
+                          type: configVar
+                          value: Jobs Table
+                      name: Get Job
+                    - action:
+                        key: rawRequest
+                        component:
+                          isPublic: true
+                          key: hubspot
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: HubSpot Private App Connection
+                        data:
+                          type: value
+                          value: ""
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        fileData:
+                          type: complex
+                          value: []
+                        fileDataFileNames:
+                          type: complex
+                          value: []
+                        formData:
+                          type: complex
+                          value: []
+                        headers:
+                          type: complex
+                          value: []
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        method:
+                          type: value
+                          value: GET
+                        queryParams:
+                          type: complex
+                          value: []
+                        responseType:
+                          type: value
+                          value: json
+                        retryAllErrors:
+                          type: value
+                          value: "false"
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: value
+                          value: /crm/v3/properties/deals?archived=false
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: Get deal properties
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              let properties = stepResults.getDealProperties.results.results;
+
+                              // Filter properties: exclude calculated + read-only
+                              let propNames = properties
+                                .filter(
+                                  (prop) =>
+                                    !prop.calculated && // not a calculated property
+                                    !prop.modificationMetadata?.readOnlyValue && // not read-only
+                                    prop.groupName !== "deal_activity" && // exclude deal_activity group
+                                    (prop.name === "dealstage" || prop.groupName !== "dealstages") // allow dealstage, exclude dealstages group
+                                )
+                                .map((prop) => prop.name);
+
+                              // Ensure "pipeline" and "dealstage" are always included
+                              if (!propNames.includes("pipeline")) {
+                                propNames.push("pipeline");
+                              }
+                              if (!propNames.includes("dealstage")) {
+                                propNames.push("dealstage");
+                              }
+
+                              return propNames;
+                            };
+                      name: List Deal Properties
+                    - action:
+                        key: getDealById
+                        component:
+                          isPublic: true
+                          key: hubspot
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: null
+                        errorHandlerType: ignore
+                        ignoreFinalError: null
+                        maxAttempts: null
+                        usesExponentialBackoff: null
+                      inputs:
+                        additionalProperties:
+                          type: complex
+                          value:
+                            - type: reference
+                              value: listDealProperties.results
+                        archived:
+                          type: value
+                          value: "false"
+                        associationsList:
+                          type: complex
+                          value: []
+                        dealId:
+                          type: reference
+                          value: getJob.results.fields.HS Deal ID
+                        dealName:
+                          type: value
+                          value: ""
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        hubspotConnection:
+                          type: configVar
+                          value: HubSpot Private App Connection
+                        timeout:
+                          type: value
+                          value: ""
+                      name: Get Original Deal
+                    - action:
+                        key: branchOnExpression
+                        component:
+                          isPublic: true
+                          key: branch
+                          version: LATEST
+                      branches:
+                        - name: Original Deal Found
+                          steps:
+                            - action:
+                                key: runCode
+                                component:
+                                  isPublic: true
+                                  key: code
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                code:
+                                  type: value
+                                  value: >
+                                    module.exports = async ({ logger, configVars
+                                    }, stepResults) => {
+                                      let configAirtableRecordId = configVars["Airtable Job Record ID Property"];
+                                      return { 
+                                        data: {
+                                          payload: {
+                                            [configAirtableRecordId]:stepResults?.getJob?.results?.id
+                                          }
+                                        } 
+                                      };
+                                    };
+                              name: Get Airtable Record Id
+                            - action:
+                                key: invokeFlow
+                                component:
+                                  isPublic: true
+                                  key: cross-flow
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                data:
+                                  type: reference
+                                  value: getAirtableRecordId.results
+                                flowName:
+                                  type: value
+                                  value: 13 Change Order Label Processor
+                              name: Get CO Count
+                            - action:
+                                key: rawRequest
+                                component:
+                                  isPublic: true
+                                  key: hubspot
+                                  version: LATEST
+                              description: ""
+                              errorConfig:
+                                delaySeconds: null
+                                errorHandlerType: ignore
+                                ignoreFinalError: null
+                                maxAttempts: null
+                                usesExponentialBackoff: null
+                              inputs:
+                                connection:
+                                  type: configVar
+                                  value: HubSpot Private App Connection
+                                data:
+                                  type: template
+                                  value: >-
+                                    {
+                                      "filterGroups": [
+                                        {
+                                          "filters": [
+                                            {
+                                              "propertyName": "email",
+                                              "operator": "CONTAINS_TOKEN",
+                                              "value": "{{$getJob.results.fields.Job Contact Email}}"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                debugRequest:
+                                  type: value
+                                  value: "false"
+                                fileData:
+                                  type: complex
+                                  value: []
+                                fileDataFileNames:
+                                  type: complex
+                                  value: []
+                                formData:
+                                  type: complex
+                                  value: []
+                                headers:
+                                  type: complex
+                                  value:
+                                    - name:
+                                        type: value
+                                        value: Content-Type
+                                      type: value
+                                      value: application/json
+                                maxRetries:
+                                  type: value
+                                  value: "0"
+                                method:
+                                  type: value
+                                  value: POST
+                                queryParams:
+                                  type: complex
+                                  value: []
+                                responseType:
+                                  type: value
+                                  value: json
+                                retryAllErrors:
+                                  type: value
+                                  value: "false"
+                                retryDelayMS:
+                                  type: value
+                                  value: "0"
+                                timeout:
+                                  type: value
+                                  value: ""
+                                url:
+                                  type: value
+                                  value: /crm/v3/objects/contacts/search
+                                useExponentialBackoff:
+                                  type: value
+                                  value: "false"
+                              name: Get Contact
+                            - action:
+                                key: runCode
+                                component:
+                                  isPublic: true
+                                  key: code
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                code:
+                                  type: value
+                                  value: >
+                                    module.exports = async ({ logger, configVars
+                                    }, stepResults) => {
+                                      let addendumsData = stepResults?.createAddendumsTrigger?.results?.body?.data?.currentItem?.fields; // addendums
+                                      let addendumsATID = stepResults?.createAddendumsTrigger?.results?.body?.data?.currentItem?.id;
+                                      let jobsData = stepResults?.getJob?.results?.fields; // jobs
+                                      let objectsData = stepResults?.getProjectType?.results?.fields; // objects
+                                      let mapper = stepResults?.createAddendumsTrigger?.results?.body?.data?.parsedForm;
+                                      let pipeline = configVars?.["Sales Pipeline"];
+                                      let stage = configVars?.["Won Job Stage"];
+                                      let hsDealName = jobsData?.["HS Deal Name"];
+                                      let aTJobRecordIDProperty = configVars["Airtable Job Record ID Property"];
+                                      let aTCORecordIDProperty = configVars["Airtable CO Record ID Property"];
+                                      let addemdumCount = stepResults?.getCoCount?.results?.count;
+                                      let jobId = stepResults?.getJob?.results?.id;
+                                      let originalDeal = stepResults?.getOriginalDeal?.results?.properties;
+
+                                      logger.info(stepResults?.createAddendumsTrigger?.results?.body?.data?.fields);
+
+                                      const createDealPayload = {
+                                        properties: {
+                                          dealstage: stage,
+                                          pipeline: pipeline,
+                                          [configVars["Choose the Ready to Process Property"]]: "No",
+                                          [configVars["Choose the Contract Type Property"]]: "Addendum - Change Order",
+                                          [aTJobRecordIDProperty]: jobId,
+                                          [aTCORecordIDProperty]: addendumsATID,
+                                        },
+                                      };
+
+                                      // Apply mappings from parsed form
+                                      mapper?.forEach((mapping) => {
+                                        let dataSource;
+                                        switch (mapping?.at_table) {
+                                          case "Addendums":
+                                            dataSource = addendumsData;
+                                            break;
+                                          case "Jobs":
+                                            dataSource = jobsData;
+                                            break;
+                                          case "Objects":
+                                            dataSource = objectsData;
+                                            break;
+                                          default:
+                                            logger.info(`Unknown table: ${mapping?.at_table}`);
+                                            return;
+                                        }
+
+                                        let fieldValue = dataSource?.[mapping?.at_field];
+
+                                        if (Array.isArray(fieldValue)) {
+                                          fieldValue = fieldValue[0];
+                                        }
+
+                                        if (fieldValue !== null && fieldValue !== undefined) {
+                                          logger.info("mapping.hs_field:", mapping?.hs_field);
+                                          createDealPayload.properties[mapping?.hs_field] = fieldValue;
+                                        } else {
+                                          logger.info(`No valid value for ${mapping?.at_field} in ${mapping?.at_table}`);
+                                        }
+                                      });
+
+                                      // If dealname is already set, append CO count
+                                      if (createDealPayload.properties?.dealname) {
+                                        createDealPayload.properties.dealname = `${hsDealName}_CO-${addemdumCount}`;
+                                      }
+
+                                      // Merge originalDeal values if they are not null/undefined and not already present
+                                      if (originalDeal) {
+                                        Object.entries(originalDeal).forEach(([key, value]) => {
+                                          // skip null, undefined, empty string
+                                          if (value === null || value === undefined || value === "") return;
+
+                                          // skip if property already exists in payload
+                                          if (createDealPayload.properties[key] !== undefined) return;
+
+                                          // skip HubSpot system/calculated/read-only properties
+                                          if (key.startsWith("hs_")) return; // all hs_* are read-only
+                                          const readOnlyProps = [
+                                            "amount_in_home_currency",
+                                            "days_to_close",
+                                            "num_associated_contacts",
+                                            "paintscout_quote_template_label",
+                                            "paintscout_quote_template_label_test",
+                                            "paintscout_quote_type_label",
+                                            // you can add more known read-only props here if HubSpot errors on them
+                                          ];
+                                          if (readOnlyProps.includes(key)) return;
+
+                                          // finally add to payload
+                                          createDealPayload.properties[key] = value;
+                                        });
+                                      }
+
+                                      return createDealPayload
+                                    };
+                              name: Generate Create Deal Payload
+                            - action:
+                                key: rawRequest
+                                component:
+                                  isPublic: true
+                                  key: hubspot
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                connection:
+                                  type: configVar
+                                  value: HubSpot Private App Connection
+                                data:
+                                  type: reference
+                                  value: generateCreateDealPayload.results
+                                debugRequest:
+                                  type: value
+                                  value: "false"
+                                fileData:
+                                  type: complex
+                                  value: []
+                                fileDataFileNames:
+                                  type: complex
+                                  value: []
+                                formData:
+                                  type: complex
+                                  value: []
+                                headers:
+                                  type: complex
+                                  value:
+                                    - name:
+                                        type: value
+                                        value: Content-Type
+                                      type: value
+                                      value: application/json
+                                maxRetries:
+                                  type: value
+                                  value: "0"
+                                method:
+                                  type: value
+                                  value: POST
+                                queryParams:
+                                  type: complex
+                                  value: []
+                                responseType:
+                                  type: value
+                                  value: json
+                                retryAllErrors:
+                                  type: value
+                                  value: "false"
+                                retryDelayMS:
+                                  type: value
+                                  value: "0"
+                                timeout:
+                                  type: value
+                                  value: ""
+                                url:
+                                  type: value
+                                  value: /crm/v3/objects/deals
+                                useExponentialBackoff:
+                                  type: value
+                                  value: "false"
+                              name: Create Deal
+                            - action:
+                                key: createAssociations
+                                component:
+                                  isPublic: true
+                                  key: hubspot
+                                  version: LATEST
+                              description: ""
+                              errorConfig:
+                                delaySeconds: null
+                                errorHandlerType: ignore
+                                ignoreFinalError: null
+                                maxAttempts: null
+                                usesExponentialBackoff: null
+                              inputs:
+                                associateType:
+                                  type: value
+                                  value: DEAL_TO_CONTACT
+                                debugRequest:
+                                  type: value
+                                  value: "false"
+                                fromId:
+                                  type: reference
+                                  value: createDeal.results.id
+                                fromObjectType:
+                                  type: value
+                                  value: Deals
+                                hubspotConnection:
+                                  type: configVar
+                                  value: HubSpot Private App Connection
+                                timeout:
+                                  type: value
+                                  value: ""
+                                toId:
+                                  type: reference
+                                  value: getContact.results.results.0.id
+                                toObjectType:
+                                  type: value
+                                  value: Contacts
+                              name: Create Association
+                            - action:
+                                key: updateRecord
+                                component:
+                                  isPublic: true
+                                  key: airtable
+                                  version: LATEST
+                              description: ""
+                              errorConfig:
+                                delaySeconds: 10
+                                errorHandlerType: retry
+                                ignoreFinalError: false
+                                maxAttempts: 5
+                                usesExponentialBackoff: false
+                              inputs:
+                                airtableConnection:
+                                  type: configVar
+                                  value: Airtable Connection
+                                baseId:
+                                  type: configVar
+                                  value: Project Management Base
+                                record:
+                                  type: reference
+                                  value: createAddendumsTrigger.results.body.data.currentItem.id
+                                recordFields:
+                                  type: complex
+                                  value:
+                                    - name:
+                                        type: value
+                                        value: CO HS Deal Record ID
+                                      type: reference
+                                      value: createDeal.results.id
+                                tableName:
+                                  type: configVar
+                                  value: Addendums Table
+                              name: Update Record
+                        - name: Else
+                          steps: []
+                      description: ""
+                      inputs:
+                        conditions:
+                          type: complex
+                          value:
+                            - name: Original Deal Found
+                              type: complex
+                              value:
+                                - and
+                                - - doesNotExist
+                                  - name: ""
+                                    type: reference
+                                    value: getOriginalDeal.results.error.message
+                      name: Branch on Expression
+                - name: Else
+                  steps: []
+              description: ""
+              inputs:
+                conditions:
+                  type: complex
+                  value:
+                    - name: Deal ID Do Not Exist
+                      type: complex
+                      value:
+                        - and
+                        - - doesNotExist
+                          - name: ""
+                            type: reference
+                            value: createAddendumsTrigger.results.body.data.currentItem.fields.CO HS Deal
+                              Record ID
+              name: Record ID Branch
+        - name: Else
+          steps:
+            - action:
+                key: writeLog
+                component:
+                  isPublic: true
+                  key: log
+                  version: LATEST
+              description: CO has no job record assigned
+              inputs:
+                level:
+                  type: value
+                  value: info
+                message:
+                  type: value
+                  value: CO has no job record assigned
+              name: CO has no job record assigned
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Has Job Assigned
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: createAddendumsTrigger.results.body.data.currentItem.fields.Jobs.0
+      name: Check if CO has Job assigned

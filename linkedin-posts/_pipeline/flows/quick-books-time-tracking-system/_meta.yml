@@ -1,0 +1,58 @@
+sourceFile: quick-books-time-tracking-system-export.yml
+category: Boolean PaintOS
+name: QuickBooks Time Tracking System
+description: This integration connects QuickBooks Time with Airtable to
+  streamline time tracking and project management. It syncs employee time data
+  directly into Airtable, enabling detailed reporting, job costing, and
+  real-time insights into labor allocation and productivity.
+configPages:
+  - elements:
+      - type: htmlElement
+        value: >-
+          Access tokens expire periodically, so be sure to set the token’s
+          expiration date as far in the future as possible when generating
+          it.<br><br>
+
+          You can find or generate a new token by going to:<br>
+
+          QuickBooks Time → Add-Ons → API → Generate Token
+      - type: configVar
+        value: QuickBooks Time Token
+      - type: configVar
+        value: Airtable Connection
+    name: General Connection
+    tagline: ""
+  - elements:
+      - type: configVar
+        value: Project Management Base
+    name: Airtable Base
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: htmlElement
+        value: <h3>Please select the appropriate table for each item.</h3>
+      - type: configVar
+        value: Time Logs Table
+      - type: configVar
+        value: People Table
+      - type: configVar
+        value: Projects Table
+    name: Tables
+    tagline: ""
+    userLevelConfigured: false
+  - elements:
+      - type: configVar
+        value: ⚙️ Update Time Tracking App Record
+      - type: configVar
+        value: ⚙️ Include In Timetracking App Upsert Automation
+      - type: configVar
+        value: How Far Back to Pull Deleted Logs
+      - type: configVar
+        value: Non-Work Job Code Mapping
+      - type: configVar
+        value: Auto-Delete Non-Work Time Logs
+      - type: configVar
+        value: Location Last Modified Date
+    name: Configuration
+    tagline: ""
+    userLevelConfigured: false

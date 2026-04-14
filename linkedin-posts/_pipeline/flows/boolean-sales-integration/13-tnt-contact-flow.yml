@@ -1,0 +1,108 @@
+sourceFile: boolean-sales-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 13 TNT Contact Flow
+  description: ""
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: webhook
+        component:
+          isPublic: true
+          key: webhook-triggers
+          version: LATEST
+      description: ""
+      inputs:
+        body:
+          type: value
+          value: ""
+        contentType:
+          type: value
+          value: application/json
+        headers:
+          type: complex
+          value: []
+        statusCode:
+          type: value
+          value: "200"
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            const axios = require("axios");
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              try {
+                const token = configVars["HubSpot Private App Connection"]?.fields?.accessToken;
+                const contactId = stepResults?.trigger?.results?.body?.data?.[0]?.objectId;
+                const settings = configVars["TNT - Blacklist Settings"];
+                const icon = settings?.icon || "🔥"; // default icon if not provided
+
+                if (!token || !contactId) {
+                  throw new Error("Missing required HubSpot token or contactId.");
+                }
+
+                // Get contact data from HubSpot
+                const contactRes = await axios.get(
+                  `https://api.hubapi.com/crm/v3/objects/contacts/${contactId}`,
+                  {
+                    params: { properties: "firstname,lastname" },
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                      "Content-Type": "application/json",
+                    },
+                  }
+                );
+
+                const contactData = contactRes.data;
+                const firstName = contactData?.properties?.firstname || "";
+                const lastName = contactData?.properties?.lastname || "";
+
+                // Construct updated name with icons
+                const updatedFirstName = `${icon} ${firstName}`;
+                const updatedLastName = `${lastName} ${icon}`;
+
+                // Update the contact in HubSpot
+                const updateRes = await axios.patch(
+                  `https://api.hubapi.com/crm/v3/objects/contacts/${contactId}`,
+                  {
+                    properties: {
+                      firstname: updatedFirstName,
+                      lastname: updatedLastName,
+                    },
+                  },
+                  {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                      "Content-Type": "application/json",
+                    },
+                  }
+                );
+
+                logger.info(`✅ Contact updated successfully: ${updatedFirstName} ${updatedLastName}`);
+
+                return {
+                  success: true,
+                  contactId,
+                  updatedFirstName,
+                  updatedLastName,
+                  icon,
+                  updateResult: updateRes.data,
+                };
+              } catch (error) {
+                logger.error("❌ Error updating contact:", error.response?.data || error.message);
+                return { success: false, error: error.response?.data || error.message };
+              }
+            };
+      name: Update TNT Contact

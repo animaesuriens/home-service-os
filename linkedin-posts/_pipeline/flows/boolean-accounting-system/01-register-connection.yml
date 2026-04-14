@@ -1,0 +1,65 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 01 Register Connection
+  description: This flow creates the trigger in Airtable and registers the Won
+    stage ID in the HS router.
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: instanceDeploy
+        component:
+          isPublic: true
+          key: management-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Instance Deploy - Webhook
+    - action:
+        key: listWebhooks
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: ""
+      inputs:
+        airtableConnection:
+          type: configVar
+          value: Airtable Connection
+        baseId:
+          type: configVar
+          value: Project Management Base
+      name: List Webhooks
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: listWebhooks.results
+      name: Loop Over Webhooks
+      steps:
+        - action:
+            key: deleteWebhook
+            component:
+              isPublic: true
+              key: airtable
+              version: LATEST
+          description: ""
+          inputs:
+            airtableConnection:
+              type: configVar
+              value: Airtable Connection
+            baseId:
+              type: configVar
+              value: Project Management Base
+            webhookId:
+              type: reference
+              value: loopOverWebhooks.currentItem.id
+          name: Delete Webhook

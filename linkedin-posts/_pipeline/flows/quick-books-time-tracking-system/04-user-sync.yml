@@ -1,0 +1,428 @@
+sourceFile: quick-books-time-tracking-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 04 User Sync
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: schedule
+        component:
+          isPublic: true
+          key: schedule-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+      schedule:
+        meta:
+          scheduleType: day
+          timeZone: Asia/Manila
+        type: value
+        value: 00 12 */1 * *
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: From QuickBooks Time
+      inputs:
+        code:
+          type: value
+          value: >-
+            const axios = require('axios');
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const tsheetToken = configVars["QuickBooks Time Token"];
+
+              // Initialize TSheets API client.
+              const tsheetClient = axios.create({
+                baseURL: `https://rest.tsheets.com/api/v1`,
+                headers: {
+                  Authorization: `Bearer ${tsheetToken}`,
+                  'Content-Type': 'application/json'
+                },
+              });
+
+              let allUsers = [];
+              let page = 1;
+              const pageSize = 200; // maximum records per call
+
+              while (true) {
+                try {
+                  const users = await retryOperation(
+                    () => retriveUsers(tsheetClient, '/users', page),
+                    [3, 3, 3]
+                  );
+                  logger.log(`Retrieved ${users.length} user records on page ${page}`);
+                  allUsers = allUsers.concat(users);
+                  if (users.length < pageSize) break;
+                  page++;
+                } catch (err) {
+                  logger.error(`Error retrieving Users on page ${page}:`, err.message);
+                  break;
+                }
+              }
+              
+              logger.log("Total Users Retrieved: ", allUsers.length);
+              return allUsers;
+            };
+
+
+            async function retriveUsers(client, endpoint, page) {
+              try {
+                // Construct query parameters.
+                const params = new URLSearchParams({ page: page, per_page: 200, active: "yes" }).toString();
+                const response = await client.get(`${endpoint}?${params}`);
+                // Assuming the response structure contains user objects under results.users.
+                if (!response.data || !response.data.results || !response.data.results.users) return [];
+                return Object.values(response.data.results.users);
+              } catch (error) {
+                console.error(`${endpoint} retrieval failed:`, error.response?.data || error.message);
+                throw error;
+              }
+            }
+
+
+            function sleep(ms) {
+              return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+
+            async function retryOperation(operationFn, retryDelaysInSeconds =
+            [5, 5, 5]) {
+              let lastError;
+              for (const delayInSeconds of retryDelaysInSeconds) {
+                try {
+                  return await operationFn();
+                } catch (error) {
+                  lastError = error;
+                  console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                  await sleep(delayInSeconds * 1000);
+                }
+              }
+              throw lastError;
+            }
+      name: Retrieve All Users
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: From PaintOS People Table
+      inputs:
+        code:
+          type: value
+          value: >
+            const axios = require("axios");
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const peopleTable = configVars["People Table"];
+              const base = configVars["Project Management Base"];
+              const { apiKey } = configVars["Airtable Connection"].fields;
+
+              // Initialize Airtable client.
+              const airtableClient = axios.create({
+                baseURL: `https://api.airtable.com/v0/${base}`,
+                headers: {
+                  Authorization: `Bearer ${apiKey}`,
+                  "Content-Type": "application/json",
+                },
+              });
+
+              let allPeople = [];
+              let offset = null;
+              const pageSize = 100; // Airtable page size
+
+              do {
+                // Build the URL with pageSize and offset (if available)
+                let url = `/${encodeURIComponent(peopleTable)}?pageSize=${pageSize}`;
+                if (offset) {
+                  url += `&offset=${encodeURIComponent(offset)}`;
+                }
+
+                try {
+                  // Use retryOperation for robust API call.
+                  const response = await retryOperation(
+                    () => airtableClient.get(url),
+                    [3, 3, 3],
+                  );
+
+                  const records = response.data.records || [];
+                  allPeople = allPeople.concat(records);
+                  logger.log(
+                    `Retrieved ${records.length} records; offset: ${response.data.offset || "none"}`,
+                  );
+
+                  offset = response.data.offset;
+                } catch (error) {
+                  logger.error("Error retrieving projects:", error.message);
+                  break;
+                }
+              } while (offset);
+
+              logger.log("Total Employee Retrieved:", allPeople.length);
+              return allPeople.map((record) => ({
+                id: record.id,
+                fields: {
+                  "Time Tracking User ID": record.fields["Time Tracking User ID"],
+                  "Work Email": record.fields["Work Email"],
+                  "First Name": record.fields["First Name"],
+                  "Last Name": record.fields["Last Name"],
+                },
+              }));
+            };
+
+
+            //
+
+            // --- Retry Operation Function and Sleep Helper ---
+
+            //
+
+
+            function sleep(ms) {
+              return new Promise((resolve) => setTimeout(resolve, ms));
+            }
+
+
+            /**
+             * Retries an async operation using specified delays (in seconds).
+             *
+             * @param {Function} operationFn - The async function to execute.
+             * @param {Array<number>} retryDelaysInSeconds - Delays (in seconds) between retries.
+             * @returns {Promise<any>} - The result of the async function if successful.
+             */
+            async function retryOperation(operationFn, retryDelaysInSeconds =
+            [5, 5, 5]) {
+              let lastError;
+              for (const delayInSeconds of retryDelaysInSeconds) {
+                try {
+                  return await operationFn();
+                } catch (error) {
+                  lastError = error;
+                  console.warn(
+                    `Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`,
+                  );
+                  await sleep(delayInSeconds * 1000);
+                }
+              }
+              throw lastError;
+            }
+      name: Retrieve All People
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: To PaintOS People Table
+      inputs:
+        code:
+          type: value
+          value: >
+            const axios = require("axios");
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              // 1) Gather inputs
+              const userData = stepResults.retrieveAllUsers.results || [];
+              const peopleData = stepResults.retrieveAllPeople.results || [];
+              const peopleTable = encodeURIComponent(configVars["People Table"]);
+              const baseId = configVars["Project Management Base"];
+              const apiKey = configVars["Airtable Connection"].fields.apiKey;
+
+              // 2) Process each user from QB Time
+              const toUpdate = [];
+              const toCreate = [];
+
+              for (const user of userData) {
+                const tidStr = String(user.id);
+
+                // Check if we already have this Time Tracking User ID in Airtable
+                let existing = peopleData.find(
+                  (rec) =>
+                    rec.fields["Time Tracking User ID"] != null &&
+                    String(rec.fields["Time Tracking User ID"]).trim() === tidStr,
+                );
+
+                if (existing) {
+                  // Record already has the correct Time Tracking ID - skip
+                  logger.log(
+                    `Skipping user ${user.display_name} - already has Time Tracking ID`,
+                  );
+                  continue;
+                }
+
+                // Reset existing
+                existing = null;
+
+                // Try to match by Work Email
+                if (user.email) {
+                  existing = peopleData.find(
+                    (rec) => rec.fields["Work Email"] === user.email,
+                  );
+                }
+
+                // If no match, try Personal Email
+                if (!existing && user.email) {
+                  existing = peopleData.find(
+                    (rec) => rec.fields["Personal Email"] === user.email,
+                  );
+                }
+
+                // If matched by email, just update the Time Tracking ID
+                if (existing) {
+                  toUpdate.push({
+                    id: existing.id,
+                    fields: {
+                      "Time Tracking User ID": tidStr,
+                      "QB Time Username": user.username || "",
+                      "Employment Status": user.active ? "Active" : "Inactive",
+                    },
+                  });
+                  logger.log(
+                    `Will update ${user.display_name} with Time Tracking ID (matched by email)`,
+                  );
+                  continue;
+                }
+
+                // If we get here, no email match was found - try by display_name
+                if (user.display_name) {
+                  existing = peopleData.find((rec) => {
+                    const firstName = rec.fields["First Name"];
+                    const lastName = rec.fields["Last Name"];
+
+                    if (!firstName || !lastName) return false;
+
+                    const airtableFullName = `${firstName} ${lastName}`
+                      .trim()
+                      .toLowerCase();
+                    const normalizedQBName = user.display_name.trim().toLowerCase();
+
+                    return airtableFullName === normalizedQBName;
+                  });
+                }
+
+                // If matched by name, update with Time Tracking ID and only add emails if missing
+                if (existing) {
+                  const updateFields = {
+                    "Time Tracking User ID": tidStr,
+                    "QB Time Username": user.username || "",
+                    "Employment Status": user.active ? "Active" : "Inactive",
+                  };
+
+                  // Only add emails if they don't already exist
+                  if (!existing.fields["Work Email"] && user.email) {
+                    updateFields["Work Email"] = user.email;
+                  }
+                  if (!existing.fields["Personal Email"] && user.email) {
+                    updateFields["Personal Email"] = user.email;
+                  }
+
+                  toUpdate.push({
+                    id: existing.id,
+                    fields: updateFields,
+                  });
+                  logger.log(
+                    `Will update ${user.display_name} with Time Tracking ID (matched by name, preserving existing emails)`,
+                  );
+                } else {
+                  // No match found - create new record
+                  toCreate.push({
+                    fields: {
+                      "First Name": user.first_name || "",
+                      "Last Name": user.last_name || "",
+                      "Time Tracking User ID": tidStr,
+                      "QB Time Username": user.username || "",
+                      "Work Email": user.email || "",
+                      "Personal Email": user.email || "",
+                      "Employment Status": user.active ? "Active" : "Inactive",
+                    },
+                  });
+                  logger.log(`Will create new record for ${user.display_name}`);
+                }
+              }
+
+              logger.log(
+                `Will UPDATE ${toUpdate.length} and CREATE ${toCreate.length} records.`,
+              );
+
+              // 3) Airtable HTTP client
+              const airtable = axios.create({
+                baseURL: `https://api.airtable.com/v0/${baseId}/${peopleTable}`,
+                headers: {
+                  Authorization: `Bearer ${apiKey}`,
+                  "Content-Type": "application/json",
+                },
+              });
+
+              // 4) PATCH updates in chunks of 10
+              const updateResults = [];
+              for (const [i, chunk] of chunkArray(toUpdate, 10).entries()) {
+                logger.log(
+                  `PATCH chunk ${i + 1}/${Math.ceil(toUpdate.length / 10)} (${chunk.length} records)`,
+                );
+                try {
+                  const res = await retry(() => airtable.patch("", { records: chunk }));
+                  updateResults.push(res.data);
+                } catch (e) {
+                  logger.error(`Failed PATCH chunk ${i + 1}:`, e.message);
+                  updateResults.push({ error: e.message });
+                }
+              }
+
+              // 5) POST creates in chunks of 10
+              const createResults = [];
+              for (const [i, chunk] of chunkArray(toCreate, 10).entries()) {
+                logger.log(
+                  `POST chunk ${i + 1}/${Math.ceil(toCreate.length / 10)} (${chunk.length} records)`,
+                );
+                try {
+                  const res = await retry(() => airtable.post("", { records: chunk }));
+                  createResults.push(res.data);
+                } catch (e) {
+                  logger.error(`Failed POST chunk ${i + 1}:`, e.message);
+                  createResults.push({ error: e.message });
+                }
+              }
+
+              // 6) Return everything
+              logger.log("Update results:", updateResults);
+              logger.log("Create results:", createResults);
+              return { updated: updateResults, created: createResults };
+            };
+
+
+            // --- Helpers (outside module) ---
+
+
+            function chunkArray(array, size) {
+              const chunks = [];
+              for (let i = 0; i < array.length; i += size) {
+                chunks.push(array.slice(i, i + size));
+              }
+              return chunks;
+            }
+
+
+            async function retry(fn, delays = [5, 5, 5]) {
+              let lastError;
+              for (const d of delays) {
+                try {
+                  return await fn();
+                } catch (e) {
+                  lastError = e;
+                  console.warn(`Operation failed: ${e.message}. Retrying in ${d}s…`);
+                  await new Promise((r) => setTimeout(r, d * 1000));
+                }
+              }
+              throw lastError;
+            }
+      name: Bulk Update Users

@@ -1,0 +1,800 @@
+sourceFile: quick-books-time-tracking-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 05 Initial Timelogs Sync
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: instanceDeploy
+        component:
+          isPublic: true
+          key: management-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >-
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              let type = stepResults.trigger.results.body.contentType;
+              let data = stepResults.trigger.results.body.data;
+
+              if (type === "application/xml") {
+                let days = String(data) === '{}' ? -30 : data;
+                logger.log(days);
+                return days;
+              } else {
+                logger.warn("Content-Type must be application/xml, so I use '-30' as default duration.")
+                return -30;
+              }
+            };
+      name: Default Days
+    - action:
+        key: adjustDateTime
+        component:
+          isPublic: true
+          key: datetime
+          version: LATEST
+      description: ""
+      inputs:
+        dateTimeInput:
+          type: reference
+          value: trigger.results.startedAt
+        daysInput:
+          type: reference
+          value: defaultDays.results
+        hoursInput:
+          type: value
+          value: ""
+        minutesInput:
+          type: value
+          value: ""
+        secondsInput:
+          type: value
+          value: ""
+      name: Adjust Date/Time
+    - action:
+        key: formatDateTime
+        component:
+          isPublic: true
+          key: datetime
+          version: LATEST
+      description: ""
+      inputs:
+        dateTime:
+          type: reference
+          value: adjustDateTime.results
+        format:
+          type: value
+          value: YYYY-MM-DDTHH:mm:ssZ
+        timeZone:
+          type: value
+          value: Etc/UTC
+      name: Format to ISO Date
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: From QuickBooks Time
+      inputs:
+        code:
+          type: value
+          value: >-
+            const axios = require('axios');
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              // Example: ISO date string for filtering timesheets (passed as a parameter)
+              const date = stepResults.formatToIsoDate.results;  
+
+              // Retrieve TSheets token from configVars (assuming it's defined)
+              const tsheetToken = configVars["QuickBooks Time Token"];
+
+              // Initialize TSheets API client.
+              const tsheetClient = axios.create({
+                baseURL: `https://rest.tsheets.com/api/v1`,
+                headers: {
+                  Authorization: `Bearer ${tsheetToken}`,
+                  'Content-Type': 'application/json'
+                },
+              });
+
+              let allTimesheets = [];
+              let page = 1;
+              const pageSize = 200; // maximum records per call
+
+              while (true) {
+                try {
+                  // Use retryOperation to call the API for this page.
+                  const timesheets = await retryOperation(
+                    () => retriveSheets(tsheetClient, '/timesheets', date, page),
+                    [3, 3, 3]
+                  );
+                  logger.log(`Retrieved ${timesheets.length} records on page ${page}`);
+                  // Append the records from this page to allTimesheets.
+                  allTimesheets = allTimesheets.concat(timesheets);
+
+                  // If the number of records returned is less than the pageSize, we assume this is the last page.
+                  if (timesheets.length < pageSize) {
+                    break;
+                  }
+                  // Otherwise, move to the next page.
+                  page++;
+                } catch (err) {
+                  logger.error(`Error retrieving Time Sheets on page ${page}:`, err.message);
+                  break;
+                }
+              }
+                
+              // Sort timesheets from earliest to latest using last_modified
+              allTimesheets.sort((a, b) => new Date(a.last_modified) - new Date(b.last_modified));
+              
+              logger.log("Total Timesheets Retrieved: ", allTimesheets.length);
+              return allTimesheets;
+            };
+
+
+            async function retriveSheets(client, endpoint, date, page) {
+              try {
+                // Construct query parameters.
+                // Adjust the query string parameters as required by the API.
+                const params = new URLSearchParams({ modified_since: date, page: page }).toString();    
+                const response = await client.get(`${endpoint}?${params}`);
+                
+                // Assuming your API returns a JSON object where timesheets are nested under a key (e.g. "results")
+                // and that each page returns an object with a property "timesheets"
+                const data = extractAllTimesheetIds(response.data);
+                return data || [];
+              } catch (error) {
+                console.error(`${endpoint} retrieval failed:`, error.response?.data || error.message);
+                throw error;
+              }
+            }
+
+
+            function extractAllTimesheetIds(data) {
+              // Adjust this function based on the structure of your API's response.
+              // For example, if response data looks like: { results: { timesheets: { id1: {}, id2: {} } }, more: true }
+              if (!data || !data.results || !data.results.timesheets) return [];
+              
+              return Object.values(data.results.timesheets);
+            }
+
+
+            function sleep(ms) {
+              return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+
+            /**
+             * Retry an async operation using specified delays (in seconds).
+             *
+             * @param {Function} operationFn - The async function to execute.
+             * @param {Array<number>} retryDelaysInSeconds - Array of delays (seconds) between retries.
+             * @returns {Promise<any>} - The result of the async function if successful.
+             */
+            async function retryOperation(operationFn, retryDelaysInSeconds =
+            [5, 5, 5]) {
+              let lastError;
+              for (const delayInSeconds of retryDelaysInSeconds) {
+                try {
+                  return await operationFn();
+                } catch (error) {
+                  lastError = error;
+                  console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                  await sleep(delayInSeconds * 1000);
+                }
+              }
+              throw lastError;
+            }
+      name: Retrieve All Time Sheets
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: From QuickBooks Time
+      inputs:
+        code:
+          type: value
+          value: >-
+            const axios = require('axios');
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const tsheetToken = configVars["QuickBooks Time Token"];
+
+              // Initialize TSheets API client.
+              const tsheetClient = axios.create({
+                baseURL: `https://rest.tsheets.com/api/v1`,
+                headers: {
+                  Authorization: `Bearer ${tsheetToken}`,
+                  'Content-Type': 'application/json'
+                },
+              });
+
+              let allUsers = [];
+              let page = 1;
+              const pageSize = 200; // maximum records per call
+
+              while (true) {
+                try {
+                  const users = await retryOperation(
+                    () => retriveUsers(tsheetClient, '/users', page),
+                    [3, 3, 3]
+                  );
+                  logger.log(`Retrieved ${users.length} user records on page ${page}`);
+                  allUsers = allUsers.concat(users);
+                  if (users.length < pageSize) break;
+                  page++;
+                } catch (err) {
+                  logger.error(`Error retrieving Users on page ${page}:`, err.message);
+                  break;
+                }
+              }
+              
+              logger.log("Total Users Retrieved: ", allUsers.length);
+              return allUsers;
+            };
+
+
+            async function retriveUsers(client, endpoint, page) {
+              try {
+                // Construct query parameters.
+                const params = new URLSearchParams({ page: page, per_page: 200 }).toString();
+                const response = await client.get(`${endpoint}?${params}`);
+                // Assuming the response structure contains user objects under results.users.
+                if (!response.data || !response.data.results || !response.data.results.users) return [];
+                return Object.values(response.data.results.users);
+              } catch (error) {
+                console.error(`${endpoint} retrieval failed:`, error.response?.data || error.message);
+                throw error;
+              }
+            }
+
+
+            function sleep(ms) {
+              return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+
+            async function retryOperation(operationFn, retryDelaysInSeconds =
+            [5, 5, 5]) {
+              let lastError;
+              for (const delayInSeconds of retryDelaysInSeconds) {
+                try {
+                  return await operationFn();
+                } catch (error) {
+                  lastError = error;
+                  console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                  await sleep(delayInSeconds * 1000);
+                }
+              }
+              throw lastError;
+            }
+      name: Retrieve All Users
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: From QuickBooks Time
+      inputs:
+        code:
+          type: value
+          value: >-
+            const axios = require('axios');
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const tsheetToken = configVars["QuickBooks Time Token"];
+
+              // Initialize TSheets API client.
+              const tsheetClient = axios.create({
+                baseURL: `https://rest.tsheets.com/api/v1`,
+                headers: {
+                  Authorization: `Bearer ${tsheetToken}`,
+                  'Content-Type': 'application/json'
+                },
+              });
+
+              let allJobCodes = [];
+              let page = 1;
+              const pageSize = 200; // maximum records per call
+
+              while (true) {
+                try {
+                  const jobCodes = await retryOperation(
+                    () => retriveJobCodes(tsheetClient, '/jobcodes', page),
+                    [3, 3, 3]
+                  );
+                  logger.log(`Retrieved ${jobCodes.length} job codes on page ${page}`);
+                  
+                  // Filter for active job codes
+                  allJobCodes = allJobCodes.concat(jobCodes);
+                  
+                  if (jobCodes.length < pageSize) break;
+                  page++;
+                } catch (err) {
+                  logger.error(`Error retrieving JobCodes on page ${page}:`, err.message);
+                  break;
+                }
+              }
+              
+              logger.log("Total Active JobCodes Retrieved: ", allJobCodes.length);
+              return allJobCodes;
+            };
+
+
+            async function retriveJobCodes(client, endpoint, page) {
+              try {
+                const params = new URLSearchParams({ page: page, per_page: 200, active: true }).toString();
+                const response = await client.get(`${endpoint}?${params}`);
+                if (!response.data || !response.data.results || !response.data.results.jobcodes) return [];
+                return Object.values(response.data.results.jobcodes);
+              } catch (error) {
+                console.error(`${endpoint} retrieval failed:`, error.response?.data || error.message);
+                throw error;
+              }
+            }
+
+
+            function sleep(ms) {
+              return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+
+            async function retryOperation(operationFn, retryDelaysInSeconds =
+            [5, 5, 5]) {
+              let lastError;
+              for (const delayInSeconds of retryDelaysInSeconds) {
+                try {
+                  return await operationFn();
+                } catch (error) {
+                  lastError = error;
+                  console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                  await sleep(delayInSeconds * 1000);
+                }
+              }
+              throw lastError;
+            }
+      name: Retrieve All Active JobCodes
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: From PaintOS Projects Table
+      inputs:
+        code:
+          type: value
+          value: >-
+            const axios = require('axios');
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const projectTable = configVars["Projects Table"];
+              const base = configVars["Project Management Base"];
+              const { apiKey } = configVars["Airtable Connection"].fields;
+
+              // Initialize Airtable client.
+              const airtableClient = axios.create({
+                baseURL: `https://api.airtable.com/v0/${base}`,
+                headers: {
+                  Authorization: `Bearer ${apiKey}`,
+                  'Content-Type': 'application/json'
+                },
+              });
+
+              let allProjects = [];
+              let offset = null;
+              const pageSize = 100; // Airtable page size
+
+              do {
+                // Build the URL with pageSize and offset (if available)
+                let url = `/${encodeURIComponent(projectTable)}?pageSize=${pageSize}`;
+                if (offset) {
+                  url += `&offset=${encodeURIComponent(offset)}`;
+                }
+                
+                try {
+                  // Use retryOperation for robust API call.
+                  const response = await retryOperation(
+                    () => airtableClient.get(url),
+                    [3, 3, 3]
+                  );
+                  
+                  const records = response.data.records || [];
+                  allProjects = allProjects.concat(records);
+                  logger.log(`Retrieved ${records.length} records; offset: ${response.data.offset || "none"}`);
+                  
+                  offset = response.data.offset;
+                } catch (error) {
+                  logger.error("Error retrieving projects:", error.message);
+                  break;
+                }
+              } while (offset);
+
+              logger.log("Total Projects Retrieved:", allProjects.length);
+              return allProjects.map(record => ({
+                  id: record.id,
+                  fields: {
+                    "QB Time Jobcode ID": record.fields["QB Time Jobcode ID"]
+                  }
+              }));
+            };
+
+
+            //
+
+            // --- Retry Operation Function and Sleep Helper ---
+
+            //
+
+
+            function sleep(ms) {
+              return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+
+            /**
+             * Retries an async operation using specified delays (in seconds).
+             *
+             * @param {Function} operationFn - The async function to execute.
+             * @param {Array<number>} retryDelaysInSeconds - Delays (in seconds) between retries.
+             * @returns {Promise<any>} - The result of the async function if successful.
+             */
+            async function retryOperation(operationFn, retryDelaysInSeconds =
+            [5, 5, 5]) {
+              let lastError;
+              for (const delayInSeconds of retryDelaysInSeconds) {
+                try {
+                  return await operationFn();
+                } catch (error) {
+                  lastError = error;
+                  console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                  await sleep(delayInSeconds * 1000);
+                }
+              }
+              throw lastError;
+            }
+      name: Retrieve All Projects
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: From PaintOS Projects Table
+      inputs:
+        code:
+          type: value
+          value: >-
+            const axios = require('axios');
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const peopleTable = configVars["People Table"]
+              const base = configVars["Project Management Base"];
+              const { apiKey } = configVars["Airtable Connection"].fields;
+
+              // Initialize Airtable client.
+              const airtableClient = axios.create({
+                baseURL: `https://api.airtable.com/v0/${base}`,
+                headers: {
+                  Authorization: `Bearer ${apiKey}`,
+                  'Content-Type': 'application/json'
+                },
+              });
+
+              let allPeople = [];
+              let offset = null;
+              const pageSize = 100; // Airtable page size
+
+              do {
+                // Build the URL with pageSize and offset (if available)
+                let url = `/${encodeURIComponent(peopleTable)}?pageSize=${pageSize}`;
+                if (offset) {
+                  url += `&offset=${encodeURIComponent(offset)}`;
+                }
+                
+                try {
+                  // Use retryOperation for robust API call.
+                  const response = await retryOperation(
+                    () => airtableClient.get(url),
+                    [3, 3, 3]
+                  );
+                  
+                  const records = response.data.records || [];
+                  allPeople = allPeople.concat(records);
+                  logger.log(`Retrieved ${records.length} records; offset: ${response.data.offset || "none"}`);
+                  
+                  offset = response.data.offset;
+                } catch (error) {
+                  logger.error("Error retrieving projects:", error.message);
+                  break;
+                }
+              } while (offset);
+
+              logger.log("Total Employee Retrieved:", allPeople.length);
+              return allPeople.map(record => ({
+                  id: record.id,
+                  fields: {
+                    "Time Tracking User ID": record.fields["Time Tracking User ID"]
+                  }
+              }));
+            };
+
+
+            //
+
+            // --- Retry Operation Function and Sleep Helper ---
+
+            //
+
+
+            function sleep(ms) {
+              return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+
+            /**
+             * Retries an async operation using specified delays (in seconds).
+             *
+             * @param {Function} operationFn - The async function to execute.
+             * @param {Array<number>} retryDelaysInSeconds - Delays (in seconds) between retries.
+             * @returns {Promise<any>} - The result of the async function if successful.
+             */
+            async function retryOperation(operationFn, retryDelaysInSeconds =
+            [5, 5, 5]) {
+              let lastError;
+              for (const delayInSeconds of retryDelaysInSeconds) {
+                try {
+                  return await operationFn();
+                } catch (error) {
+                  lastError = error;
+                  console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                  await sleep(delayInSeconds * 1000);
+                }
+              }
+              throw lastError;
+            }
+      name: Retrieve All People
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: To Timelogs Airtable
+      errorConfig:
+        delaySeconds: 2
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 1
+        usesExponentialBackoff: false
+      inputs:
+        code:
+          type: value
+          value: >-
+            const axios = require('axios');
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+
+              try {
+                // Get the time entries from stepResults.
+                const timeEntries = stepResults.retrieveAllTimeSheets?.results || [];
+                const jobCodesData = stepResults.retrieveAllActiveJobcodes?.results || []
+                const projects = stepResults.retrieveAllProjects?.results || []
+                const people = stepResults.retrieveAllPeople?.results || []
+                const breakCodeIDs = configVars["Non-Work Job Code Mapping"] || []
+                const timeLogTable = configVars["Time Logs Table"];
+                const base = configVars["Project Management Base"];
+                const { apiKey } = configVars["Airtable Connection"].fields;
+
+                logger.log("Break/Lunch Entry Tag(s): ", breakCodeIDs)
+
+                // Initialize Airtable client.
+                const airtableClient = axios.create({
+                  baseURL: `https://api.airtable.com/v0/${base}`,
+                  headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json',
+                  },
+                });
+
+                let timeLogRecords = [];
+
+                // Process each time entry sequentially.
+                for (const entry of timeEntries) {
+                  const jobCodeId = entry.jobcode_id;
+                  const userId = entry.user_id;
+
+                  let jobCode = filter(jobCodesData, jobCodeId)
+
+                  let project = getProject(projects, jobCodeId)
+
+                  // Create payloads for People and Time Logs based on retrieved data.
+                  let employee = getEmployee(people, userId)
+
+                  let timelogPayload = new TimeLogsPayload(entry, jobCode, project, employee, breakCodeIDs)
+
+                  timeLogRecords.push(timelogPayload);
+                }
+
+                // Process timeLogRecords in chunks of 10.
+                const timeLogChunks = chunkArray(timeLogRecords, 10);
+                const timeLogResponses = [];
+                for (const chunk of timeLogChunks) {
+                  const timeLogPayload = {
+                    performUpsert: {
+                      fieldsToMergeOn: ["Time Entry ID"]
+                    },
+                    records: chunk
+                  };
+                  try {
+                    // Use retryOperation for bulk update.
+                    const response = await retryOperation(
+                      () => bulkUpdate(airtableClient, timeLogTable, timeLogPayload),
+                      [3, 3, 3]
+                    );
+                    timeLogResponses.push(response);
+                  } catch (error) {
+                    logger.error("Error during bulk update for time log chunk:", error.message);
+                    timeLogResponses.push({ error: error.message });
+                  }
+                }
+                logger.log("Time Log API Response: ", timeLogResponses);
+                logger.log("Time Log API Response Count: ", timeLogResponses.length);
+                return timeLogResponses
+              } catch(error) {
+                logger.error("Unhandled error in code block", error);
+                return { error: error.message };
+              }
+            };
+
+
+
+            // --- Retry Operation Function ---
+
+
+            function sleep(ms) {
+              return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+
+            /**
+             * Retry an async operation using specified delays (in seconds).
+             *
+             * @param {Function} operationFn - The async function to execute.
+             * @param {Array<number>} retryDelaysInSeconds - Array of delays (seconds) between retries.
+             * @returns {Promise<any>} - The result of the async function if successful.
+             */
+            async function retryOperation(operationFn, retryDelaysInSeconds =
+            [5, 5, 5]) {
+              let lastError;
+              for (const delayInSeconds of retryDelaysInSeconds) {
+                try {
+                  return await operationFn();
+                } catch (error) {
+                  lastError = error;
+                  console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                  await sleep(delayInSeconds * 1000);
+                }
+              }
+              throw lastError;
+            }
+
+
+            // --- API Call Functions ---
+
+
+            function filter(users, filterValue) {
+              if (!Array.isArray(users)) {
+                throw new Error("The first argument must be an array.");
+              }
+              // Convert both user.id and filterValue to strings for the comparison.
+              return users.find(user => String(user.id) == String(filterValue));
+            }
+
+
+            function getQBTJobcodeNameByValue(jobcodeMap, value) {
+              if (!Array.isArray(jobcodeMap)) {
+                throw new Error("jobcodeMap must be an array");
+              }
+              const found = jobcodeMap.find(item => String(item.value) === String(value));
+              return found ? found.key : "Jobcode used in time entry not found. Either inactive or is unmapped break code.";
+            }
+
+
+            function chunkArray(array, chunkSize) {
+              const chunks = [];
+              for (let i = 0; i < array.length; i += chunkSize) {
+                chunks.push(array.slice(i, i + chunkSize));
+              }
+              return chunks;
+            }
+
+
+            async function bulkUpdate(client, tableName, data) {
+              try {
+                const response = await client.patch(`/${encodeURIComponent(tableName)}`, data);
+                return response.data || "";
+              } catch (error) {
+                console.error("Bulk update failed:", error.response?.data || error.message);
+                throw error;
+              }
+            }
+
+
+            function getEmployee(records, userId) {
+              return records.find(record => 
+                record.fields?.["Time Tracking User ID"] == userId
+              );
+            }
+
+
+            function getProject(records, jobCodeId) {
+              return records.find(record => 
+                record.fields["QB Time Jobcode ID"] == jobCodeId
+              );
+            }
+
+
+
+            // --- Payload Classes ---
+
+            class TimeLogsPayload {
+              constructor(timelog, jobCode, project, employee, breakCode) {
+                this.fields = {
+                  "Time Entry ID": `${timelog.id}`,
+                  "Hours Worked": timelog.duration ? timelog.duration / 3600 : 0
+                };
+
+                // Add job code fields if available.
+                if (jobCode) {
+                  this.fields["QB Time Jobcode Name"] = jobCode.name || "";
+                  this.fields["QB Time Jobcode ID"] = `${jobCode.id}` || "";
+                } else {
+                  this.fields["QB Time Jobcode Name"] = getQBTJobcodeNameByValue(breakCode, timelog.jobcode_id)
+                  this.fields["QB Time Jobcode ID"] = String(timelog.jobcode_id) || "";
+                }
+
+                // Clocked In (start or fallback to date).
+                this.fields["Clocked In"] = timelog.start || timelog.date || "";
+
+                // Clocked Out.
+                if (timelog.end) {
+                  this.fields["Clocked Out"] = timelog.end;
+                }
+
+                // Project (array format).
+                if (project?.id) {
+                  this.fields["Project"] = [project.id];
+                }
+
+                // Set Employee field from timelog.user_id.
+                if (employee?.id) {
+                  this.fields["Employee"] = [employee.id];
+                }
+              }
+            }
+      name: Bulk Update Timelogs

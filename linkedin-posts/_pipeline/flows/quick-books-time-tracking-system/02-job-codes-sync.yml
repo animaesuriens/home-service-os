@@ -1,0 +1,645 @@
+sourceFile: quick-books-time-tracking-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 02 Job Codes Sync
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: schedule
+        component:
+          isPublic: true
+          key: schedule-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+      schedule:
+        meta:
+          scheduleType: minute
+          timeZone: ""
+        type: value
+        value: "*/5 * * * *"
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: >-
+        From Airtable PaintOS
+
+        If ⚙️ Update Time Tracking App Record and ⚙️ Include In Timetracking App
+        Upsert is TRUE
+      inputs:
+        code:
+          type: value
+          value: >-
+            const axios = require('axios');
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const projectTable = configVars["Projects Table"];
+              const base = configVars["Project Management Base"];
+              const { apiKey } = configVars["Airtable Connection"].fields;
+              const updateTimeTracker = configVars["⚙️ Update Time Tracking App Record"]
+              const includeTimeTracker = configVars["⚙️ Include In Timetracking App Upsert Automation"]
+
+              // Initialize Airtable client.
+              const airtableClient = axios.create({
+                baseURL: `https://api.airtable.com/v0/${base}`,
+                headers: {
+                  Authorization: `Bearer ${apiKey}`,
+                  'Content-Type': 'application/json'
+                },
+              });
+
+              const formula = `AND({${updateTimeTracker}}="TRUE",{${includeTimeTracker}}="TRUE")`;
+              const encodedFormula = encodeURIComponent(formula);
+              let allProjects = [];
+              let offset = null;
+              const pageSize = 100; // Airtable page size
+
+              do {
+                // Build the URL with pageSize and offset (if available)
+                let url = `/${encodeURIComponent(projectTable)}?pageSize=${pageSize}&filterByFormula=${encodedFormula}`;
+                if (offset) {
+                  url += `&offset=${encodeURIComponent(offset)}`;
+                }
+                
+                try {
+                  // Use retryOperation for robust API call.
+                  const response = await retryOperation(
+                    () => airtableClient.get(url),
+                    [3, 3, 3]
+                  );
+                  
+                  const records = response.data.records || [];
+                  allProjects = allProjects.concat(records);
+                  logger.log(`Retrieved ${records.length} records; offset: ${response.data.offset || "none"}`);
+                  
+                  offset = response.data.offset;
+                } catch (error) {
+                  logger.error("Error retrieving projects:", error.message);
+                  break;
+                }
+              } while (offset);
+
+              logger.log("Total Projects Retrieved:", allProjects.length);
+              return allProjects;
+            };
+
+
+            //
+
+            // --- Retry Operation Function and Sleep Helper ---
+
+            //
+
+
+            function sleep(ms) {
+              return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+
+            /**
+             * Retries an async operation using specified delays (in seconds).
+             *
+             * @param {Function} operationFn - The async function to execute.
+             * @param {Array<number>} retryDelaysInSeconds - Delays (in seconds) between retries.
+             * @returns {Promise<any>} - The result of the async function if successful.
+             */
+            async function retryOperation(operationFn, retryDelaysInSeconds =
+            [5, 5, 5]) {
+              let lastError;
+              for (const delayInSeconds of retryDelaysInSeconds) {
+                try {
+                  return await operationFn();
+                } catch (error) {
+                  lastError = error;
+                  console.warn(`Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`);
+                  await sleep(delayInSeconds * 1000);
+                }
+              }
+              throw lastError;
+            }
+      name: Retrieve Eligible Projects
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: From QuickBooks Time
+      inputs:
+        code:
+          type: value
+          value: >
+            const axios = require("axios");
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const tsheetToken = configVars["QuickBooks Time Token"];
+              const projectsData = stepResults.retrieveEligibleProjects.results;
+
+              if (projectsData == "") {
+                logger.info("No Eligible Project to Update.");
+                return [];
+              } else {
+                // Initialize TSheets API client.
+                const tsheetClient = axios.create({
+                  baseURL: `https://rest.tsheets.com/api/v1`,
+                  headers: {
+                    Authorization: `Bearer ${tsheetToken}`,
+                    "Content-Type": "application/json",
+                  },
+                });
+
+                // Define the date filter in ISO-8601 format (without milliseconds)
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                const modifiedSince = thirtyDaysAgo.toISOString().split(".")[0] + "Z"; // Format: YYYY-MM-DDTHH:mm:ssZ
+
+                let allJobCodes = [];
+                let page = 1;
+                const pageSize = 200; // maximum records per call
+
+                while (true) {
+                  try {
+                    const jobCodes = await retryOperation(
+                      () =>
+                        retrieveJobCodes(tsheetClient, "/jobcodes", page, modifiedSince),
+                      [3, 3, 3],
+                    );
+                    logger.log(`Retrieved ${jobCodes.length} job codes on page ${page}`);
+
+                    allJobCodes = allJobCodes.concat(jobCodes);
+
+                    if (jobCodes.length < pageSize) break;
+                    page++;
+                  } catch (err) {
+                    logger.error(`Error retrieving JobCodes on page ${page}:`, err.message);
+                    break;
+                  }
+                }
+
+                logger.log("Total Active JobCodes Retrieved: ", allJobCodes.length);
+                return allJobCodes;
+              }
+            };
+
+
+            async function retrieveJobCodes(client, endpoint, page,
+            modifiedSince) {
+              try {
+                const params = new URLSearchParams({
+                  page: page,
+                  per_page: 200,
+                  // modified_since: modifiedSince,
+                  // active: "no",
+                }).toString();
+                const response = await client.get(`${endpoint}?${params}`);
+                if (
+                  !response.data ||
+                  !response.data.results ||
+                  !response.data.results.jobcodes
+                )
+                  return [];
+                return Object.values(response.data.results.jobcodes);
+              } catch (error) {
+                console.error(
+                  `${endpoint} retrieval failed:`,
+                  error.response?.data || error.message,
+                );
+                throw error;
+              }
+            }
+
+
+            function sleep(ms) {
+              return new Promise((resolve) => setTimeout(resolve, ms));
+            }
+
+
+            async function retryOperation(operationFn, retryDelaysInSeconds =
+            [5, 5, 5]) {
+              let lastError;
+              for (const delayInSeconds of retryDelaysInSeconds) {
+                try {
+                  return await operationFn();
+                } catch (error) {
+                  lastError = error;
+                  console.warn(
+                    `Operation failed: ${error.message}. Retrying in ${delayInSeconds} seconds...`,
+                  );
+                  await sleep(delayInSeconds * 1000);
+                }
+              }
+              throw lastError;
+            }
+      name: Retrieve All Active Jobcodes
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: Updates QBO ID and Sync Date
+      errorConfig:
+        delaySeconds: 5
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 3
+        usesExponentialBackoff: false
+      inputs:
+        code:
+          type: value
+          value: >-
+            const axios = require('axios');
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              // Retrieve data from step results.
+              const projectsData = stepResults.retrieveEligibleProjects.results || [];
+              const activeJobCodes = stepResults.retrieveAllActiveJobcodes.results || [];
+              
+              // Read configuration.
+              const projectTable = configVars["Projects Table"];
+              const base = configVars["Project Management Base"];
+              const { apiKey } = configVars["Airtable Connection"].fields;
+              const tsheetToken = configVars["QuickBooks Time Token"];
+              const currentDate = new Date().toISOString();
+
+              // Initialize clients.
+              const airtableClient = axios.create({
+                baseURL: `https://api.airtable.com/v0/${base}`,
+                headers: {
+                  Authorization: `Bearer ${apiKey}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+              const tsheetClient = axios.create({
+                baseURL: `https://rest.tsheets.com/api/v1`,
+                headers: {
+                  Authorization: `Bearer ${tsheetToken}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+
+              // Arrays to accumulate job code payloads and project update records.
+              const newJobCodeItems = [];  // Payloads for new job codes.
+              const jobCodeResults = [];   // Records (project updates) for projects that already have a job code.
+              
+              // Process each project.
+              for (const project of projectsData) {
+                let jobCode = null;
+                
+                // 1. Try to locate the job code using the project's "QB Time Jobcode ID" field.
+                if (project.fields["QB Time Jobcode ID"]) {
+                  const targetId = project.fields["QB Time Jobcode ID"];
+                  jobCode = activeJobCodes.find(jc => String(jc.id) === String(targetId));
+                  if (jobCode) {
+                    logger.log("Jobcode ID Exists:", jobCode);
+                    jobCodeResults.push({
+                      id: project.id,
+                      fields: new ProjectPayload(currentDate, jobCode.id)
+                    });
+                  }
+                }
+                
+                // 2. If not found, try to search by name using the project's "Pre-Automation Time Tracking App Record Name".
+                if (!jobCode && project.fields["Pre-Automation Time Tracking App Record Name"]) {
+                  const targetName = String(project.fields["Pre-Automation Time Tracking App Record Name"]).trim();
+                  jobCode = activeJobCodes.find(jc => {
+                    const jcName = String(jc.name).toLowerCase().trim();
+                    return jcName === targetName.toLowerCase();
+                  });
+                  if (jobCode) {
+                    logger.log("Jobcode Pre-Automation Name Exists:", jobCode);
+                    jobCodeResults.push({
+                      id: project.id,
+                      fields: new ProjectPayload(currentDate, jobCode.id)
+                    });
+                  }
+                }
+                
+                // 3. If still not found, add a new job code payload for this project using the JobcodePayload class.
+                if (!jobCode && project.fields["Timetracking App Record Display Name"]) {
+                  const createPayload = new JobcodePayload(project);
+                  newJobCodeItems.push(createPayload);
+                  logger.log("Create New Jobcode for project", project.id, ":", createPayload);
+                }
+              }
+              
+              // 4. Build the bulk payload for job codes creation.
+              const bulkJobCodePayload = { data: newJobCodeItems };
+
+              // Chunk newJobCodeItems into groups of 50.
+              const jobCodeChunks = chunkArray(newJobCodeItems, 50);
+              logger.log(`Total new job code payloads: ${newJobCodeItems.length}. Split into ${jobCodeChunks.length} chunk(s).`);
+              
+              let createdJobCodes = [];
+              for (const chunk of jobCodeChunks) {
+                const payloadChunk = { data: chunk };
+                try {
+                  const jobCodes = await retryOperation(
+                    () => createJobCodes(tsheetClient, '/jobcodes', payloadChunk),
+                    [3, 3, 3]
+                  );
+                  logger.log(`Created ${jobCodes.length} job codes in this chunk`);
+                  createdJobCodes.push(...jobCodes);
+                } catch (err) {
+                  logger.error("Error creating jobcodes:", err.message);
+                }
+              }
+              
+              logger.log("Created Jobcodes Count:", createdJobCodes.length);
+
+              // 5. For each created job code, update the associated project record.
+              // Build an array of project records to upsert in Airtable.
+              const newProjectRecords = createdJobCodes.map(jobcode => {
+                const associatedProject = queryProject(projectsData, jobcode.id, jobcode.fields ? jobcode.fields["Name"] : jobcode.name);
+                if (!associatedProject) {
+                  logger.warn(`No associated project found for jobcode ID [${jobcode.id}]`);
+                  return null;
+                }
+                logger.log(`Associated Project with Jobcode ID [${jobcode.id}]:`, associatedProject);
+                return {
+                  id: associatedProject.id,
+                  fields: new ProjectPayload(currentDate, jobcode.id)
+                };
+              }).filter(record => record !== null);
+
+              const allProjectRecords = [...jobCodeResults, ...newProjectRecords];
+              
+              // 6. Bulk update the Projects table in Airtable.
+              const projectChunks = chunkArray(allProjectRecords, 10);
+              logger.log(`Total project records: ${allProjectRecords.length}. Split into ${projectChunks.length} chunk(s).`);
+              
+              let responses = [];
+              for (const chunk of projectChunks) {
+                const payload = { records: chunk };
+                try {
+                  const response = await retryOperation(
+                    () => bulkUpdate(airtableClient, projectTable, payload),
+                    [3, 3, 3]
+                  );
+                  responses.push(response);
+                } catch (error) {
+                  logger.error("Error during bulk update for project chunk:", error.message);
+                  responses.push({ error: error.message });
+                }
+              }
+              
+              logger.log("Project API Responses Count:", responses.length);
+              return responses;
+            };
+
+
+            //
+
+            // --- Helper Functions ---
+
+            //
+
+
+            function queryProject(projectsData, id, name) {
+              if (!Array.isArray(projectsData)) {
+                throw new Error("projectsData must be an array");
+              }
+              return projectsData.find(project => {
+                const fields = project.fields || {};
+                const jobcodeId = fields["QB Time Jobcode ID"]
+                  ? String(fields["QB Time Jobcode ID"]).trim().toLowerCase()
+                  : "";
+                const subCustomerName = fields["Timetracking App Record Display Name"]
+                  ? String(fields["Timetracking App Record Display Name"]).trim().toLowerCase()
+                  : "";
+                return (
+                  jobcodeId === String(id).trim().toLowerCase() ||
+                  subCustomerName === String(name).trim().toLowerCase()
+                );
+              });
+            }
+
+
+            function chunkArray(array, chunkSize) {
+              const chunks = [];
+              for (let i = 0; i < array.length; i += chunkSize) {
+                chunks.push(array.slice(i, i + chunkSize));
+              }
+              return chunks;
+            }
+
+
+            async function bulkUpdate(client, tableName, data) {
+              try {
+                const response = await client.patch(`/${encodeURIComponent(tableName)}`, data);
+                return response.data || "";
+              } catch (error) {
+                console.error("Bulk update failed:", error.response?.data || error.message);
+                throw error;
+              }
+            }
+
+
+            async function createJobCodes(client, endpoint, payload) {
+              try {
+                const response = await client.post(endpoint, payload);
+                if (!response.data || !response.data.results || !response.data.results.jobcodes)
+                  return [];
+                return Object.values(response.data.results.jobcodes);
+              } catch (error) {
+                console.error(`${endpoint} creation failed:`, error.response?.data || error.message);
+                throw error;
+              }
+            }
+
+
+            function sleep(ms) {
+              return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+
+            async function retryOperation(operationFn, retryDelaysInSeconds =
+            [5, 5, 5]) {
+              let lastError;
+              for (const delay of retryDelaysInSeconds) {
+                try {
+                  return await operationFn();
+                } catch (error) {
+                  lastError = error;
+                  console.warn(`Operation failed: ${error.message}. Retrying in ${delay} seconds...`);
+                  await sleep(delay * 1000);
+                }
+              }
+              throw lastError;
+            }
+
+
+            //
+
+            // --- Payload Classes ---
+
+            //
+
+
+            class JobcodePayload {
+              constructor(project = [], jobCode = []) {
+                if (jobCode && jobCode.id) {
+                  this.id = jobCode.id;
+                }
+                // Use "Timetracking App Record Display Name" from project data if available; otherwise fall back to jobCode.name.
+                this.name = project.fields ? project.fields["Timetracking App Record Display Name"] || jobCode.name : jobCode.name;
+                this.billable = "yes";
+                this.assigned_to_all = !project.fields?.["QB Time Jobcode Assign to All"] ? "no" : "yes"
+              }
+            }
+
+
+            class ProjectPayload {
+              constructor(date, jobCodeId) {
+                this["⚙️ Time Tracking App Record Last Sync"] = date;
+                this["QB Time Jobcode ID"] = String(jobCodeId);
+              }
+            }
+      name: Jobcodes Bulk Update
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: Status and Display Name in QBT
+      inputs:
+        code:
+          type: value
+          value: >
+            const axios = require('axios');
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              // Retrieve projects data from step results (from Airtable).
+              const projectsData = stepResults.retrieveEligibleProjects.results || [];
+              
+              // Read configuration.
+              const tsheetToken = configVars["QuickBooks Time Token"];
+
+              // Initialize QuickBooks Time (TSheets) API client.
+              const tsheetClient = axios.create({
+                baseURL: `https://rest.tsheets.com/api/v1`,
+                headers: {
+                  Authorization: `Bearer ${tsheetToken}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+
+              // Build an array of jobcode update payloads.
+              // In this example, we update jobcodes for projects that already have a "QB Time Jobcode ID".
+              // We use the project's "Timetracking App Record Display Name" as the new job code name and set active status to "yes".
+              const jobcodeUpdateItems = [];
+              projectsData.forEach(project => {
+                if (project.fields["QB Time Jobcode ID"]) {
+                  jobcodeUpdateItems.push(new JobcodeUpdatePayload(project));
+                }
+              });
+
+              logger.log("Total Jobcodes to Update:", jobcodeUpdateItems.length);
+
+              // Chunk payloads into groups of 200
+              const chunks = chunkArray(jobcodeUpdateItems, 200);
+              const updatedJobCodes = [];
+
+              for (const [i, chunk] of chunks.entries()) {
+                const payload = { data: chunk };
+                logger.log(`Updating chunk ${i + 1}/${chunks.length} (size=${chunk.length})`);
+                try {
+                  const result = await retryOperation(
+                    () => updateJobCodes(tsheetClient, '/jobcodes', payload),
+                    [3, 3, 3]
+                  );
+                  logger.log(`Chunk ${i + 1} updated ${result.length} jobcodes`);
+                  updatedJobCodes.push(...result);
+                } catch (err) {
+                  logger.error(`Failed to update chunk ${i + 1}:`, err.message);
+                  // You can decide whether to throw or continue
+                }
+              }
+
+              logger.log("Total Jobcodes Successfully Updated:", updatedJobCodes.length);
+              return updatedJobCodes;
+            };
+
+
+            //
+
+            // --- Helper Functions ---
+
+            //
+
+
+            async function updateJobCodes(client, endpoint, payload) {
+              try {
+                const response = await client.put(endpoint, payload);
+                if (!response.data || !response.data.results || !response.data.results.jobcodes) return [];
+                return Object.values(response.data.results.jobcodes);
+              } catch (error) {
+                console.error(`${endpoint} update failed:`, error.response?.data || error.message);
+                throw error;
+              }
+            }
+
+
+            function sleep(ms) {
+              return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+
+            async function retryOperation(operationFn, retryDelaysInSeconds =
+            [5, 5, 5]) {
+              let lastError;
+              for (const delay of retryDelaysInSeconds) {
+                try {
+                  return await operationFn();
+                } catch (error) {
+                  lastError = error;
+                  console.warn(`Operation failed: ${error.message}. Retrying in ${delay} seconds...`);
+                  await sleep(delay * 1000);
+                }
+              }
+              throw lastError;
+            }
+
+
+            function chunkArray(array, size) {
+              const chunks = [];
+              for (let i = 0; i < array.length; i += size) {
+                chunks.push(array.slice(i, i + size));
+              }
+              return chunks;
+            }
+
+
+            //
+
+            // --- Payload Class ---
+
+            //
+
+
+            class JobcodeUpdatePayload {
+              /**
+               * @param {string|number} id - The QuickBooks Time jobcode id to update.
+               * @param {string} name - The new name for the jobcode.
+               * @param {string} [active="yes"] - The new active status ("yes" or "no").
+               */
+              constructor(project) {
+                this.id = project.fields["QB Time Jobcode ID"];
+                this.name = project.fields["Timetracking App Record Display Name"];
+                this.active = project.fields?.["⚙️ Timetracking Job Active Status"] || true;
+                this.assigned_to_all = !project.fields?.["QB Time Jobcode Assign to All"] ? "no" : "yes"
+              }
+            }
+      name: Update Jobcodes

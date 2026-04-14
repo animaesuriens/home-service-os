@@ -1,0 +1,360 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 03.1 Process Project
+  description: ""
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Yes
+          steps:
+            - action:
+                key: writeLog
+                component:
+                  isPublic: true
+                  key: log
+                  version: LATEST
+              description: ""
+              inputs:
+                level:
+                  type: value
+                  value: info
+                message:
+                  type: value
+                  value: QBO Sub Customer ID exists.
+              name: Log Message
+            - action:
+                key: stopExecution
+                component:
+                  isPublic: true
+                  key: stop-execution
+                  version: LATEST
+              description: ""
+              inputs:
+                contentType:
+                  type: value
+                  value: application/json
+                headers:
+                  type: complex
+                  value: []
+                jsonBody:
+                  type: reference
+                  value: trigger.results.body.data.fields.QBO Sub-Customer ID
+                statusCode:
+                  type: value
+                  value: "200"
+              name: Stop Execution
+        - name: Else
+          steps:
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      let qboSubCustomerName =
+                        stepResults.trigger.results.body.data.fields["QBO Sub-Customer Name"];
+                      let query = `SELECT * FROM Customer WHERE DisplayName = '${qboSubCustomerName.replace(/'/g, "\\'")}'`;
+
+                      let encodedQuery = encodeURIComponent(query);
+
+                      return { data: `/query?query=${encodedQuery}` };
+                    };
+              name: Get Query Url
+            - action:
+                key: rawRequest
+                component:
+                  isPublic: true
+                  key: quickbooks
+                  version: LATEST
+              description: "By: QBO Parent Customer Name"
+              inputs:
+                connection:
+                  type: configVar
+                  value: QuickBooks Connection
+                data:
+                  type: value
+                  value: ""
+                debugRequest:
+                  type: value
+                  value: "true"
+                fileData:
+                  type: complex
+                  value: []
+                formData:
+                  type: complex
+                  value: []
+                headers:
+                  type: complex
+                  value: []
+                maxRetries:
+                  type: value
+                  value: "0"
+                method:
+                  type: value
+                  value: GET
+                queryParams:
+                  type: complex
+                  value: []
+                responseType:
+                  type: value
+                  value: json
+                retryAllErrors:
+                  type: value
+                  value: "false"
+                retryDelayMS:
+                  type: value
+                  value: "0"
+                timeout:
+                  type: value
+                  value: ""
+                url:
+                  type: reference
+                  value: getQueryUrl.results
+                useExponentialBackoff:
+                  type: value
+                  value: "false"
+              name: Get Customer
+            - action:
+                key: branchOnExpression
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              branches:
+                - name: Yes
+                  steps:
+                    - action:
+                        key: writeLog
+                        component:
+                          isPublic: true
+                          key: log
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        level:
+                          type: value
+                          value: info
+                        message:
+                          type: value
+                          value: Customer Matched by QBO Sub Customer Name
+                      name: Log Message 2
+                    - action:
+                        key: stopExecution
+                        component:
+                          isPublic: true
+                          key: stop-execution
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        contentType:
+                          type: value
+                          value: application/json
+                        headers:
+                          type: complex
+                          value: []
+                        jsonBody:
+                          type: reference
+                          value: getCustomer.results.QueryResponse.Customer[0].Id
+                        statusCode:
+                          type: value
+                          value: "200"
+                      name: Stop Execution 2
+                - name: Else
+                  steps:
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              let projectData = stepResults.trigger.results.body.data;
+
+                              const customerData = {
+                                DisplayName: projectData.fields["QBO Sub-Customer Name"],
+                                // GivenName: jobData.fields["Billing Contact First Name"],
+                                // FamilyName: jobData.fields["Billing Contact Last Name"],
+                                // PrimaryPhone: {
+                                //   FreeFormNumber: jobData.fields["Billing Contact Phone"],
+                                // },
+                                // PrimaryEmailAddr: {
+                                //   Address: jobData.fields["Billing Contact Email"],
+                                // },
+                                // BillAddr: {
+                                //   Line1: jobData.fields["Billing Street Address"],
+                                //   City: jobData.fields["Billing City"],
+                                //   CountrySubDivisionCode: jobData.fields["Billing State"],
+                                //   PostalCode: jobData.fields["Billing Postal Code"],
+                                // },
+                              };
+
+                              return customerData;
+                            };
+                      name: Create Customer Payload
+                    - action:
+                        key: rawRequest
+                        component:
+                          isPublic: true
+                          key: quickbooks
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 10
+                        errorHandlerType: retry
+                        ignoreFinalError: false
+                        maxAttempts: 2
+                        usesExponentialBackoff: false
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: QuickBooks Connection
+                        data:
+                          type: reference
+                          value: createCustomerPayload.results
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        fileData:
+                          type: complex
+                          value: []
+                        formData:
+                          type: complex
+                          value: []
+                        headers:
+                          type: complex
+                          value:
+                            - name:
+                                type: value
+                                value: Content-Type
+                              type: value
+                              value: application/json
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        method:
+                          type: value
+                          value: POST
+                        queryParams:
+                          type: complex
+                          value: []
+                        responseType:
+                          type: value
+                          value: json
+                        retryAllErrors:
+                          type: value
+                          value: "false"
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: value
+                          value: customer
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: Create Customer
+                    - action:
+                        key: writeLog
+                        component:
+                          isPublic: true
+                          key: log
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        level:
+                          type: value
+                          value: info
+                        message:
+                          type: value
+                          value: Customer Created w/ only Display Name
+                      name: Log Message 3
+                    - action:
+                        key: stopExecution
+                        component:
+                          isPublic: true
+                          key: stop-execution
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        contentType:
+                          type: value
+                          value: application/json
+                        headers:
+                          type: complex
+                          value: []
+                        jsonBody:
+                          type: reference
+                          value: createCustomer.results.Customer.Id
+                        statusCode:
+                          type: value
+                          value: "200"
+                      name: Stop Execution 6
+              description: ""
+              inputs:
+                conditions:
+                  type: complex
+                  value:
+                    - name: Yes
+                      type: complex
+                      value:
+                        - and
+                        - - exists
+                          - name: ""
+                            type: reference
+                            value: getCustomer.results.QueryResponse.Customer[0].Id
+              name: Customer Match Found?
+      description: QBO Sub Customer ID Exists?
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Yes
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: trigger.results.body.data.fields.QBO Sub-Customer ID
+                - - isNotEmpty
+                  - name: ""
+                    type: reference
+                    value: trigger.results.body.data.fields.QBO Sub-Customer ID
+                  - name: ""
+                    type: value
+                    value: ""
+      name: QBO Sub Customer ID Exists?

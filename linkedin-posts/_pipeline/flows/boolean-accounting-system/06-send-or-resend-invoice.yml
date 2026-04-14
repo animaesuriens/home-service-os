@@ -1,0 +1,213 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 06 Send or ReSend Invoice
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: webhook
+        component:
+          isPublic: true
+          key: webhook-triggers
+          version: LATEST
+      description: ""
+      inputs:
+        body:
+          type: value
+          value: ""
+        contentType:
+          type: value
+          value: ""
+        headers:
+          type: complex
+          value: []
+        statusCode:
+          type: value
+          value: ""
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: getRecord
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: ""
+      inputs:
+        airtableConnection:
+          type: configVar
+          value: Airtable Connection
+        baseId:
+          type: configVar
+          value: Project Management Base
+        record:
+          type: reference
+          value: trigger.results.body.data.recordId
+        tableName:
+          type: configVar
+          value: Invoices Table
+      name: Get Invoice
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: quickbooks
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: null
+        errorHandlerType: ignore
+        ignoreFinalError: null
+        maxAttempts: null
+        usesExponentialBackoff: null
+      inputs:
+        connection:
+          type: configVar
+          value: QuickBooks Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value: []
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: POST
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: template
+          value: /invoice/{{$getInvoice.results.fields.QBO Invoice
+            ID}}/send?sendTo={{$getInvoice.results.fields.Send Invoice To?.0}}
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Send Invoice
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Sent
+          steps:
+            - action:
+                key: updateRecord
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: 10
+                errorHandlerType: retry
+                ignoreFinalError: false
+                maxAttempts: 5
+                usesExponentialBackoff: false
+              inputs:
+                airtableConnection:
+                  type: configVar
+                  value: Airtable Connection
+                baseId:
+                  type: configVar
+                  value: Project Management Base
+                dynamicFields:
+                  type: value
+                  value: ""
+                record:
+                  type: reference
+                  value: getInvoice.results.id
+                recordFields:
+                  type: complex
+                  value:
+                    - name:
+                        type: value
+                        value: Invoice Actions
+                      type: value
+                      value: Done
+                tableName:
+                  type: configVar
+                  value: Invoices Table
+              name: Update Status
+        - name: Else
+          steps:
+            - action:
+                key: updateRecord
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: 10
+                errorHandlerType: retry
+                ignoreFinalError: false
+                maxAttempts: 5
+                usesExponentialBackoff: false
+              inputs:
+                airtableConnection:
+                  type: configVar
+                  value: Airtable Connection
+                baseId:
+                  type: configVar
+                  value: Project Management Base
+                dynamicFields:
+                  type: value
+                  value: ""
+                record:
+                  type: reference
+                  value: getInvoice.results.id
+                recordFields:
+                  type: complex
+                  value:
+                    - name:
+                        type: value
+                        value: Invoice Actions
+                      type: value
+                      value: Error
+                tableName:
+                  type: configVar
+                  value: Invoices Table
+              name: Update Status 2
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Sent
+              type: complex
+              value:
+                - and
+                - - doesNotExist
+                  - name: ""
+                    type: reference
+                    value: sendInvoice.results.error
+      name: Status Branch

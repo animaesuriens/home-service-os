@@ -1,0 +1,499 @@
+sourceFile: daily-production-data-export.yml
+category: Boolean PaintOS
+flow:
+  name: 01 Update DPD Schedule
+  description: This updates the daily production data records when the associated
+    project's start and end dates are updated.
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: schedule
+        component:
+          isPublic: true
+          key: schedule-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Runs 30 Minutes
+      schedule:
+        meta:
+          scheduleType: minute
+          timeZone: ""
+        type: value
+        value: "*/30 * * * *"
+    - action:
+        key: listRecords
+        component:
+          isPublic: true
+          key: airtable
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: true
+        maxAttempts: 5
+        usesExponentialBackoff: false
+      inputs:
+        airtableConnection:
+          type: configVar
+          value: Airtable Connection
+        baseId:
+          type: configVar
+          value: Project Management Base
+        fields:
+          type: complex
+          value: []
+        filterByFormula:
+          type: template
+          value: '{⚙️ Daily Production Data Up-to-Date}="False"'
+        tableName:
+          type: configVar
+          value: Projects Table
+        view:
+          type: value
+          value: ""
+      name: List Projects
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: listProjects.results
+      name: Loop Projects
+      steps:
+        - action:
+            key: branchOnExpression
+            component:
+              isPublic: true
+              key: branch
+              version: LATEST
+          branches:
+            - name: If Dates Exist
+              steps:
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: "Convert date and generate unique IDs for each project:
+                    {Data}:{ProjectNumber}"
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+
+                          let projectData = stepResults.loopProjects.currentItem
+                          let startDate = new Date(projectData.fields["Project Start Date"])
+                          let endDate = new Date(projectData.fields["Project End Date"])
+                          let projectNumber = projectData.fields["Project Number"]
+                          let dailyProductionData = projectData.fields["Daily Production Data"]
+
+                          logger.log(startDate)
+                          logger.log(endDate)
+
+                          function formatDateYYYYMMDD(date) {
+                              let year = date.getFullYear();
+                              let month = (date.getMonth() + 1).toString().padStart(2, '0');
+                              let day = date.getDate().toString().padStart(2, '0');
+                              return `${year}${month}${day}`;
+                          }
+
+                          function getWorkdays(startDate, endDate) {
+                            let workdays = [];
+                            let currentDate = new Date(startDate);
+                            while (currentDate <= endDate) {
+                                let day = currentDate.getDay();
+                                // Exclude weekends (0 = Sunday, 6 = Saturday)
+                                if (day !== 0 && day !== 6) {
+                                    workdays.push(new Date(currentDate));
+                                }
+                                currentDate.setDate(currentDate.getDate() + 1);
+                            }
+                            return workdays;
+                          }
+                          
+                          let workdays = getWorkdays(startDate, endDate)
+
+                          
+
+                          return {
+                            // startDate: formatDateYYYYMMDD(startDate),
+                            // endDate: formatDateYYYYMMDD(endDate),
+                            workdays: workdays,
+                            workdaysLength: workdays.length,
+                            // workDayIds: workdays.map(date => `${formatDateYYYYMMDD(date)}:${projectNumber}`),
+                            dpd: dailyProductionData
+
+                          };
+                        };
+                  name: Utilities
+                - action:
+                    key: branchOnExpression
+                    component:
+                      isPublic: true
+                      key: branch
+                      version: LATEST
+                  branches:
+                    - name: Existing DPD
+                      steps:
+                        - action:
+                            key: loopOverItems
+                            component:
+                              isPublic: true
+                              key: loop
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            items:
+                              type: reference
+                              value: utilities.results.dpd
+                          name: Loop Over DPD
+                          steps:
+                            - action:
+                                key: getRecord
+                                component:
+                                  isPublic: true
+                                  key: airtable
+                                  version: LATEST
+                              description: ""
+                              errorConfig:
+                                delaySeconds: 5
+                                errorHandlerType: retry
+                                ignoreFinalError: false
+                                maxAttempts: 3
+                                usesExponentialBackoff: false
+                              inputs:
+                                airtableConnection:
+                                  type: configVar
+                                  value: Airtable Connection
+                                baseId:
+                                  type: configVar
+                                  value: Project Management Base
+                                record:
+                                  type: reference
+                                  value: loopOverDpd.currentItem
+                                tableName:
+                                  type: configVar
+                                  value: Daily Production Data Table
+                              name: Get DPD
+                    - name: Else
+                      steps: []
+                  description: ""
+                  inputs:
+                    conditions:
+                      type: complex
+                      value:
+                        - name: Existing DPD
+                          type: complex
+                          value:
+                            - and
+                            - - exists
+                              - name: ""
+                                type: reference
+                                value: utilities.results.dpd
+                  name: Existing DPD Branch
+                - action:
+                    key: sort
+                    component:
+                      isPublic: true
+                      key: collection-tools
+                      version: LATEST
+                  description: ""
+                  errorConfig:
+                    delaySeconds: null
+                    errorHandlerType: ignore
+                    ignoreFinalError: null
+                    maxAttempts: null
+                    usesExponentialBackoff: null
+                  inputs:
+                    list:
+                      type: reference
+                      value: loopOverDpd.results
+                    sortComparisonFunction:
+                      type: value
+                      value: >-
+                        (a, b) => {
+                          return a.fields.Date < b.fields.Date ? -1 : a.fields.Date > b.fields.Date ? 1 : 0;
+                        }
+                  name: Sort Existing DPD by Date
+                - action:
+                    key: loopOverItems
+                    component:
+                      isPublic: true
+                      key: loop
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    items:
+                      type: reference
+                      value: utilities.results.workdays
+                  name: Loop Over Work Days
+                  steps:
+                    - action:
+                        key: selectItemFromList
+                        component:
+                          isPublic: true
+                          key: collection-tools
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: null
+                        errorHandlerType: ignore
+                        ignoreFinalError: null
+                        maxAttempts: null
+                        usesExponentialBackoff: null
+                      inputs:
+                        indexInput:
+                          type: complex
+                          value:
+                            - type: reference
+                              value: loopOverWorkDays.index
+                        listInput:
+                          type: reference
+                          value: sortExistingDpdByDate.results
+                      name: Get Existing DPD
+                    - action:
+                        key: branchOnExpression
+                        component:
+                          isPublic: true
+                          key: branch
+                          version: LATEST
+                      branches:
+                        - name: New Work Day
+                          steps:
+                            - action:
+                                key: updateRecord
+                                component:
+                                  isPublic: true
+                                  key: airtable
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                airtableConnection:
+                                  type: configVar
+                                  value: Airtable Connection
+                                baseId:
+                                  type: configVar
+                                  value: Project Management Base
+                                dynamicFields:
+                                  type: value
+                                  value: ""
+                                record:
+                                  type: reference
+                                  value: getExistingDpd.results.0.id
+                                recordFields:
+                                  type: complex
+                                  value:
+                                    - name:
+                                        type: value
+                                        value: Date
+                                      type: reference
+                                      value: loopOverWorkDays.currentItem
+                                    - name:
+                                        type: value
+                                        value: Project
+                                      type: reference
+                                      value: loopProjects.currentItem.id
+                                tableName:
+                                  type: configVar
+                                  value: Daily Production Data Table
+                              name: Update Daily Production Data
+                        - name: Else
+                          steps:
+                            - action:
+                                key: createRecord
+                                component:
+                                  isPublic: true
+                                  key: airtable
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                airtableConnection:
+                                  type: configVar
+                                  value: Airtable Connection
+                                baseId:
+                                  type: configVar
+                                  value: Project Management Base
+                                dynamicFields:
+                                  type: value
+                                  value: ""
+                                recordFields:
+                                  type: complex
+                                  value:
+                                    - name:
+                                        type: value
+                                        value: Date
+                                      type: reference
+                                      value: loopOverWorkDays.currentItem
+                                    - name:
+                                        type: value
+                                        value: Project
+                                      type: reference
+                                      value: loopProjects.currentItem.id
+                                tableName:
+                                  type: configVar
+                                  value: Daily Production Data Table
+                              name: Create Daily Production Data
+                      description: ""
+                      inputs:
+                        conditions:
+                          type: complex
+                          value:
+                            - name: New Work Day
+                              type: complex
+                              value:
+                                - and
+                                - - exists
+                                  - name: ""
+                                    type: reference
+                                    value: getExistingDpd.results.0
+                      name: New Work Day Branch
+                - action:
+                    key: length
+                    component:
+                      isPublic: true
+                      key: collection-tools
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    listInput:
+                      type: reference
+                      value: loopOverWorkDays.results
+                  name: Total Working Days
+                - action:
+                    key: loopOverItems
+                    component:
+                      isPublic: true
+                      key: loop
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    items:
+                      type: reference
+                      value: sortExistingDpdByDate.results
+                  name: Loop Over Existing DPD
+                  steps:
+                    - action:
+                        key: branchOnExpression
+                        component:
+                          isPublic: true
+                          key: branch
+                          version: LATEST
+                      branches:
+                        - name: Delete DPD
+                          steps: []
+                        - name: Else
+                          steps: []
+                      description: ""
+                      inputs:
+                        conditions:
+                          type: complex
+                          value:
+                            - name: Delete DPD
+                              type: complex
+                              value:
+                                - and
+                                - - lessThanOrEqual
+                                  - name: ""
+                                    type: reference
+                                    value: totalWorkingDays.results
+                                  - name: ""
+                                    type: reference
+                                    value: loopOverExistingDpd.index
+                      name: Extra Work Days Branch
+                - action:
+                    key: getCurrentDateTime
+                    component:
+                      isPublic: true
+                      key: datetime
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    displayEpochInSeconds:
+                      type: value
+                      value: "true"
+                  name: Get Current Date/Time
+                - action:
+                    key: convertFromEpoch
+                    component:
+                      isPublic: true
+                      key: datetime
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    isSecondsTimestamp:
+                      type: value
+                      value: "true"
+                    timestamp:
+                      type: reference
+                      value: getCurrentDateTime.results
+                  name: Convert Epoch Timestamp To Date
+                - action:
+                    key: updateRecord
+                    component:
+                      isPublic: true
+                      key: airtable
+                      version: LATEST
+                  description: ""
+                  errorConfig:
+                    delaySeconds: 5
+                    errorHandlerType: retry
+                    ignoreFinalError: false
+                    maxAttempts: 3
+                    usesExponentialBackoff: false
+                  inputs:
+                    airtableConnection:
+                      type: configVar
+                      value: Airtable Connection
+                    baseId:
+                      type: configVar
+                      value: Project Management Base
+                    dynamicFields:
+                      type: value
+                      value: ""
+                    record:
+                      type: reference
+                      value: loopProjects.currentItem.id
+                    recordFields:
+                      type: complex
+                      value:
+                        - name:
+                            type: value
+                            value: ⚙️ Daily Production Data Records Last Updated
+                          type: reference
+                          value: convertEpochTimestampToDate.results
+                    tableName:
+                      type: configVar
+                      value: Projects Table
+                  name: Update Modified Date
+            - name: Else
+              steps: []
+          description: ""
+          inputs:
+            conditions:
+              type: complex
+              value:
+                - name: If Dates Exist
+                  type: complex
+                  value:
+                    - or
+                    - - exists
+                      - name: ""
+                        type: reference
+                        value: loopProjects.currentItem.fields.Project Start Date
+                    - - exists
+                      - name: ""
+                        type: reference
+                        value: loopProjects.currentItem.fields.Project End Date
+          name: Branch on Expression

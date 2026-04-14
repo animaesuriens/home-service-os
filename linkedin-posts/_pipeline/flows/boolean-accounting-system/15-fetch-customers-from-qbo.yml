@@ -1,0 +1,399 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 15 Fetch customers from QBO
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: webhook
+        component:
+          isPublic: true
+          key: webhook-triggers
+          version: LATEST
+      description: ""
+      inputs:
+        body:
+          type: value
+          value: ""
+        contentType:
+          type: value
+          value: ""
+        headers:
+          type: complex
+          value: []
+        statusCode:
+          type: value
+          value: ""
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const filter = configVars["Active Customers Only"];
+
+              let query = "SELECT * FROM Customer WHERE Active IN (true, false)";
+
+              if (filter === "true") {
+                query = `SELECT * FROM Customer WHERE active=true`;
+              }
+
+              return { data: encodeURIComponent(query) };
+            };
+      name: Build Query
+    - action:
+        key: saveExecutionValue
+        component:
+          isPublic: true
+          key: persist-data
+          version: LATEST
+      description: ""
+      inputs:
+        dynamicValues:
+          type: complex
+          value: []
+        keyInput:
+          type: value
+          value: index
+        valueInput:
+          type: value
+          value: "1"
+      name: Start Index
+    - action:
+        key: loopNTimes
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        iterationCount:
+          type: value
+          value: "200"
+      name: Loop N Times
+      steps:
+        - action:
+            key: getExecutionValue
+            component:
+              isPublic: true
+              key: persist-data
+              version: LATEST
+          description: ""
+          inputs:
+            defaultValueInput:
+              type: value
+              value: "0"
+            keyInput:
+              type: value
+              value: index
+          name: Get Index
+        - action:
+            key: runCode
+            component:
+              isPublic: true
+              key: code
+              version: LATEST
+          description: ""
+          inputs:
+            code:
+              type: value
+              value: >
+                module.exports = async ({ logger, configVars }, stepResults) =>
+                {
+                  const index = stepResults.getIndex.results;
+
+                  const queryParameters = ` STARTPOSITION ${index} MAXRESULTS 100`;
+
+                  return { data: encodeURIComponent(queryParameters) };
+                };
+          name: Query Parameters
+        - action:
+            key: rawRequest
+            component:
+              isPublic: true
+              key: quickbooks
+              version: LATEST
+          description: ""
+          inputs:
+            connection:
+              type: configVar
+              value: QuickBooks Connection
+            data:
+              type: value
+              value: ""
+            debugRequest:
+              type: value
+              value: "false"
+            fileData:
+              type: complex
+              value: []
+            formData:
+              type: complex
+              value: []
+            headers:
+              type: complex
+              value: []
+            maxRetries:
+              type: value
+              value: "0"
+            method:
+              type: value
+              value: GET
+            queryParams:
+              type: complex
+              value: []
+            responseType:
+              type: value
+              value: json
+            retryAllErrors:
+              type: value
+              value: "false"
+            retryDelayMS:
+              type: value
+              value: "0"
+            timeout:
+              type: value
+              value: ""
+            url:
+              type: template
+              value: /query?query={{$buildQuery.results}}{{$queryParameters.results}}
+            useExponentialBackoff:
+              type: value
+              value: "false"
+          name: Get Customers
+        - action:
+            key: branchOnExpression
+            component:
+              isPublic: true
+              key: branch
+              version: LATEST
+          branches:
+            - name: Yes
+              steps:
+                - action:
+                    key: incrementExecutionValue
+                    component:
+                      isPublic: true
+                      key: persist-data
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    amountInput:
+                      type: value
+                      value: "100"
+                    keyInput:
+                      type: value
+                      value: index
+                  name: Increment Index
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        const _ = require("lodash");
+
+
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+                          const records = stepResults.getCustomers.results.QueryResponse.Customer;
+
+                          const batches = _.chunk(records, 10);
+
+                          return { data: batches };
+                        };
+                  name: Prepare record batches
+                - action:
+                    key: loopOverItems
+                    component:
+                      isPublic: true
+                      key: loop
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    items:
+                      type: reference
+                      value: prepareRecordBatches.results
+                  name: Loop Over Batches
+                  steps:
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              const records = stepResults.loopOverBatches.currentItem;
+
+                              const payloadRecords = records.map((record) => {
+                                const addr = record?.BillAddr || {};
+                                const lastMod = new Date(record.MetaData.LastUpdatedTime);
+                                const createdAt = new Date(record.MetaData.CreateTime);
+                                const value = {
+                                  fields: {
+                                    "QBO Customer ID": record.Id,
+                                    "Customer Display Name": record.DisplayName,
+                                    "Contact Street": addr.Line1 || "",
+                                    "Contact City": addr.City || "",
+                                    "Contact State": addr.CountrySubDivisionCode || "",
+                                    "Contact Postal Code": addr.PostalCode || "",
+                                    "Customer Status": record.Active ? "Active" : "Inactive",
+                                    "Balance": parseFloat(record.Balance || 0),
+                                    "First Name": record.GivenName || "",
+                                    "Last Name": record.FamilyName || "",
+                                    "Email": record.PrimaryEmailAddr?.Address || "",
+                                    "Phone": record.PrimaryPhone?.FreeFormNumber || "",
+                                    // Checks if the customer has sub-levels (is a Parent)
+                                    "Has Sub-Customers": record.SubLevel > 0,
+                                    // If the customer IS a sub-customer, this pulls the Parent's ID
+                                    "Parent Customer ID": record.ParentRef?.value || "",
+                                    // "Last Modified Date": lastMod.toISOString().split(".")[0] + "Z",
+                                    // "Created Date": createdAt.toISOString().split(".")[0] + "Z",
+                                  },
+                                };
+                                return value;
+                              });
+
+                              const payload = {
+                                records: payloadRecords,
+                              };
+
+                              return { data: payload };
+                            };
+                      name: Create Payload
+                    - action:
+                        key: rawRequest
+                        component:
+                          isPublic: true
+                          key: airtable
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 10
+                        errorHandlerType: retry
+                        ignoreFinalError: false
+                        maxAttempts: 2
+                        usesExponentialBackoff: false
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: Airtable Connection
+                        data:
+                          type: reference
+                          value: createPayload.results
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        fileData:
+                          type: complex
+                          value: []
+                        fileDataFileNames:
+                          type: complex
+                          value: []
+                        formData:
+                          type: complex
+                          value: []
+                        headers:
+                          type: complex
+                          value:
+                            - name:
+                                type: value
+                                value: Content-Type
+                              type: value
+                              value: application/json
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        method:
+                          type: value
+                          value: POST
+                        queryParams:
+                          type: complex
+                          value: []
+                        responseType:
+                          type: value
+                          value: json
+                        retryAllErrors:
+                          type: value
+                          value: "false"
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: template
+                          value: /v0/{{#Project Management Base}}/{{#Existing QBO Customers}}
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: Create Records in AT
+            - name: Else
+              steps:
+                - action:
+                    key: writeLog
+                    component:
+                      isPublic: true
+                      key: log
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    level:
+                      type: value
+                      value: info
+                    message:
+                      type: value
+                      value: Empty response.
+                  name: Write Log Message
+                - action:
+                    key: breakLoop
+                    component:
+                      isPublic: true
+                      key: loop
+                      version: LATEST
+                  description: ""
+                  inputs: {}
+                  name: Break Loop
+          description: ""
+          inputs:
+            conditions:
+              type: complex
+              value:
+                - name: Yes
+                  type: complex
+                  value:
+                    - and
+                    - - exists
+                      - name: ""
+                        type: reference
+                        value: getCustomers.results.QueryResponse.Customer
+                    - - isNotEmpty
+                      - name: ""
+                        type: reference
+                        value: getCustomers.results.QueryResponse.Customer
+                      - name: ""
+                        type: value
+                        value: ""
+          name: Records fetched?

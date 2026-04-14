@@ -1,0 +1,386 @@
+sourceFile: job-management-integration-export.yml
+category: Boolean PaintOS
+flow:
+  name: 12 Hubspot mapper to file field
+  description: Maps file field and sync the file between HS to AT
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Cross Flow
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: Get Deal Properties
+      inputs:
+        connection:
+          type: configVar
+          value: HubSpot Private App Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: Content-Type
+              type: value
+              value: application/json
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: /crm/v3/properties/deals
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Deal Properties
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: Deal Payload
+      inputs:
+        code:
+          type: value
+          value: >
+            /*
+              Access config variables by name through the configVars object. e.g.
+                const apiEndpoint = `${configVars["App Base URL"]}/api`;
+
+              Access previous steps' results through the stepResults object. Trigger
+              and step names are camelCased. If the step "Get Data from API" returned
+              {"foo": "bar", "baz": 123}, you could destructure that data with:
+                const { foo, baz } = stepResults.getDataFromApi.results;
+
+              You can return string, number or complex object data. e.g.
+                return { data: { foo: "Hello", bar: 123.45, baz: true } };
+            */
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              let properties = stepResults?.getDealProperties?.results?.results;
+             properties = properties?.filter(item => item?.fieldType?.toLowerCase().includes("file"));
+              properties = properties?.map((item) => item?.name);
+             
+              return {
+                data: {
+                  properties,
+                  properties_instring: properties?.toString()
+                },
+              };
+            };
+      name: Deal Payload
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: Get Deal
+      inputs:
+        connection:
+          type: configVar
+          value: HubSpot Private App Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: Content-Type
+              type: value
+              value: application/json
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: template
+          value: /crm/v3/objects/deals/{{$crossFlow.results.body.data.hs_object_id}}?properties={{$dealPayload.results.properties_instring}}
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Deal
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: Downloads the file from hubspot and upload to gdrive, this should
+        return the public url of the uploaded files
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const hubspot_accessKey =
+                configVars?.["HubSpot Private App Connection"]?.fields?.accessToken;
+              const properties = stepResults?.dealPayload?.results?.properties;
+              const dealId = stepResults?.crossFlow?.results?.body?.data?.hs_object_id;
+              const airtable_accessKey = configVars?.["Airtable Connection"]?.fields?.apiKey;
+              const airtableItemID =
+                stepResults?.crossFlow?.results?.body?.data?.airtable_id;
+              const fieldMapped =
+                configVars?.["HS Deal Properties / AT Jobs Table Fields Mapping"];
+              const atBase = configVars?.["Project Management Base"];
+              const atTable = configVars?.["Jobs Table"];
+
+              logger.info(hubspot_accessKey);
+
+              const propertyKeys = properties?.toString();
+
+              const getDeal = async (id) => {
+                try {
+                  const url = `https://api.hubapi.com/crm/v3/objects/deals/${id}${
+                    propertyKeys ? `?properties=${propertyKeys}` : ""
+                  }`;
+
+                  const response = await fetch(url, {
+                    method: "GET",
+                    headers: {
+                      Authorization: `Bearer ${hubspot_accessKey}`,
+                      "Content-Type": "application/json",
+                    },
+                  });
+
+                  if (!response?.ok) {
+                    throw new Error(`Failed to fetch deal: ${response?.statusText}`);
+                  }
+
+                  const dealData = await response?.json();
+                  return {
+                    ...dealData?.properties,
+                    id: dealData?.id,
+                  };
+                } catch (error) {
+                  logger.info("Error fetching deal from HubSpot", error?.message);
+                  return null;
+                }
+              };
+
+              const getDownloadUrl = async (fileId) => {
+                try {
+                  const metaResponse = await fetch(
+                    `https://api.hubapi.com/files/v3/files/${fileId}`,
+                    {
+                      method: "GET",
+                      headers: {
+                        Authorization: `Bearer ${hubspot_accessKey}`,
+                        "Content-Type": "application/json",
+                      },
+                    }
+                  );
+
+                  if (!metaResponse?.ok) {
+                    logger.info(`Failed to get file metadata for fileId: ${fileId}`);
+                  }
+
+                  const fileMeta = await metaResponse?.json();
+                  const fileName = fileMeta?.name;
+
+                  const urlResponse = await fetch(
+                    `https://api.hubapi.com/files/v3/files/${fileId}/signed-url`,
+                    {
+                      method: "GET",
+                      headers: {
+                        Authorization: `Bearer ${hubspot_accessKey}`,
+                        "Content-Type": "application/json",
+                      },
+                    }
+                  );
+
+                  if (!urlResponse?.ok) {
+                    logger.info(`Failed to get signed URL for fileId: ${fileId}`);
+                  }
+
+                  const urlJson = await urlResponse?.json();
+                  const signedUrl = urlJson?.url;
+
+                  return {
+                    url: signedUrl,
+                    name: fileName,
+                  };
+                } catch (error) {
+                  logger.info("Error fetching download URL or file name:", error?.message);
+                  return null;
+                }
+              };
+
+              const dealDetails = dealId ? await getDeal(dealId) : null;
+              logger.info("dealDetails:", dealDetails);
+
+              if (!dealDetails) {
+                return {
+                  data: null,
+                };
+              }
+
+              const fieldDestination = (item) => {
+                return fieldMapped?.find((itemField) => itemField?.source === item);
+              };
+
+              for (let item of properties || []) {
+                let string_file_id_list = dealDetails?.[item];
+                if (string_file_id_list) {
+                  let list_file_ids_array = string_file_id_list?.split(";");
+
+                  logger.info("list_file_ids_array:", list_file_ids_array);
+                  logger.info("item:", item);
+
+                  for (let fileItem of list_file_ids_array || []) {
+                    const downloadUrl = await getDownloadUrl(fileItem);
+                    let destinationField = fieldDestination(item);
+
+                    logger.info("destinationField:", destinationField);
+
+                    const airtableUpdateUrl = `https://api.airtable.com/v0/${atBase}/${atTable}/${airtableItemID}`;
+
+                    const getExistingRecord = await fetch(airtableUpdateUrl, {
+                      method: "GET",
+                      headers: {
+                        Authorization: `Bearer ${airtable_accessKey}`,
+                        "Content-Type": "application/json",
+                      },
+                    });
+
+                    let existingFiles = [];
+                    if (getExistingRecord?.ok) {
+                      const recordJson = await getExistingRecord?.json();
+                      existingFiles =
+                        recordJson?.fields?.[destinationField?.destination] || [];
+
+                      existingFiles = existingFiles?.filter((file) => {
+                        const existingFileName = decodeURIComponent(file?.filename || "")
+                          .replace(/\s+/g, "")
+                          .toLowerCase();
+
+                        const incomingFileName = (downloadUrl?.name || "")
+                          .replace(/\s+/g, "")
+                          .toLowerCase();
+
+                        logger.info(
+                          `Comparing existing file: ${existingFileName} vs incoming file: ${incomingFileName}`
+                        );
+
+                        return !existingFileName.includes(incomingFileName);
+                      });
+                    }
+
+                    const updatedFiles = [...existingFiles, { url: downloadUrl?.url }];
+                    const airtablePayload = {
+                      fields: {
+                        [destinationField?.destination]: updatedFiles,
+                      },
+                    };
+
+                    const airtableResponse = await fetch(airtableUpdateUrl, {
+                      method: "PATCH",
+                      headers: {
+                        Authorization: `Bearer ${airtable_accessKey}`,
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify(airtablePayload),
+                    });
+
+                    if (!airtableResponse?.ok) {
+                      logger.info(
+                        `Failed to update Airtable field "${destinationField?.destination}" with file URL:`,
+                        await airtableResponse?.text()
+                      );
+                    } else {
+                      logger.info(
+                        `✅ Uploaded file to Airtable field "${destinationField?.destination}"`
+                      );
+                    }
+                  }
+                }
+              }
+
+              return {
+                data: {
+                  fieldMapped,
+                  airtable_accessKey,
+                  atBase,
+                  hubspot_accessKey,
+                },
+              };
+            };
+      name: Download and upload file

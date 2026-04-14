@@ -1,0 +1,289 @@
+sourceFile: boolean-sales-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 01 PaintScout > HubSpot | Process Quote - Estimate > Deal Sync
+  description: PaintScout > HubSpot | Process Quote - Estimate > Deal Sync
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: schedule
+        component:
+          isPublic: true
+          key: schedule-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+      schedule:
+        meta:
+          scheduleType: minute
+          timeZone: ""
+        type: value
+        value: "*/2 * * * *"
+    - action:
+        key: convertToEpoch
+        component:
+          isPublic: true
+          key: datetime
+          version: LATEST
+      description: ""
+      inputs:
+        dateTimeInput:
+          type: configVar
+          value: Sync Deals After X Date
+        displayEpochInSeconds:
+          type: value
+          value: "false"
+      name: Estimate Date To Sync
+    - action:
+        key: adjustDateTime
+        component:
+          isPublic: true
+          key: datetime
+          version: LATEST
+      description: ""
+      inputs:
+        dateTimeInput:
+          type: reference
+          value: trigger.results.startedAt
+        daysInput:
+          type: value
+          value: ""
+        hoursInput:
+          type: value
+          value: ""
+        minutesInput:
+          type: value
+          value: "-6"
+        secondsInput:
+          type: value
+          value: ""
+      name: Time X Minutes Ago
+    - action:
+        key: convertToEpoch
+        component:
+          isPublic: true
+          key: datetime
+          version: LATEST
+      description: ""
+      inputs:
+        dateTimeInput:
+          type: reference
+          value: timeXMinutesAgo.results
+        displayEpochInSeconds:
+          type: value
+          value: "false"
+      name: Time X Minutes Ago to Epoch
+    - action:
+        key: listQuotes
+        component:
+          isPublic: false
+          key: paintScoutApi
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 2
+        usesExponentialBackoff: false
+      inputs:
+        connection:
+          type: configVar
+          value: PaintScout Connection
+        page:
+          type: value
+          value: "1"
+        perPage:
+          type: value
+          value: "20"
+        query:
+          type: value
+          value: query=sent&query=accepted&query=viewed&query=declined
+        sort:
+          type: value
+          value: updated
+        sortDir:
+          type: value
+          value: desc
+      name: List Quotes
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: listQuotes.results.rows
+      name: Loop Over Quotes
+      steps:
+        - action:
+            key: getQuote
+            component:
+              isPublic: false
+              key: paintScoutApi
+              version: LATEST
+          description: ""
+          errorConfig:
+            delaySeconds: 5
+            errorHandlerType: retry
+            ignoreFinalError: false
+            maxAttempts: 2
+            usesExponentialBackoff: false
+          inputs:
+            connection:
+              type: configVar
+              value: PaintScout Connection
+            id:
+              type: reference
+              value: loopOverQuotes.currentItem.id
+          name: Get Quote
+        - action:
+            key: runCode
+            component:
+              isPublic: true
+              key: code
+              version: LATEST
+          description: ""
+          inputs:
+            code:
+              type: value
+              value: >
+                module.exports = async ({ logger, configVars }, stepResults) =>
+                {
+                  let timestamp = stepResults?.getQuote?.results?.timestamp?.updated;
+                  let quote = stepResults?.getQuote?.results?.dates?.quote;
+
+                  let sent = stepResults?.getQuote?.results?.statusHistory?.sent?.timestamp;
+                  let accepted = stepResults?.getQuote?.results?.statusHistory?.accepted?.timestamp;
+                  let viewed = stepResults?.getQuote?.results?.statusHistory?.viewed?.timestamp;
+                  let declined = stepResults?.getQuote?.results?.statusHistory?.declined?.timestamp;
+
+                  let estimateDateToSync = stepResults?.estimateDateToSync?.results;
+                  let timeXMinutesAgoToEpoch = stepResults?.timeXMinutesAgoToEpoch?.results;
+
+                  const condition1 =
+                    timestamp > timeXMinutesAgoToEpoch &&
+                    quote > estimateDateToSync;
+
+                  const condition2 =
+                    sent > timeXMinutesAgoToEpoch ||
+                    accepted > timeXMinutesAgoToEpoch ||
+                    viewed > timeXMinutesAgoToEpoch ||
+                    declined > timeXMinutesAgoToEpoch;
+
+                  const result = condition1 || condition2;
+
+                  return {
+                    timestamp,
+                    quote,
+                    sent,
+                    accepted,
+                    viewed,
+                    declined,
+                    estimateDateToSync,
+                    timeXMinutesAgoToEpoch,
+                    result
+                  };
+                };
+          name: Time Stamp
+        - action:
+            key: branchOnExpression
+            component:
+              isPublic: true
+              key: branch
+              version: LATEST
+          branches:
+            - name: Past 6 Minutes
+              steps:
+                - action:
+                    key: writeLog
+                    component:
+                      isPublic: true
+                      key: log
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    level:
+                      type: value
+                      value: info
+                    message:
+                      type: value
+                      value: Test
+                  name: Write Log Message 4
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+                          let estimatedDataToSync = stepResults?.estimateDateToSync?.results
+                          let timeXMinutesAgo = stepResults?.timeXMinutesAgo?.results
+                          let timeXMinutesAgoToEpoch = stepResults?.timeXMinutesAgoToEpoch?.results
+                          let getQuote = stepResults?.getQuote?.results
+                          return { 
+                            estimatedDataToSync,
+                            timeXMinutesAgo,
+                            timeXMinutesAgoToEpoch,
+                            getQuote
+                           };
+                        };
+                  name: Process Payload
+                - action:
+                    key: invokeFlow
+                    component:
+                      isPublic: true
+                      key: cross-flow
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    data:
+                      type: reference
+                      value: processPayload.results
+                    flowName:
+                      type: value
+                      value: 01.1 Proccess Deal Sync
+                  name: Invoke Flow
+            - name: Else
+              steps:
+                - action:
+                    key: writeLog
+                    component:
+                      isPublic: true
+                      key: log
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    level:
+                      type: value
+                      value: info
+                    message:
+                      type: value
+                      value: Not applicable for update.
+                  name: Write Log Message 2
+          description: ""
+          inputs:
+            conditions:
+              type: complex
+              value:
+                - name: Past 6 Minutes
+                  type: complex
+                  value:
+                    - and
+                    - - isTrue
+                      - name: ""
+                        type: reference
+                        value: timeStamp.results.result
+          name: Timestamp Branch

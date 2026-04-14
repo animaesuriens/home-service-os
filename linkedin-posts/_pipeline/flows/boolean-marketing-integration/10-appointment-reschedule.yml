@@ -1,0 +1,462 @@
+sourceFile: boolean-marketing-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 10 Appointment Reschedule
+  description: Updates the hubspot estimated date when the YCBM Rescheduled
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: webhook
+        component:
+          isPublic: true
+          key: webhook-triggers
+          version: LATEST
+      description: ""
+      inputs:
+        body:
+          type: value
+          value: ""
+        contentType:
+          type: value
+          value: application/json
+        headers:
+          type: complex
+          value: []
+        statusCode:
+          type: value
+          value: "200"
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: YCBM ID EXIST
+          steps:
+            - action:
+                key: rawRequest
+                component:
+                  isPublic: true
+                  key: hubspot
+                  version: LATEST
+              description: Get deal based on ycbm_booking_id given from the payload
+              errorConfig:
+                delaySeconds: 10
+                errorHandlerType: retry
+                ignoreFinalError: false
+                maxAttempts: 1
+                usesExponentialBackoff: false
+              inputs:
+                connection:
+                  type: configVar
+                  value: HubSpot Private App Connection
+                data:
+                  type: template
+                  value: >
+                    {
+                      "properties": ["ycbm_booking_id","paintscout_quote_id"],
+                      "filterGroups": [
+                        {
+                          "filters": [
+                            {
+                              "propertyName": "ycbm_booking_id",
+                              "value": "{{$trigger.results.body.data.ycmbBookingId}}",
+                              "operator": "EQ"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                fileData:
+                  type: complex
+                  value: []
+                fileDataFileNames:
+                  type: complex
+                  value: []
+                formData:
+                  type: complex
+                  value: []
+                headers:
+                  type: complex
+                  value:
+                    - name:
+                        type: value
+                        value: Content-Type
+                      type: value
+                      value: application/json
+                maxRetries:
+                  type: value
+                  value: "0"
+                method:
+                  type: value
+                  value: POST
+                queryParams:
+                  type: complex
+                  value: []
+                responseType:
+                  type: value
+                  value: json
+                retryAllErrors:
+                  type: value
+                  value: "false"
+                retryDelayMS:
+                  type: value
+                  value: "0"
+                timeout:
+                  type: value
+                  value: ""
+                url:
+                  type: value
+                  value: /crm/v3/objects/deals/search
+                useExponentialBackoff:
+                  type: value
+                  value: "false"
+              name: Get Deal
+            - action:
+                key: loopOverItems
+                component:
+                  isPublic: true
+                  key: loop
+                  version: LATEST
+              description: ""
+              inputs:
+                items:
+                  type: reference
+                  value: getDeal.results.results
+              name: Loop Over Items
+              steps:
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        /*
+                          Access config variables by name through the configVars object. e.g.
+                            const apiEndpoint = `${configVars["App Base URL"]}/api`;
+
+                          Access previous steps' results through the stepResults object. Trigger
+                          and step names are camelCased. If the step "Get Data from API" returned
+                          {"foo": "bar", "baz": 123}, you could destructure that data with:
+                            const { foo, baz } = stepResults.getDataFromApi.results;
+
+                          You can return string, number or complex object data. e.g.
+                            return { data: { foo: "Hello", bar: 123.45, baz: true } };
+                        */
+
+
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+                          let startAt = stepResults?.trigger?.results?.body?.data?.startsAt
+                          return { 
+                              data: {
+                              "properties": {
+                                "estimate_date":startAt
+                                }
+                              }
+                            };
+                        };
+                  name: Convert Estimate Date Payload
+                - action:
+                    key: invokeFlow
+                    component:
+                      isPublic: true
+                      key: cross-flow
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    data:
+                      type: reference
+                      value: convertEstimateDatePayload.results
+                    flowName:
+                      type: value
+                      value: 11 Estimate Date Converter
+                  name: Converted Estimate Date
+                - action:
+                    key: rawRequest
+                    component:
+                      isPublic: true
+                      key: hubspot
+                      version: LATEST
+                  description: Updates estimated date
+                  errorConfig:
+                    delaySeconds: 10
+                    errorHandlerType: retry
+                    ignoreFinalError: false
+                    maxAttempts: 1
+                    usesExponentialBackoff: false
+                  inputs:
+                    connection:
+                      type: configVar
+                      value: HubSpot Private App Connection
+                    data:
+                      type: template
+                      value: |-
+                        {
+                          "properties": {
+                        "estimate_date":"{{$convertedEstimateDate.results.properties.estimate_date}}"
+                          }
+                        }
+                    fileData:
+                      type: complex
+                      value: []
+                    fileDataFileNames:
+                      type: complex
+                      value: []
+                    formData:
+                      type: complex
+                      value: []
+                    headers:
+                      type: complex
+                      value:
+                        - name:
+                            type: value
+                            value: Content-Type
+                          type: value
+                          value: application/json
+                    maxRetries:
+                      type: value
+                      value: "0"
+                    method:
+                      type: value
+                      value: PATCH
+                    queryParams:
+                      type: complex
+                      value: []
+                    responseType:
+                      type: value
+                      value: json
+                    retryAllErrors:
+                      type: value
+                      value: "false"
+                    retryDelayMS:
+                      type: value
+                      value: "0"
+                    timeout:
+                      type: value
+                      value: ""
+                    url:
+                      type: template
+                      value: /crm/v3/objects/deals/{{$loopOverItems.currentItem.id}}
+                    useExponentialBackoff:
+                      type: value
+                      value: "false"
+                  name: Update Deal
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    code:
+                      type: value
+                      value: >-
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+
+                          let trigger = stepResults.trigger.results.body.data;
+                          let startsAt = trigger["startsAt"];
+
+                          // Convert date fields to UNIX time (seconds)
+                          const convertToUnix = (date) => Math.floor(new Date(date).getTime());
+
+                          const startsAtUnix = startsAt ? convertToUnix(startsAt) : null;
+
+                          // Map the variables into the payload
+                          let payload = {
+                            dates: {
+                              quote: startsAtUnix
+                            }
+                          };
+
+                          return payload;
+                        };
+                  name: Payload
+                - action:
+                    key: rawRequest
+                    component:
+                      isPublic: false
+                      key: paintScoutApi
+                      version: LATEST
+                  description: ""
+                  errorConfig:
+                    delaySeconds: 10
+                    errorHandlerType: retry
+                    ignoreFinalError: false
+                    maxAttempts: 1
+                    usesExponentialBackoff: false
+                  inputs:
+                    connection:
+                      type: configVar
+                      value: PaintScout Connection
+                    data:
+                      type: reference
+                      value: payload.results
+                    debugRequest:
+                      type: value
+                      value: "false"
+                    fileData:
+                      type: complex
+                      value: []
+                    fileDataFileNames:
+                      type: complex
+                      value: []
+                    formData:
+                      type: complex
+                      value: []
+                    headers:
+                      type: complex
+                      value:
+                        - name:
+                            type: value
+                            value: Content-Type
+                          type: value
+                          value: application/json
+                    maxRetries:
+                      type: value
+                      value: "0"
+                    method:
+                      type: value
+                      value: PUT
+                    queryParams:
+                      type: complex
+                      value: []
+                    responseType:
+                      type: value
+                      value: json
+                    retryAllErrors:
+                      type: value
+                      value: "false"
+                    retryDelayMS:
+                      type: value
+                      value: "0"
+                    timeout:
+                      type: value
+                      value: ""
+                    url:
+                      type: template
+                      value: /quotes/{{$loopOverItems.currentItem.properties.paintscout_quote_id}}
+                    useExponentialBackoff:
+                      type: value
+                      value: "false"
+                  name: Update Quote
+        - name: Else
+          steps:
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: Creates payload for GMAIL Communicator
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      let mappedJson = stepResults.trigger.results.body.data;
+                      let messages = configVars['YCBM Email notification template'].replace(/\n/g, '<br>');
+
+                      logger.info(mappedJson);
+                      
+                      const formattedDetails = `
+                        📅 <b>Appointment Date:</b> ${mappedJson.startsAt || "N/A"}<br>
+                        ⏰ <b>Time:</b> ${mappedJson.endsAt || "N/A"}<br>
+                        🌍 <b>Time Zone:</b> ${mappedJson.timeZone || "N/A"}<br>
+                        👤 <b>First Name:</b> ${mappedJson.firstName || "N/A"}<br>
+                        📧 <b>Email:</b> ${mappedJson.email || "N/A"}<br>
+                        🔄 <b>Rescheduled At:</b> ${mappedJson.rescheduledAt || "N/A"}<br>
+                        🏷 <b>Rescheduled By:</b> ${mappedJson.rescheduledBy || "N/A"}<br>
+                        🔗 <b>YCBM ID:</b> ${mappedJson.ycbmId || "N/A"}<br>
+                      `;
+
+                      const emailPayload = {
+                        "from": configVars['The "From Name" for Automation Alerts'],
+                        "to": configVars['Resource Coordinator - Default Notification Email'],
+                        // "to": "rod@helloboolean.com",
+                        "cc": "",
+                        "bcc": configVars['HubSpot Portal ID'] + '@bcc.hubspot.com',
+                        "subject": "Error YCBM Reschedule (No YCBM ID Found) - Unable to Update HubSpot Estimate Date",
+                        "body": messages.replace('[Details]', `Unable to update HubSpot estimate date. Please review the details below:<br><br>${formattedDetails}`)
+                      };
+
+                      return { data: emailPayload };
+                    };
+              name: Error Email Payload NO YCBM ID
+            - action:
+                key: httpPost
+                component:
+                  isPublic: true
+                  key: http
+                  version: LATEST
+              description: Trigger to send an email
+              inputs:
+                connection:
+                  type: configVar
+                  value: ""
+                data:
+                  type: reference
+                  value: errorEmailPayloadNoYcbmId.results
+                debugRequest:
+                  type: value
+                  value: "false"
+                headers:
+                  type: complex
+                  value: []
+                ignoreSslErrors:
+                  type: value
+                  value: "false"
+                includeFullResponse:
+                  type: value
+                  value: "false"
+                maxRetries:
+                  type: value
+                  value: "0"
+                queryParams:
+                  type: complex
+                  value: []
+                responseType:
+                  type: value
+                  value: json
+                retryDelayMS:
+                  type: value
+                  value: "0"
+                retryOnAllErrors:
+                  type: value
+                  value: "false"
+                timeout:
+                  type: value
+                  value: ""
+                url:
+                  type: configVar
+                  value: Email Sender Webhook URL
+                useExponentialBackoff:
+                  type: value
+                  value: "false"
+              name: GMAIL COMMUNICATOR
+      description: Checks if YCBM Exist in the payload
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: YCBM ID EXIST
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: trigger.results.body.data.ycmbBookingId
+      name: Is YCBM ID exist?

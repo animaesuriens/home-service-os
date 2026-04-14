@@ -1,0 +1,2199 @@
+sourceFile: boolean-sales-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 03 Change Order Process
+  description: 03 Change Order Process
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: split
+        component:
+          isPublic: true
+          key: text-manipulation
+          version: LATEST
+      description: ""
+      inputs:
+        separator:
+          type: value
+          value: ","
+        text:
+          type: reference
+          value: trigger.results.body.data.source.id
+      name: Split Sources
+    - action:
+        key: length
+        component:
+          isPublic: true
+          key: collection-tools
+          version: LATEST
+      description: ""
+      inputs:
+        listInput:
+          type: reference
+          value: splitSources.results
+      name: Source IDs Count
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 30
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 2
+        usesExponentialBackoff: false
+      inputs:
+        connection:
+          type: configVar
+          value: HubSpot Private App Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value: []
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: /crm/v3/properties/deals?archived=false
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Deal Properties
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+
+              let properties = stepResults.getDealProperties.results.results
+              let propNames = properties
+                .filter(prop => prop.groupName !== "deal_activity" && prop.groupName !== "dealstages")
+                .map(prop => prop.name)
+
+              return propNames;
+            };
+      name: List Deal Properties Label
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+
+              let properties = stepResults.getDealProperties.results.results
+              let propNames = properties
+                .filter(prop => prop.groupName !== "deal_activity" && prop.groupName !== "dealstages")
+                .map(prop => prop)
+
+              return propNames;
+            };
+      name: List Deal Properties Object
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 30
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 2
+        usesExponentialBackoff: false
+      inputs:
+        connection:
+          type: configVar
+          value: HubSpot Private App Connection
+        data:
+          type: template
+          value: |
+            {
+              "limit": 1,
+              "properties": {{$listDealPropertiesLabel.results}},
+              "filterGroups": [
+                {
+                  "filters": [
+                    {
+                      "propertyName": "hs_object_id",
+                      "value": "{{$trigger.results.body.data.originalDeal}}",
+                      "operator": "EQ"
+                    }
+                  ]
+                }
+              ]
+            }
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value:
+            - name:
+                type: value
+                value: Content-Type
+              type: value
+              value: application/json
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: POST
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: /crm/v3/objects/deals/search
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Deal
+    - action:
+        key: readAssociations
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 30
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 2
+        usesExponentialBackoff: false
+      inputs:
+        debugRequest:
+          type: value
+          value: "false"
+        fromObjectType:
+          type: value
+          value: Deal
+        hubspotConnection:
+          type: configVar
+          value: HubSpot Private App Connection
+        timeout:
+          type: value
+          value: ""
+        toId:
+          type: reference
+          value: trigger.results.body.data.originalDeal
+        toObjectType:
+          type: value
+          value: Contacts
+      name: Get Contact Association
+    - action:
+        key: readAssociations
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 30
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 2
+        usesExponentialBackoff: false
+      inputs:
+        debugRequest:
+          type: value
+          value: "false"
+        fromObjectType:
+          type: value
+          value: Deal
+        hubspotConnection:
+          type: configVar
+          value: HubSpot Private App Connection
+        timeout:
+          type: value
+          value: ""
+        toId:
+          type: reference
+          value: trigger.results.body.data.originalDeal
+        toObjectType:
+          type: value
+          value: Companies
+      name: Get Company Association
+    - action:
+        key: divide
+        component:
+          isPublic: true
+          key: math
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: null
+        errorHandlerType: ignore
+        ignoreFinalError: null
+        maxAttempts: null
+        usesExponentialBackoff: null
+      inputs:
+        numbers:
+          type: complex
+          value:
+            - type: reference
+              value: trigger.results.body.data.totals.afterDiscount
+            - type: reference
+              value: trigger.results.body.data.totals.hours
+      name: Sales Rate
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: splitSources.results
+      name: Loop Over Deals Amount
+      steps:
+        - action:
+            key: getDealById
+            component:
+              isPublic: true
+              key: hubspot
+              version: LATEST
+          description: ""
+          errorConfig:
+            delaySeconds: 30
+            errorHandlerType: retry
+            ignoreFinalError: false
+            maxAttempts: 2
+            usesExponentialBackoff: false
+          inputs:
+            additionalProperties:
+              type: complex
+              value:
+                - type: value
+                  value: amount
+                - type: value
+                  value: hours___contract
+                - type: value
+                  value: dealstage
+            archived:
+              type: value
+              value: "false"
+            associationsList:
+              type: complex
+              value: []
+            dealId:
+              type: reference
+              value: loopOverDealsAmount.currentItem
+            dealName:
+              type: value
+              value: ""
+            debugRequest:
+              type: value
+              value: "false"
+            hubspotConnection:
+              type: configVar
+              value: HubSpot Private App Connection
+            timeout:
+              type: value
+              value: ""
+          name: Get Deal 2
+        - action:
+            key: branchOnExpression
+            component:
+              isPublic: true
+              key: branch
+              version: LATEST
+          branches:
+            - name: If Deal is Won
+              steps:
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        /*
+                          Access config variables by name through the configVars object. e.g.
+                            const apiEndpoint = `${configVars["App Base URL"]}/api`;
+
+                          Access previous steps' results through the stepResults object. Trigger
+                          and step names are camelCased. If the step "Get Data from API" returned
+                          {"foo": "bar", "baz": 123}, you could destructure that data with:
+                            const { foo, baz } = stepResults.getDataFromApi.results;
+
+                          You can return string, number or complex object data. e.g.
+                            return { data: { foo: "Hello", bar: 123.45, baz: true } };
+                        */
+
+
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+
+                          // From Deal
+                          let amount = stepResults.getDeal2.results.properties.amount
+                          // let estimated_hours = stepResults.getDeal2.results.properties.estimated_hours
+
+                          return Number(amount)
+                        };
+                  name: Amount Output
+            - name: Else
+              steps:
+                - action:
+                    key: abs
+                    component:
+                      isPublic: true
+                      key: math
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    number:
+                      type: value
+                      value: "0"
+                  name: Absolute Value 2
+          description: ""
+          inputs:
+            conditions:
+              type: complex
+              value:
+                - name: If Deal is Won
+                  type: complex
+                  value:
+                    - and
+                    - - equal
+                      - name: ""
+                        type: reference
+                        value: getDeal2.results.properties.dealstage
+                      - name: ""
+                        type: configVar
+                        value: Sales Won
+          name: Filter Won Deals Only (Amount)
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: splitSources.results
+      name: Loop Over Deals Hours
+      steps:
+        - action:
+            key: getDealById
+            component:
+              isPublic: true
+              key: hubspot
+              version: LATEST
+          description: ""
+          errorConfig:
+            delaySeconds: 30
+            errorHandlerType: retry
+            ignoreFinalError: false
+            maxAttempts: 2
+            usesExponentialBackoff: false
+          inputs:
+            additionalProperties:
+              type: complex
+              value:
+                - type: value
+                  value: amount
+                - type: value
+                  value: hours___contract
+            archived:
+              type: value
+              value: "false"
+            associationsList:
+              type: complex
+              value: []
+            dealId:
+              type: reference
+              value: loopOverDealsHours.currentItem
+            dealName:
+              type: value
+              value: ""
+            debugRequest:
+              type: value
+              value: "false"
+            hubspotConnection:
+              type: configVar
+              value: HubSpot Private App Connection
+            timeout:
+              type: value
+              value: ""
+          name: Get Deal 3
+        - action:
+            key: branchOnExpression
+            component:
+              isPublic: true
+              key: branch
+              version: LATEST
+          branches:
+            - name: If Deal is Won
+              steps:
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        /*
+                          Access config variables by name through the configVars object. e.g.
+                            const apiEndpoint = `${configVars["App Base URL"]}/api`;
+
+                          Access previous steps' results through the stepResults object. Trigger
+                          and step names are camelCased. If the step "Get Data from API" returned
+                          {"foo": "bar", "baz": 123}, you could destructure that data with:
+                            const { foo, baz } = stepResults.getDataFromApi.results;
+
+                          You can return string, number or complex object data. e.g.
+                            return { data: { foo: "Hello", bar: 123.45, baz: true } };
+                        */
+
+
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+
+                          // From Deal
+                          // let amount = stepResults.getDeal2.results.properties.amount
+                          let estimated_hours = stepResults.getDeal3.results.properties.hours___contract
+
+                          return Number(estimated_hours)
+                        };
+                  name: Hours Output
+            - name: Else
+              steps:
+                - action:
+                    key: abs
+                    component:
+                      isPublic: true
+                      key: math
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    number:
+                      type: value
+                      value: "0"
+                  name: Absolute Value
+          description: ""
+          inputs:
+            conditions:
+              type: complex
+              value:
+                - name: If Deal is Won
+                  type: complex
+                  value:
+                    - and
+                    - - equal
+                      - name: ""
+                        type: reference
+                        value: getDeal3.results.properties.dealstage
+                      - name: ""
+                        type: configVar
+                        value: Sales Won
+          name: Filter Won Deals Only (Hours)
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: splitSources.results
+      name: Loop Over Deals Labor
+      steps:
+        - action:
+            key: getDealById
+            component:
+              isPublic: true
+              key: hubspot
+              version: LATEST
+          description: ""
+          errorConfig:
+            delaySeconds: 30
+            errorHandlerType: retry
+            ignoreFinalError: false
+            maxAttempts: 2
+            usesExponentialBackoff: false
+          inputs:
+            additionalProperties:
+              type: complex
+              value:
+                - type: value
+                  value: amount
+                - type: value
+                  value: hours___contract
+                - type: value
+                  value: material_expense___contract
+                - type: value
+                  value: labor_expense___contract
+            archived:
+              type: value
+              value: "false"
+            associationsList:
+              type: complex
+              value: []
+            dealId:
+              type: reference
+              value: loopOverDealsLabor.currentItem
+            dealName:
+              type: value
+              value: ""
+            debugRequest:
+              type: value
+              value: "false"
+            hubspotConnection:
+              type: configVar
+              value: HubSpot Private App Connection
+            timeout:
+              type: value
+              value: ""
+          name: Get Deal 5
+        - action:
+            key: branchOnExpression
+            component:
+              isPublic: true
+              key: branch
+              version: LATEST
+          branches:
+            - name: If Deal is Won
+              steps:
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        /*
+                          Access config variables by name through the configVars object. e.g.
+                            const apiEndpoint = `${configVars["App Base URL"]}/api`;
+
+                          Access previous steps' results through the stepResults object. Trigger
+                          and step names are camelCased. If the step "Get Data from API" returned
+                          {"foo": "bar", "baz": 123}, you could destructure that data with:
+                            const { foo, baz } = stepResults.getDataFromApi.results;
+
+                          You can return string, number or complex object data. e.g.
+                            return { data: { foo: "Hello", bar: 123.45, baz: true } };
+                        */
+
+
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+
+                          // From Deal
+                          // let amount = stepResults.getDeal2.results.properties.amount
+                          let labor_contract = stepResults.getDeal5.results.properties.labor_expense___contract
+
+                          return Number(labor_contract)
+                        };
+                  name: Labor Output
+            - name: Else
+              steps:
+                - action:
+                    key: abs
+                    component:
+                      isPublic: true
+                      key: math
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    number:
+                      type: value
+                      value: "0"
+                  name: Absolute Value 3
+          description: ""
+          inputs:
+            conditions:
+              type: complex
+              value:
+                - name: If Deal is Won
+                  type: complex
+                  value:
+                    - and
+                    - - equal
+                      - name: ""
+                        type: reference
+                        value: getDeal5.results.properties.dealstage
+                      - name: ""
+                        type: configVar
+                        value: Sales Won
+          name: Filter Won Deals Only (Labor)
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: splitSources.results
+      name: Loop Over Deals Discount
+      steps:
+        - action:
+            key: getDealById
+            component:
+              isPublic: true
+              key: hubspot
+              version: LATEST
+          description: ""
+          errorConfig:
+            delaySeconds: 30
+            errorHandlerType: retry
+            ignoreFinalError: false
+            maxAttempts: 2
+            usesExponentialBackoff: false
+          inputs:
+            additionalProperties:
+              type: complex
+              value:
+                - type: value
+                  value: amount
+                - type: value
+                  value: hours___contract
+                - type: value
+                  value: material_expense___contract
+                - type: value
+                  value: labor_expense___contract
+                - type: value
+                  value: discount_amount
+            archived:
+              type: value
+              value: "false"
+            associationsList:
+              type: complex
+              value: []
+            dealId:
+              type: reference
+              value: loopOverDealsDiscount.currentItem
+            dealName:
+              type: value
+              value: ""
+            debugRequest:
+              type: value
+              value: "false"
+            hubspotConnection:
+              type: configVar
+              value: HubSpot Private App Connection
+            timeout:
+              type: value
+              value: ""
+          name: Get Deal 7
+        - action:
+            key: branchOnExpression
+            component:
+              isPublic: true
+              key: branch
+              version: LATEST
+          branches:
+            - name: If Deal is Won
+              steps:
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+
+                          // From Deal
+                          let discount_amount = stepResults.getDeal7.results.properties.discount_amount
+
+                          return Number(discount_amount)
+                        };
+                  name: Discount Output
+            - name: Else
+              steps:
+                - action:
+                    key: abs
+                    component:
+                      isPublic: true
+                      key: math
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    number:
+                      type: value
+                      value: "0"
+                  name: Absolute Value 5
+          description: ""
+          inputs:
+            conditions:
+              type: complex
+              value:
+                - name: If Deal is Won
+                  type: complex
+                  value:
+                    - and
+                    - - equal
+                      - name: ""
+                        type: reference
+                        value: getDeal7.results.properties.dealstage
+                      - name: ""
+                        type: configVar
+                        value: Sales Won
+          name: Filter Won Deals Only (Discount)
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: splitSources.results
+      name: Loop Over Deals Materials
+      steps:
+        - action:
+            key: getDealById
+            component:
+              isPublic: true
+              key: hubspot
+              version: LATEST
+          description: ""
+          errorConfig:
+            delaySeconds: 30
+            errorHandlerType: retry
+            ignoreFinalError: false
+            maxAttempts: 2
+            usesExponentialBackoff: false
+          inputs:
+            additionalProperties:
+              type: complex
+              value:
+                - type: value
+                  value: amount
+                - type: value
+                  value: hours___contract
+                - type: value
+                  value: material_expense___contract
+                - type: value
+                  value: labor_expense___contract
+            archived:
+              type: value
+              value: "false"
+            associationsList:
+              type: complex
+              value: []
+            dealId:
+              type: reference
+              value: loopOverDealsMaterials.currentItem
+            dealName:
+              type: value
+              value: ""
+            debugRequest:
+              type: value
+              value: "false"
+            hubspotConnection:
+              type: configVar
+              value: HubSpot Private App Connection
+            timeout:
+              type: value
+              value: ""
+          name: Get Deal 6
+        - action:
+            key: branchOnExpression
+            component:
+              isPublic: true
+              key: branch
+              version: LATEST
+          branches:
+            - name: If Deal is Won
+              steps:
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        /*
+                          Access config variables by name through the configVars object. e.g.
+                            const apiEndpoint = `${configVars["App Base URL"]}/api`;
+
+                          Access previous steps' results through the stepResults object. Trigger
+                          and step names are camelCased. If the step "Get Data from API" returned
+                          {"foo": "bar", "baz": 123}, you could destructure that data with:
+                            const { foo, baz } = stepResults.getDataFromApi.results;
+
+                          You can return string, number or complex object data. e.g.
+                            return { data: { foo: "Hello", bar: 123.45, baz: true } };
+                        */
+
+
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+
+                          // From Deal
+                          // let amount = stepResults.getDeal2.results.properties.amount
+                          let material_amount = stepResults.getDeal6.results.properties.material_expense___contract
+
+                          return Number(material_amount)
+                        };
+                  name: Materials Output
+            - name: Else
+              steps:
+                - action:
+                    key: abs
+                    component:
+                      isPublic: true
+                      key: math
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    number:
+                      type: value
+                      value: "0"
+                  name: Absolute Value 4
+          description: ""
+          inputs:
+            conditions:
+              type: complex
+              value:
+                - name: If Deal is Won
+                  type: complex
+                  value:
+                    - and
+                    - - equal
+                      - name: ""
+                        type: reference
+                        value: getDeal6.results.properties.dealstage
+                      - name: ""
+                        type: configVar
+                        value: Sales Won
+          name: Filter Won Deals Only (Materials)
+    - action:
+        key: aggregate
+        component:
+          isPublic: true
+          key: collection-tools
+          version: LATEST
+      description: ""
+      inputs:
+        aggregateFunctionInput:
+          type: value
+          value: SUM
+        filterCodeInput:
+          type: value
+          value: (item, index) => { return true; }
+        listInput:
+          type: reference
+          value: loopOverDealsAmount.results
+      name: Sum Deal Amounts
+    - action:
+        key: aggregate
+        component:
+          isPublic: true
+          key: collection-tools
+          version: LATEST
+      description: ""
+      inputs:
+        aggregateFunctionInput:
+          type: value
+          value: SUM
+        filterCodeInput:
+          type: value
+          value: (item, index) => { return true; }
+        listInput:
+          type: reference
+          value: loopOverDealsHours.results
+      name: Sum Deal Hours
+    - action:
+        key: aggregate
+        component:
+          isPublic: true
+          key: collection-tools
+          version: LATEST
+      description: ""
+      inputs:
+        aggregateFunctionInput:
+          type: value
+          value: SUM
+        filterCodeInput:
+          type: value
+          value: (item, index) => { return true; }
+        listInput:
+          type: reference
+          value: loopOverDealsLabor.results
+      name: Sum Deal Labor
+    - action:
+        key: aggregate
+        component:
+          isPublic: true
+          key: collection-tools
+          version: LATEST
+      description: ""
+      inputs:
+        aggregateFunctionInput:
+          type: value
+          value: SUM
+        filterCodeInput:
+          type: value
+          value: (item, index) => { return true; }
+        listInput:
+          type: reference
+          value: loopOverDealsMaterials.results
+      name: Sum Deal Materials
+    - action:
+        key: aggregate
+        component:
+          isPublic: true
+          key: collection-tools
+          version: LATEST
+      description: ""
+      inputs:
+        aggregateFunctionInput:
+          type: value
+          value: SUM
+        filterCodeInput:
+          type: value
+          value: (item, index) => { return true; }
+        listInput:
+          type: reference
+          value: loopOverDealsDiscount.results
+      name: Sum Deal Discount
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+
+              // From PaintScout
+              let quoteData = stepResults.trigger.results.body.data
+              let totalPrice = quoteData.totals.afterDiscount
+              let totalHours = quoteData.totals.hours
+              let totalLabor = quoteData.totals.laborPrice
+              let totalMaterials = quoteData.totals.materialsPrice
+              let additionalLabor = quoteData.totals?.additionalWorkLaborPrice || 0
+              let additionalMaterial = quoteData.totals?.additionalWorkMaterialsPrice || 0
+              let discountPrice = quoteData.discount?.total
+
+              // From Deals
+              let amount = stepResults.sumDealAmounts.results
+              let estimated_hours = stepResults.sumDealHours.results
+              let laborAmount = stepResults.sumDealLabor.results 
+              let materialsAmount = stepResults.sumDealMaterials.results
+              let discount_amount = stepResults.sumDealDiscount.results
+
+              // Old Code
+              // Reason Number() funtion still returns exponential value which causes an issue
+              // let amount_difference = Number(totalPrice - amount)
+              // let hours_difference = Number(totalHours - estimated_hours)
+              // let labor_difference = Number(totalLabor - laborAmount + additionalLabor)
+              // let materials_difference = Number(totalMaterials - materialsAmount + additionalMaterial)
+              // let discount_difference = Number(discountPrice - discount_amount) || 0
+
+               function roundToTwo(num) {
+                const rounded = Number(num.toFixed(2));
+                return Object.is(rounded, -0) ? 0 : rounded; // turn -0 into 0
+              }
+
+              let amount_difference     = roundToTwo(totalPrice - amount);
+              let hours_difference      = roundToTwo(totalHours - estimated_hours);
+              let labor_difference      = roundToTwo(totalLabor - laborAmount + additionalLabor);
+              let materials_difference  = roundToTwo(totalMaterials - materialsAmount + additionalMaterial);
+              let discount_difference   = roundToTwo(discountPrice - discount_amount) || 0;
+
+
+              return { 
+                coAmount: amount_difference,
+                coHours: hours_difference,
+                coLabor: labor_difference,
+                coMaterials: materials_difference,
+                coDiscount: discount_difference,
+                // difference: Number(amount_difference + hours_difference + labor_difference + materials_difference)
+                difference: Number(amount_difference) // we only need amount to check if CO needs to be created
+              };
+            };
+      name: CO Hours and Amount
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: If Difference != 0
+          steps:
+            - action:
+                key: loopOverItems
+                component:
+                  isPublic: true
+                  key: loop
+                  version: LATEST
+              description: This loop gets all the associated deals in the quote's source ID
+                and wraps it with their deal stages.
+              inputs:
+                items:
+                  type: reference
+                  value: splitSources.results
+              name: Loop Over Dealstage
+              steps:
+                - action:
+                    key: getDealById
+                    component:
+                      isPublic: true
+                      key: hubspot
+                      version: LATEST
+                  description: ""
+                  errorConfig:
+                    delaySeconds: 30
+                    errorHandlerType: retry
+                    ignoreFinalError: false
+                    maxAttempts: 2
+                    usesExponentialBackoff: false
+                  inputs:
+                    additionalProperties:
+                      type: complex
+                      value:
+                        - type: value
+                          value: amount
+                        - type: value
+                          value: hours___contract
+                        - type: value
+                          value: dealstage
+                    archived:
+                      type: value
+                      value: "false"
+                    associationsList:
+                      type: complex
+                      value: []
+                    dealId:
+                      type: reference
+                      value: loopOverDealstage.currentItem
+                    dealName:
+                      type: value
+                      value: ""
+                    debugRequest:
+                      type: value
+                      value: "false"
+                    hubspotConnection:
+                      type: configVar
+                      value: HubSpot Private App Connection
+                    timeout:
+                      type: value
+                      value: ""
+                  name: Get Deal 4
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        /*
+                          Access config variables by name through the configVars object. e.g.
+                            const apiEndpoint = `${configVars["App Base URL"]}/api`;
+
+                          Access previous steps' results through the stepResults object. Trigger
+                          and step names are camelCased. If the step "Get Data from API" returned
+                          {"foo": "bar", "baz": 123}, you could destructure that data with:
+                            const { foo, baz } = stepResults.getDataFromApi.results;
+
+                          You can return string, number or complex object data. e.g.
+                            return { data: { foo: "Hello", bar: 123.45, baz: true } };
+                        */
+
+
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+
+                          // From Deal
+                          // let amount = stepResults.getDeal2.results.properties.amount
+                          let dealstage = stepResults.getDeal4.results.properties.dealstage
+                          let dealId = stepResults.getDeal4.results.id
+
+                          let deal = dealId + ":" + dealstage
+
+                          return deal
+                        };
+                  name: Deals and Stages
+            - action:
+                key: aggregate
+                component:
+                  isPublic: true
+                  key: collection-tools
+                  version: LATEST
+              description: ""
+              inputs:
+                aggregateFunctionInput:
+                  type: value
+                  value: SUM
+                filterCodeInput:
+                  type: value
+                  value: (item, index) => { return true; }
+                listInput:
+                  type: reference
+                  value: loopOverDealstage.results
+              name: Concatenate Deals and Stages
+            - action:
+                key: length
+                component:
+                  isPublic: true
+                  key: collection-tools
+                  version: LATEST
+              description: ""
+              inputs:
+                listInput:
+                  type: reference
+                  value: loopOverDealstage.results
+              name: Deals Count
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    /*
+                      Access config variables by name through the configVars object. e.g.
+                        const apiEndpoint = `${configVars["App Base URL"]}/api`;
+
+                      Access previous steps' results through the stepResults object. Trigger
+                      and step names are camelCased. If the step "Get Data from API" returned
+                      {"foo": "bar", "baz": 123}, you could destructure that data with:
+                        const { foo, baz } = stepResults.getDataFromApi.results;
+
+                      You can return string, number or complex object data. e.g.
+                        return { data: { foo: "Hello", bar: 123.45, baz: true } };
+                    */
+
+
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      let configAirtableRecordId = configVars["Airtable Job Record ID Property"];
+                      let value = stepResults?.getDeal?.results?.results[0]?.properties?.[configAirtableRecordId] || ""
+
+                      return { 
+                          data: {
+                            payload:{
+                              [configAirtableRecordId]: value
+                          }
+                        }
+                      };
+                    };
+              name: Get CO Count Payload
+            - action:
+                key: invokeFlow
+                component:
+                  isPublic: true
+                  key: cross-flow
+                  version: LATEST
+              description: ""
+              inputs:
+                data:
+                  type: reference
+                  value: getCoCountPayload.results
+                flowName:
+                  type: value
+                  value: 11 Change Order Label Processor
+              name: Get CO count
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >-
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      // Get PaintScout data from the previous step results
+                      const psData = stepResults.trigger.results.body.data
+                      const quoteStatus = psData.status || "";
+                      const quoteDate = Number(psData.dates.quote) || 0;  // Ensure quoteDate is a number
+                      const quotePrice = psData.totals.price || 0;
+                      const sentStage = configVars["Bid Sent"];
+                      const acceptedStage = configVars["Customer Accepted Proposal"];
+                      const bidScheduledStage = configVars["Bid Scheduled"];
+                      const inProgressStage = configVars["Bid in Progress"];
+                      const wonStage = configVars["Sales Won"]
+                      const wonStageButton = configVars["Deal Status for Accepted Quotes"]
+
+                      let status = bidScheduledStage; // Default to Bid Scheduled
+
+                      // Get today's date in epoch format at midnight
+                      const todayEpoch = new Date().setHours(0, 0, 0, 0);
+
+                      if (quoteStatus === "accepted") {
+                        status = wonStageButton != "false" ? wonStage : acceptedStage
+                      } else if (quoteStatus === "sent" || quoteStatus === "viewed") {
+                        status = sentStage;
+                      } else {
+                        // Flow Implementation using Epoch Comparison
+                        if (quoteDate >= todayEpoch) {
+                          // Quote Date is today or in the future
+                          status = bidScheduledStage;
+                        } else {
+                          // Quote Date is before today
+                          if (quotePrice > 0) {
+                            status = inProgressStage;
+                          } else {
+                            status = bidScheduledStage;
+                          }
+                        }
+                      }
+
+                      logger.log(`Won Stage Button: ${wonStageButton}`);
+                      logger.log(`Quote Date (Epoch): ${quoteDate}`);
+                      logger.log(`Today (Epoch): ${todayEpoch}`);
+                      logger.log(`Quote Price: ${quotePrice}`);
+                      logger.log(`Determined Status: ${status}`);
+
+                      // Return the status
+                      return status;
+                    };
+              name: Deal Stage Logic
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >-
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+
+                      let dealStages = stepResults.loopOverDealstage.results;
+                      logger.log("Deal Stages:", dealStages);
+
+                      let wonStage = configVars["Sales Won"];
+                      let lostStage = configVars["Sales Lost"];
+                      let condition = false; // Assume true, change to false if a stage is not Won/Lost
+                      let coDealId;
+
+                      // Iterate over each dealStage item
+                      for (let dealStage of dealStages) {
+                        // Split into dealId and stageId
+                        let [dealId, stageId] = dealStage.split(":");
+                        // Check if the stageId is neither Won nor Lost
+                        if (stageId !== wonStage && stageId !== lostStage) {
+                          condition = true;  // At least one stage is not Won or Lost
+                          coDealId = dealId;  // Collect the dealId
+                          break
+                        }
+                      }
+
+                      logger.log("Deal IDs to Process:", coDealId);
+                      logger.log("Condition:", condition);
+
+                      return {
+                        condition,
+                        coDealId
+                      };
+                    };
+              name: Check Existing CO Logic
+            - action:
+                key: branchOnExpression
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              branches:
+                - name: If NOT "Won" OR  NOT "Lost"
+                  steps:
+                    - action:
+                        key: subtract
+                        component:
+                          isPublic: true
+                          key: math
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        numbers:
+                          type: complex
+                          value:
+                            - type: reference
+                              value: dealsCount.results
+                            - type: value
+                              value: "1"
+                      name: CO Count
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >-
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              const quoteData = stepResults.trigger.results.body.data
+                              const originalDealData = stepResults.getDeal.results?.results?.[0] || ""
+                              // const coCount = stepResults.dealsCount.results
+                              const dealStage = stepResults.dealStageLogic.results
+                              const dealPropertiesObject = stepResults.listDealPropertiesObject.results
+                              
+                              const originalProps = pickOriginalProperties(originalDealData, dealPropertiesObject);
+
+                              // Extract data from associations with safeguards
+                              const contactId = stepResults.getContactAssociation?.results?.results?.[0]?.to?.[0]?.id || "";
+                              const companyId = stepResults.getCompanyAssociation?.results?.results?.[0]?.to?.[0]?.id || "";
+                              const coData = stepResults.coHoursAndAmount?.results || {};
+
+                              const overrideProps = {
+                                contract_type:   "Addendum - Change Order",
+                                change_order_type: "Sales",
+                                // dealname: originalDealData.properties?.dealname.trim() + "_CO-" + coCount,
+                                ready_to_process_send_to_production: "Yes",
+                                dealstage: dealStage,
+
+                                // change order amounts
+                                amount:                           coData.coAmount         || 0,
+                                hours___contract:                 coData.coHours          || 0,
+                                labor_expense___contract:         coData.coLabor          || 0,
+                                material_expense___contract:      coData.coMaterials      || 0,
+                                discount_amount:                  coData.coDiscount       || 0,
+
+                                // quoteData → billing
+                                billing_city:                     quoteData?.billingContact?.city      || "",
+                                billing_contact_email:            quoteData?.billingContact?.email     || "",
+                                billing_contact_first_name:       quoteData?.billingContact?.firstName || "",
+                                billing_contact_last_name:        quoteData?.billingContact?.lastName  || "",
+                                billing_contact_phone:            quoteData?.billingContact?.phoneNumber || "",
+                                billing_street_address:           quoteData?.billingContact?.address   || "",
+                                billing_state:                    quoteData?.billingContact?.state     || "",
+                                billing_postal_code:              quoteData?.billingContact?.zip       || "",
+
+                                // quoteData → job contact
+                                job_contact_first_name:           quoteData?.contact?.firstName || "",
+                                job_contact_last_name:            quoteData?.contact?.lastName  || "",
+                                job_contact_email:                quoteData?.contact?.email     || "",
+                                job_contact_phone:                quoteData?.contact?.phoneNumber || "",
+
+                                // quoteData → job address
+                                job_identifier:                   quoteData?.jobAddress?.identifier || "",
+                                job_site_street_address:          quoteData?.jobAddress?.address    || "",
+                                job_site_city:                    quoteData?.jobAddress?.city       || "",
+                                job_site_state:                   quoteData?.jobAddress?.state      || "",
+                                job_site_postal_code:             quoteData?.jobAddress?.zip        || "",
+
+                                // quoteData → totals & URLs
+                                paintscout_estimate_amount:       quoteData?.totals?.afterDiscount    || 0,
+                                tax:                              quoteData?.tax?.total               || 0,
+                                description:                      originalDealData.properties?.description  || "",
+                                hubspot_owner_id:                 originalDealData.properties?.hubspot_owner_id || ""
+                              }
+
+                              const properties    = { ...originalProps, ...overrideProps };
+
+                              // Filter out undefined properties
+                              const filteredProperties = Object.fromEntries(
+                                Object.entries(properties).filter(([key, value]) => value != "" && value != null)
+                              );
+
+                              // Build the payload
+                              const payload = {
+                                associations: [
+                                  {
+                                    types: [
+                                      {
+                                        associationCategory: "HUBSPOT_DEFINED",
+                                        associationTypeId: 3, // Contact association
+                                      },
+                                    ],
+                                    to: {
+                                      id: contactId,
+                                    },
+                                  },
+                                  ...(companyId
+                                    ? [
+                                        {
+                                          types: [
+                                            {
+                                              associationCategory: "HUBSPOT_DEFINED",
+                                              associationTypeId: 341, // Company association
+                                            },
+                                          ],
+                                          to: {
+                                            id: companyId,
+                                          },
+                                        },
+                                      ]
+                                    : []),
+                                ],
+                                properties: filteredProperties,
+                              };
+
+                              // Log the payload for debugging
+                              logger.info("Payload for HubSpot API:", JSON.stringify(payload, null, 2));
+
+                              return payload;
+                            };
+
+
+
+                            function pickOriginalProperties(originalDealData,
+                            propDefs) {
+                              const base = originalDealData.properties || {};
+                              return propDefs.reduce((acc, d) => {
+                                const { name, calculated, modificationMetadata } = d;
+                                const { readOnlyValue, readOnlyDefinition } = modificationMetadata;
+                                const val = base[name];
+
+                                // skip if  
+                                //  • calculated formula  
+                                //  • explicitly readOnlyValue  
+                                //  • or readOnlyDefinition (system timestamp fields like createdate/closedate)
+                                if (calculated || readOnlyValue || readOnlyDefinition) {
+                                  return acc;
+                                }
+
+                                if (val !== undefined && val !== null && val !== '') {
+                                  acc[name] = val;
+                                }
+                                return acc;
+                              }, {});
+                            }
+                      name: Update Deal CO Payload
+                    - action:
+                        key: rawRequest
+                        component:
+                          isPublic: true
+                          key: hubspot
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 30
+                        errorHandlerType: retry
+                        ignoreFinalError: false
+                        maxAttempts: 2
+                        usesExponentialBackoff: false
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: HubSpot Private App Connection
+                        data:
+                          type: reference
+                          value: updateDealCoPayload.results
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        fileData:
+                          type: complex
+                          value: []
+                        fileDataFileNames:
+                          type: complex
+                          value: []
+                        formData:
+                          type: complex
+                          value: []
+                        headers:
+                          type: complex
+                          value:
+                            - name:
+                                type: value
+                                value: Content-Type
+                              type: value
+                              value: application/json
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        method:
+                          type: value
+                          value: PATCH
+                        queryParams:
+                          type: complex
+                          value: []
+                        responseType:
+                          type: value
+                          value: json
+                        retryAllErrors:
+                          type: value
+                          value: "false"
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: template
+                          value: /crm/v3/objects/deals/{{$checkExistingCoLogic.results.coDealId}}
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: Update Deal CO
+                    - action:
+                        key: writeLog
+                        component:
+                          isPublic: true
+                          key: log
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        level:
+                          type: value
+                          value: info
+                        message:
+                          type: reference
+                          value: updateDealCo.results
+                      name: Write Log Message
+                    - action:
+                        key: abs
+                        component:
+                          isPublic: true
+                          key: math
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: null
+                        errorHandlerType: ignore
+                        ignoreFinalError: null
+                        maxAttempts: null
+                        usesExponentialBackoff: null
+                      inputs:
+                        number:
+                          type: reference
+                          value: updateDealCo.results.id
+                      name: Get Deal ID
+                - name: Else
+                  steps:
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >-
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              const quoteData = stepResults.trigger.results.body.data
+                              const originalDealData = stepResults.getDeal.results?.results?.[0] || ""
+                              const coCount = stepResults.getCoCount?.results?.count
+                              const dealStage = stepResults.dealStageLogic.results
+                              const dealPropertiesObject = stepResults.listDealPropertiesObject.results
+                              const originalProps = pickOriginalProperties(originalDealData, dealPropertiesObject);
+
+                              // Extract data from associations with safeguards
+                              const contactId = stepResults.getContactAssociation?.results?.results?.[0]?.to?.[0]?.id || "";
+                              const companyId = stepResults.getCompanyAssociation?.results?.results?.[0]?.to?.[0]?.id || "";
+                              const coData = stepResults.coHoursAndAmount?.results || {};
+
+                              const overrideProps = {
+                                contract_type:   "Addendum - Change Order",
+                                change_order_type: "Sales",
+                                dealname: originalDealData.properties?.dealname.trim() + "_CO-" + coCount,
+                                ready_to_process_send_to_production: "Yes",
+                                dealstage: dealStage,
+
+                                // change order amounts
+                                amount:                           coData.coAmount         || 0,
+                                hours___contract:                 coData.coHours          || 0,
+                                labor_expense___contract:         coData.coLabor          || 0,
+                                material_expense___contract:      coData.coMaterials      || 0,
+                                discount_amount:                  coData.coDiscount       || 0,
+
+                                // quoteData → billing
+                                billing_city:                     quoteData?.billingContact?.city      || "",
+                                billing_contact_email:            quoteData?.billingContact?.email     || "",
+                                billing_contact_first_name:       quoteData?.billingContact?.firstName || "",
+                                billing_contact_last_name:        quoteData?.billingContact?.lastName  || "",
+                                billing_contact_phone:            quoteData?.billingContact?.phoneNumber || "",
+                                billing_street_address:           quoteData?.billingContact?.address   || "",
+                                billing_state:                    quoteData?.billingContact?.state     || "",
+                                billing_postal_code:              quoteData?.billingContact?.zip       || "",
+
+                                // quoteData → job contact
+                                job_contact_first_name:           quoteData?.contact?.firstName || "",
+                                job_contact_last_name:            quoteData?.contact?.lastName  || "",
+                                job_contact_email:                quoteData?.contact?.email     || "",
+                                job_contact_phone:                quoteData?.contact?.phoneNumber || "",
+
+                                // quoteData → job address
+                                job_identifier:                   quoteData?.jobAddress?.identifier || "",
+                                job_site_street_address:          quoteData?.jobAddress?.address    || "",
+                                job_site_city:                    quoteData?.jobAddress?.city       || "",
+                                job_site_state:                   quoteData?.jobAddress?.state      || "",
+                                job_site_postal_code:             quoteData?.jobAddress?.zip        || "",
+
+                                // quoteData → totals & URLs
+                                paintscout_estimate_amount:       quoteData?.totals?.afterDiscount    || 0,
+                                tax:                              quoteData?.tax?.total               || 0,
+                                description:                      originalDealData.properties?.description  || "",
+                                hubspot_owner_id:                 originalDealData.properties?.hubspot_owner_id || ""
+                              }
+
+                              const properties    = { ...originalProps, ...overrideProps };
+
+                              // Filter out undefined properties
+                              const filteredProperties = Object.fromEntries(
+                                Object.entries(properties).filter(([key, value]) => value != "" && value != null)
+                              );
+
+                              // Build the payload
+                              const payload = {
+                                associations: [
+                                  {
+                                    types: [
+                                      {
+                                        associationCategory: "HUBSPOT_DEFINED",
+                                        associationTypeId: 3, // Contact association
+                                      },
+                                    ],
+                                    to: {
+                                      id: contactId,
+                                    },
+                                  },
+                                  ...(companyId
+                                    ? [
+                                        {
+                                          types: [
+                                            {
+                                              associationCategory: "HUBSPOT_DEFINED",
+                                              associationTypeId: 341, // Company association
+                                            },
+                                          ],
+                                          to: {
+                                            id: companyId,
+                                          },
+                                        },
+                                      ]
+                                    : []),
+                                ],
+                                properties: filteredProperties,
+                              };
+
+                              // Log the payload for debugging
+                              logger.info("Payload for HubSpot API:", JSON.stringify(payload, null, 2));
+
+                              return payload;
+                            };
+
+
+
+                            function pickOriginalProperties(originalDealData,
+                            propDefs) {
+                              const base = originalDealData.properties || {};
+                              return propDefs.reduce((acc, d) => {
+                                const { name, calculated, modificationMetadata } = d;
+                                const { readOnlyValue, readOnlyDefinition } = modificationMetadata;
+                                const val = base[name];
+
+                                // skip if  
+                                //  • calculated formula  
+                                //  • explicitly readOnlyValue  
+                                //  • or readOnlyDefinition (system timestamp fields like createdate/closedate)
+                                if (calculated || readOnlyValue || readOnlyDefinition) {
+                                  return acc;
+                                }
+
+                                if (val !== undefined && val !== null && val !== '') {
+                                  acc[name] = val;
+                                }
+                                return acc;
+                              }, {});
+                            }
+                      name: Create Deal CO Payload
+                    - action:
+                        key: rawRequest
+                        component:
+                          isPublic: true
+                          key: hubspot
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 30
+                        errorHandlerType: retry
+                        ignoreFinalError: false
+                        maxAttempts: 2
+                        usesExponentialBackoff: false
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: HubSpot Private App Connection
+                        data:
+                          type: reference
+                          value: createDealCoPayload.results
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        fileData:
+                          type: complex
+                          value: []
+                        fileDataFileNames:
+                          type: complex
+                          value: []
+                        formData:
+                          type: complex
+                          value: []
+                        headers:
+                          type: complex
+                          value:
+                            - name:
+                                type: value
+                                value: Content-Type
+                              type: value
+                              value: application/json
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        method:
+                          type: value
+                          value: POST
+                        queryParams:
+                          type: complex
+                          value: []
+                        responseType:
+                          type: value
+                          value: json
+                        retryAllErrors:
+                          type: value
+                          value: "false"
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: template
+                          value: /crm/v3/objects/deals
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: Create Deal CO
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+
+                              let quoteData = stepResults.trigger.results.body.data
+                              let coDealData = stepResults.createDealCo.results
+
+                              let sourceIds = quoteData.source.id
+                              let dealId = coDealData.id
+                              let newSourceIds = `${sourceIds},${dealId}`
+
+
+                              // Map the variables into the payload
+                              let payload = {
+                                source: {
+                                  id: newSourceIds
+                                },
+                              };
+
+                              return payload;
+                            };
+                      name: Update Quote Payload
+                    - action:
+                        key: rawRequest
+                        component:
+                          isPublic: false
+                          key: paintScoutApi
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 10
+                        errorHandlerType: retry
+                        ignoreFinalError: false
+                        maxAttempts: 1
+                        usesExponentialBackoff: false
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: PaintScout Connection
+                        data:
+                          type: reference
+                          value: updateQuotePayload.results
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        fileData:
+                          type: complex
+                          value: []
+                        fileDataFileNames:
+                          type: complex
+                          value: []
+                        formData:
+                          type: complex
+                          value: []
+                        headers:
+                          type: complex
+                          value:
+                            - name:
+                                type: value
+                                value: Content-Type
+                              type: value
+                              value: application/json
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        method:
+                          type: value
+                          value: PUT
+                        queryParams:
+                          type: complex
+                          value: []
+                        responseType:
+                          type: value
+                          value: json
+                        retryAllErrors:
+                          type: value
+                          value: "false"
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: template
+                          value: /quotes/{{$trigger.results.body.data.id}}
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: Update Quote Source IDs
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+
+                              let quoteData = stepResults?.trigger?.results?.body?.data
+                              let ownerFirstName = quoteData?.owner?.firstName
+                              let ownerEmail = quoteData?.owner?.email
+                              let portalId = configVars["HubSpot Portal ID"]
+                              let bcc = `${portalId}@bcc.hubspot.com`
+                              let quoteNumber = quoteData?.number
+                              let quoteUrl = quoteData?.urls?.quote
+                              let quoteAfterDiscountAmount = quoteData?.totals?.afterDiscount
+                              let workOrderUrl = quoteData?.urls?.workOrder
+                              let dealData = stepResults?.createDealCo?.results
+                              let dealId = dealData?.id
+                              let originalDealData = stepResults?.getDeal?.results
+                              let originalAmount = Number(parseFloat(originalDealData?.results[0]?.properties?.amount || 0).toFixed(2));
+                              let newAmount = Number(parseFloat(dealData?.properties?.amount || 0).toFixed(2));
+                              let changeOrderAmount = Number(parseFloat(dealData?.properties?.amount - originalDealData?.results[0]?.properties?.amount || 0).toFixed(2))
+
+                              let payload = {
+                                "from": "Automation Alert - PaintScout to HubSpot",
+                                "to": ownerEmail,
+                                // "to": "rod@helloboolean.com",
+                                "cc": "",
+                                "bcc": bcc,
+                                "subject": `New Change Order Created for ${quoteNumber}`,
+                                "body": `<body>
+
+                            <div class="container">
+                                <p>Hello <span class="highlight">${ownerFirstName}</span>,</p>
+
+                                <p>We just created a separate Change Order deal in HubSpot for the difference between the original PaintScout Quote and the current PaintScout Quote Amount.</p>
+
+                                <p>
+                                    <strong>Original Contract Amount:</strong> $${originalAmount} <br>
+                                    <strong>Change Order Deal Amount:</strong> $${newAmount} <br>
+                                    <strong>Total Contract Amount:</strong> $${quoteAfterDiscountAmount}
+                                </p>
+
+                                <div class="links">
+                                    <strong>Links:</strong><br>
+                                    <a href="https://app.hubspot.com/contacts/${portalId}/deal/${originalDealData.results[0].id}">Original HubSpot Deal</a> <br>
+                                    <a href="https://app.hubspot.com/contacts/${portalId}/deal/${dealId}">New HubSpot Deal</a><br>
+                                    <a href="${quoteUrl}">PaintScout Quote</a>
+                                </div>
+
+                                <h3>Why am I receiving this?</h3>
+                                <p>Every time a quote is sent in PaintScout, the system checks the stage of the associated deal in HubSpot:</p>
+
+                                <ul>
+                                    <li><strong>If the deal is in the Won Stage:</strong>
+                                        <ul>
+                                            <li>The system compares the current value of that quote to the current value of the deal in HubSpot.</li>
+                                            <li>If the amounts are the same, nothing happens.</li>
+                                            <li>If the amounts are different, a change order deal is created to represent that difference.</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>If the deal is NOT in the Won Stage:</strong>
+                                        <ul>
+                                            <li>The system overwrites the existing deal amounts and information with the latest details from the quote.</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+
+                                <div class="footer">
+                                    Thanks!<br>
+                                    <strong>Boolean Automation Team</strong>
+                                </div>
+                            </div>
+
+
+                            </body>
+
+                            `,
+
+                            quoteData,
+
+                            originalDealData,
+
+                            dealData
+                              }
+                              
+                              return payload;
+                            };
+                      name: CO Email JSON
+                    - action:
+                        key: httpPost
+                        component:
+                          isPublic: true
+                          key: http
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: ""
+                        data:
+                          type: reference
+                          value: coEmailJson.results
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        headers:
+                          type: complex
+                          value: []
+                        ignoreSslErrors:
+                          type: value
+                          value: "false"
+                        includeFullResponse:
+                          type: value
+                          value: "false"
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        queryParams:
+                          type: complex
+                          value: []
+                        responseType:
+                          type: value
+                          value: json
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        retryOnAllErrors:
+                          type: value
+                          value: "false"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: configVar
+                          value: Email Sender URL
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: Send Email
+              description: This branch checks ALL EXISTING associated deals if it has a CO
+                that is NOT closed won/lost.
+              inputs:
+                conditions:
+                  type: complex
+                  value:
+                    - name: If NOT "Won" OR  NOT "Lost"
+                      type: complex
+                      value:
+                        - and
+                        - - isTrue
+                          - name: ""
+                            type: reference
+                            value: checkExistingCoLogic.results.condition
+              name: Check Existing CO
+        - name: Else
+          steps:
+            - action:
+                key: stopExecution
+                component:
+                  isPublic: true
+                  key: stop-execution
+                  version: LATEST
+              description: ""
+              inputs:
+                contentType:
+                  type: value
+                  value: application/json
+                headers:
+                  type: complex
+                  value: []
+                jsonBody:
+                  type: value
+                  value: No Hours and Amount Difference
+                statusCode:
+                  type: value
+                  value: "200"
+              name: Stop Execution
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: If Difference != 0
+              type: complex
+              value:
+                - and
+                - - notEqual
+                  - name: ""
+                    type: reference
+                    value: coHoursAndAmount.results.difference
+                  - name: ""
+                    type: value
+                    value: "0"
+      name: Difference Branch

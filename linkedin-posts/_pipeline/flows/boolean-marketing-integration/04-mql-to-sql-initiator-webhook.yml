@@ -1,0 +1,689 @@
+sourceFile: boolean-marketing-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 04 MQL to SQL Initiator Webhook
+  description: Deal Trigger from HS then send data to YCBM to autofill the page
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: webhook
+        component:
+          isPublic: true
+          key: webhook-triggers
+          version: LATEST
+      description: ""
+      inputs:
+        body:
+          type: value
+          value: Initializing..
+        contentType:
+          type: value
+          value: text/html
+        headers:
+          type: complex
+          value: []
+        statusCode:
+          type: value
+          value: "303"
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: ""
+      inputs:
+        connection:
+          type: configVar
+          value: HubSpot Private App Connection
+        data:
+          type: value
+          value: ""
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value: []
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: /crm/v3/properties/deals?archived=false
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Retrieve Deal Properties
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >-
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              let properties = stepResults.retrieveDealProperties.results.results;
+              // This is an assumption based on the context of your request.
+              // Replace this with the actual source for automation_required
+              const automation_required = ["automation_required"];
+
+              logger.info(properties)
+              // Filter properties
+              let propNames = properties
+                .filter(
+                  (prop) =>
+                    // Exclude "deal_activity" group
+                    prop.groupName !== "deal_activity" &&
+                    // Include "dealstage" and "pipeline" properties explicitly,
+                    // OR exclude "dealstages" group,
+                    // OR include if the groupName is in the automation_required array
+                    (
+                      prop.name === "dealstage" ||
+                      prop.name === "pipeline" ||
+                      prop.groupName !== "dealstages" ||
+                      automation_required.includes(prop.groupName) // <-- ADDED OR CONDITION HERE
+                    )
+                )
+                .map((prop) => prop.name);
+              logger.info(propNames)
+              return propNames;
+            };
+      name: Deal Properties
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const deal_id = stepResults?.trigger?.results?.queryParameters?.deal_id;
+              const access_token = configVars['HubSpot Private App Connection']?.fields?.accessToken;
+              const deal_properties = stepResults?.dealProperties?.results
+              const propertiesParam = deal_properties?.join(",") || "";
+              if (!deal_id) {
+                logger.error("Deal ID is missing.");
+                return { error: "Missing deal_id" };
+              }
+
+              const authHeaders = {
+                Authorization: `Bearer ${access_token}`,
+                "Content-Type": "application/json"
+              };
+
+              try {
+                //
+                // 🔹 Get deal details along with associations limited to 1
+                //
+                const dealUrl = `https://api.hubapi.com/crm/v3/objects/deals/${deal_id}?properties=${propertiesParam}&associations=contacts,companies&limit=1`;
+                const dealResp = await fetch(dealUrl, { headers: authHeaders });
+                const dealData = await dealResp.json();
+
+                const contactId = dealData?.associations?.contacts?.results?.[0]?.id ?? null;
+                const companyId = dealData?.associations?.companies?.results?.[0]?.id ?? null;
+
+                logger.info(`Primary Contact => ${contactId || "None"}`);
+                logger.info(`Primary Company => ${companyId || "None"}`);
+
+                //
+                // 🔹 Parallel fetch: contact + company full details (first only)
+                //
+                const requests = [];
+
+                if (contactId) {
+                  requests.push(
+                    fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${contactId}?properties=firstname,lastname,email,phone,address,city,state,zip,company,mobilephone`, {
+                      headers: authHeaders
+                    }).then(res => res.json())
+                  );
+                } else {
+                  requests.push(Promise.resolve(null));
+                }
+
+                if (companyId) {
+                  requests.push(
+                    fetch(`https://api.hubapi.com/crm/v3/objects/companies/${companyId}?properties=name,domain,website`, {
+                      headers: authHeaders
+                    }).then(res => res.json())
+                  );
+                } else {
+                  requests.push(Promise.resolve(null));
+                }
+
+                const [contactDetails, companyDetails] = await Promise.all(requests);
+
+                return {
+                  deal: dealData,
+                  contact: contactDetails,
+                  company: companyDetails,
+                  deal_properties
+                };
+
+              } catch (error) {
+                logger.error(error);
+                return { error: error.message };
+              }
+            };
+      name: Get Deal details
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: No Contact Found
+          steps:
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: No Associated Contact - Please associate a contact to the deal and
+                try again.
+              inputs:
+                code:
+                  type: value
+                  value: >-
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      return "Error - No Associated Contact - Please associate a contact to the deal and try again.";
+                    };
+              name: No Contact Response
+        - name: Else
+          steps:
+            - action:
+                key: listRecords
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: ""
+              errorConfig:
+                delaySeconds: 5
+                errorHandlerType: retry
+                ignoreFinalError: true
+                maxAttempts: 2
+                usesExponentialBackoff: false
+              inputs:
+                airtableConnection:
+                  type: configVar
+                  value: Airtable Connection Token
+                baseId:
+                  type: configVar
+                  value: Project Management Base
+                fields:
+                  type: complex
+                  value: []
+                filterByFormula:
+                  type: template
+                  value: "{HS User
+                    ID}={{$getDealDetails.results.deal.properties.hubspot_owner_id}\
+                    }"
+                tableName:
+                  type: configVar
+                  value: People Table
+                view:
+                  type: value
+                  value: ""
+              name: Get Owner
+            - action:
+                key: branchOnExpression
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              branches:
+                - name: No Deal Owner/Calendar
+                  steps:
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            module.exports = async () => {
+                              throw new Error("Invalid Deal Owner: Missing or unmapped booking link.");
+                            };
+                      name: No Owner Response
+                - name: Else
+                  steps:
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            const axios = require("axios");
+
+
+
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              // Extract results safely using optional chaining
+                              const dealData      = stepResults.getDealDetails?.results?.deal        || {};
+                              const contactData   = stepResults.getDealDetails?.results?.contact?.properties      || {};
+                              const companyData   = stepResults.getDealDetails?.results?.company?.properties      || {};
+                              const ownerData     = stepResults.getOwner?.results?.[0]               || {};
+                              const ycbmUrl       = ownerData.fields["YCBM Page Url"]               || "";
+
+                              // Helper functions
+                              const ifempty = (...values) => values.find(v => v != null && v !== "") || "";
+
+                              /**
+                               * Looks up a phone number and returns only the national format.
+                               * Logs the full lookup results for debugging.
+                               */
+                              const lookupPhoneNumber = async (number) => {
+                                if (!number) return number;
+
+                                const url = "https://phoneformatter.netlify.app/api/lookup";
+
+                                try {
+                                  const response = await axios.get(url, {
+                                    params: { phoneNumber: number },
+                                    timeout: 5000,
+                                  });
+
+                                  // 🔎 Log full axios response payload
+                                  console.log("Phone lookup full result:", response.data);
+
+                                  const results = response?.data;
+                                  if (!results) return number;
+
+                                  return results.phoneNumber || number;
+                                } catch (error) {
+                                  console.error(
+                                    "Phone lookup error:",
+                                    error.response?.data || error.message
+                                  );
+                                  return number;
+                                }
+                              };
+
+                              // Load mappings & shortcodes
+                              const mapping    = configVars["YCBM to HS Deal Fields"];
+                              const shortCodes = JSON.parse(configVars["Short Code Setup"]);
+
+                              // Flatten deal properties for easier access
+                              const dealProps = { ...dealData.properties };
+                              logger.log("Deal Properties:", dealProps);
+
+                              // Start building payload from your field‐mapping config
+                              const payload = mapping.reduce((acc, { source, destination }) => {
+                                let val = dealProps[destination];
+                                if (val == "true") val = "yes";
+                                if (val == "false") val = "no";
+                                if (val != null && val !== "") acc[source] = val;
+                                return acc;
+                              }, {});
+
+                              // Core required fields
+                              payload.dealId       = dealData.id || "";
+                              payload.team         = ownerData.fields["Name"]       || "";
+                              payload.estimatorEmail = ownerData.fields["Work Email"] || "";
+                              payload.startAt      = new Date();
+                              payload.startsAt      = new Date();
+                              payload.appointmentType = dealProps.appointment_type || "In-Person Estimate"
+                              payload.projectType  = String(ifempty(dealProps.project_type)).replace(/;/g, ",");
+                              payload.source       = String(ifempty(
+                                                      dealProps?.source,
+                                                      dealProps?.multi_source_attribution,
+                                                      dealProps?.primary_marketing_source
+                                                    )).replace(/;/g, ",");
+
+                              payload.jobFirstName = ifempty(
+                                dealProps.job_contact_first_name,
+                                contactData.firstname,
+                                ""                          // or any literal default you prefer
+                              );
+                              payload.jobLastName = ifempty(
+                                dealProps.job_contact_last_name,
+                                contactData.lastname,
+                                ""
+                              );
+                              payload.jobEmail = ifempty(
+                                dealProps.job_contact_email,
+                                contactData.email,
+                                ""
+                              );
+                              payload.jobStreet = ifempty(
+                                dealProps.job_site_street_address,
+                                contactData.address,
+                                dealProps.billing_street_address,
+                                ""
+                              );
+                              payload.jobCity = ifempty(
+                                dealProps.job_site_city,
+                                contactData.city,
+                                dealProps.billing_city,
+                                ""
+                              );
+                              payload.jobState = ifempty(
+                                dealProps.job_site_state,
+                                contactData.state,
+                                dealProps.billing_state,
+                                ""
+                              );
+                              payload.jobPostal = ifempty(
+                                dealProps.job_site_postal_code,
+                                contactData.zip,
+                                dealProps.billing_postal_code,
+                                ""
+                              );
+                              payload.billingFirstName = ifempty(
+                                dealProps.billing_contact_first_name,
+                                contactData.firstname,
+                                dealProps.job_contact_first_name
+                              );
+                              payload.billingLastName  = ifempty(
+                                dealProps.billing_contact_last_name,
+                                contactData.lastname,
+                                dealProps.job_contact_last_name
+                              );
+                              payload.billingEmail     = ifempty(
+                                dealProps.billing_contact_email,
+                                contactData.email,
+                                dealProps.job_contact_email
+                              );
+                              payload.billingStreet  = ifempty(
+                                dealProps.billing_street_address,
+                                companyData.address,
+                                contactData.address,
+                                dealProps.job_site_street_address
+                              );
+                              payload.billingCity   = ifempty(
+                                dealProps.billing_city,
+                                companyData.city,
+                                contactData.city,
+                                dealProps.job_site_city
+                              );
+                              payload.billingState   = ifempty(
+                                dealProps.billing_state,
+                                companyData.state,
+                                contactData.state,
+                                dealProps.job_site_state
+                              );
+                              payload.billingPostal  = ifempty(
+                                dealProps.billing_postal_code,
+                                companyData.zip,
+                                contactData.zip,
+                                dealProps.job_site_postal_code
+                              );
+                              payload.company = ifempty(
+                                dealProps.company_name,
+                                companyData.name
+                              );
+                              payload.companyName = ifempty(
+                                dealProps.company_name,
+                                companyData.name
+                              );
+
+                              const [
+                                teamPhone,
+                                jobPhone,
+                                billingPhone
+                              ] = await Promise.all([
+                                lookupPhoneNumber(ownerData.fields["Phone Number"] || ""),
+                                lookupPhoneNumber(
+                                  ifempty(
+                                    dealProps.job_contact_phone,
+                                    contactData.mobilephone,
+                                    contactData.phone,
+                                    ""
+                                  )
+                                ),
+                                lookupPhoneNumber(
+                                  ifempty(
+                                    dealProps.billing_contact_phone,
+                                    contactData.mobilephone,
+                                    contactData.phone,
+                                    dealProps.job_contact_phone
+                                  )
+                                )
+                              ]);
+
+                              payload.teamPhone = teamPhone;
+                              payload.jobPhone = jobPhone;
+                              payload.billingPhone = billingPhone;
+
+                              // Apply shortcode mapping
+                              const withCalendarData = applyShortcodes(payload, shortCodes);
+                              logger.log("Final payload:", payload);
+                              logger.log("Shortcoded payload:", withCalendarData);
+
+                              // Build your final URL
+                              const encodedData = new URLSearchParams(withCalendarData).toString();
+                              const location    = `${ycbmUrl}?${encodedData}`;
+
+                              return {
+                                location,
+                                noCalendar: payload
+                              };
+                            };
+
+
+                            // Helper: translate your field keys into the YCBM
+                            shortcode names
+
+                            function applyShortcodes(dealData, shortcodeMap) {
+                              const output = {};
+                              for (const [key, value] of Object.entries(dealData)) {
+                                const sc = shortcodeMap[key];
+                                if (sc && value != null && value !== "") {
+                                  output[sc] = value;
+                                }
+                              }
+                              return output;
+                            }
+                      name: Construct Output
+                    - action:
+                        key: branchOnExpression
+                        component:
+                          isPublic: true
+                          key: branch
+                          version: LATEST
+                      branches:
+                        - name: With Calendar
+                          steps:
+                            - action:
+                                key: runCode
+                                component:
+                                  isPublic: true
+                                  key: code
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                code:
+                                  type: value
+                                  value: >-
+                                    module.exports = async ({ logger, configVars
+                                    }, stepResults) => {
+
+                                        // Extract the necessary data from the webhook trigger (if needed)
+                                        const invokeUrl = stepResults.trigger?.results?.invokeUrl; // Use optional chaining
+                                        const ownerCalendarResult = stepResults.constructOutput?.results; // Safely access results
+                                        const location = ownerCalendarResult?.location; // Get the calendarTrue from the previous step
+
+                                        // Log the invocation URL and step results for debugging
+                                        logger.log(`Webhook URL invoked: ${invokeUrl}`);
+                                        logger.log(`Step results: ${JSON.stringify(stepResults, null, 2)}`); // Log stepResults for debugging
+
+                                        // Redirect if location is valid
+                                        return {
+                                          data: "Redirecting you...",
+                                          statusCode: 303,
+                                          headers: {
+                                            Location: location, // Redirect to the dynamically generated calendarTrue
+                                          },
+                                        };
+                                    };
+                              name: Auto-fill YCBM
+                        - name: Else
+                          steps:
+                            - action:
+                                key: addKey
+                                component:
+                                  isPublic: true
+                                  key: collection-tools
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                key:
+                                  type: value
+                                  value: dealData
+                                object:
+                                  type: reference
+                                  value: constructOutput.results.noCalendar
+                                objectPath:
+                                  type: value
+                                  value: ""
+                                value:
+                                  type: reference
+                                  value: getDealDetails.results.deal
+                              name: Add Key/Value to Object
+                            - action:
+                                key: invokeFlow
+                                component:
+                                  isPublic: true
+                                  key: cross-flow
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                data:
+                                  type: reference
+                                  value: addKeyValueToObject.results
+                                flowName:
+                                  type: value
+                                  value: 07 New Appointment
+                              name: Move MQL -> SQL
+                            - action:
+                                key: runCode
+                                component:
+                                  isPublic: true
+                                  key: code
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                code:
+                                  type: value
+                                  value: >
+                                    module.exports = async ({ logger, configVars
+                                    }, stepResults) => {
+
+                                        // Extract the necessary data from the webhook trigger (if needed)
+                                        const invokeUrl = stepResults.trigger?.results?.invokeUrl; // Use optional chaining
+                                        const portalId = configVars["HubSpot Portal ID"];
+                                        const contactId = stepResults.getDealDetails?.results?.contact?.id;
+
+                                        // Generate the redirection location
+                                        const location = `https://app.hubspot.com/contacts/${portalId}/contact/${contactId}`;
+
+                                        // Log for debugging
+                                        logger.log(`Webhook URL invoked: ${invokeUrl}`);
+                                        logger.log(`Step results: ${JSON.stringify(stepResults, null, 2)}`);
+                                        logger.log(`Redirecting to: ${location}`);
+
+                                        // Return redirection response
+                                        return {
+                                          data: "Redirecting you...",
+                                          statusCode: 303,
+                                          headers: {
+                                            Location: location, // Redirect to the dynamically generated URL
+                                          },
+                                        };
+                                    };
+                              name: Redirect
+                      description: ""
+                      inputs:
+                        conditions:
+                          type: complex
+                          value:
+                            - name: With Calendar
+                              type: complex
+                              value:
+                                - and
+                                - - isTrue
+                                  - name: ""
+                                    type: reference
+                                    value: trigger.results.queryParameters.calendar
+                      name: With or Without Calendar
+              description: ""
+              inputs:
+                conditions:
+                  type: complex
+                  value:
+                    - name: No Deal Owner/Calendar
+                      type: complex
+                      value:
+                        - and
+                        - - doesNotExist
+                          - name: ""
+                            type: reference
+                            value: getOwner.results.0.id
+                        - - doesNotExist
+                          - name: ""
+                            type: reference
+                            value: getDealDetails.results.deal.properties.hubspot_owner_id
+              name: Search for Owner Results
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: No Contact Found
+              type: complex
+              value:
+                - and
+                - - doesNotExist
+                  - name: ""
+                    type: reference
+                    value: getDealDetails.results.contact.id
+      name: Branch on Expression

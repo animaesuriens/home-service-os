@@ -1,0 +1,1706 @@
+sourceFile: job-management-integration-export.yml
+category: Boolean PaintOS
+flow:
+  name: 03 Process Deal
+  description: Processing won deals to Jobs table in PaintOS
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: webhook
+        component:
+          isPublic: true
+          key: webhook-triggers
+          version: LATEST
+      description: ""
+      inputs:
+        body:
+          type: value
+          value: ""
+        contentType:
+          type: value
+          value: application/json
+        headers:
+          type: complex
+          value: []
+        statusCode:
+          type: value
+          value: "202"
+      isTrigger: true
+      name: Process Deal Trigger
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            /*
+              Access config variables by name through the configVars object. e.g.
+                const apiEndpoint = `${configVars["App Base URL"]}/api`;
+
+              Access previous steps' results through the stepResults object. Trigger
+              and step names are camelCased. If the step "Get Data from API" returned
+              {"foo": "bar", "baz": 123}, you could destructure that data with:
+                const { foo, baz } = stepResults.getDataFromApi.results;
+
+              You can return string, number or complex object data. e.g.
+                return { data: { foo: "Hello", bar: 123.45, baz: true } };
+            */
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              return { data: configVars["Job Coordinator"] };
+            };
+      name: Code Block
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: ""
+      inputs:
+        connection:
+          type: configVar
+          value: HubSpot Private App Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value: []
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: /crm/v3/properties/deals?archived=false
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Deal Properties
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: ""
+      inputs:
+        connection:
+          type: configVar
+          value: HubSpot Private App Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value: []
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: /crm/v3/properties/companies?archived=false
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Companies Properties
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: processDealTrigger.results.body.data
+      name: Loop Over Deals
+      steps:
+        - action:
+            key: branchOnExpression
+            component:
+              isPublic: true
+              key: branch
+              version: LATEST
+          branches:
+            - name: If Won
+              steps:
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: Removed File properties, to avoid issue when creating job in
+                    airtable, the flow 12 handles this file field sync
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+                          let properties = stepResults?.getDealProperties?.results?.results;
+                          properties = properties?.filter(item => !item?.fieldType?.toLowerCase()?.includes("file"));
+                          let propNames = properties?.map(prop => prop?.name);
+
+                          return propNames;
+                        };
+                  name: List Deal Properties
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+                          let properties = stepResults?.getCompaniesProperties?.results?.results;
+                          let propNames = properties?.map(prop => prop?.name);
+
+                          return propNames;
+                        };
+                  name: List Companies Properties
+                - action:
+                    key: sleep
+                    component:
+                      isPublic: true
+                      key: sleep
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    ms:
+                      type: value
+                      value: "5000"
+                  name: Sleep
+                - action:
+                    key: rawRequest
+                    component:
+                      isPublic: true
+                      key: hubspot
+                      version: LATEST
+                  description: ""
+                  errorConfig:
+                    delaySeconds: 5
+                    errorHandlerType: retry
+                    ignoreFinalError: true
+                    maxAttempts: 3
+                    usesExponentialBackoff: false
+                  inputs:
+                    connection:
+                      type: configVar
+                      value: HubSpot Private App Connection
+                    data:
+                      type: template
+                      value: >
+                        {
+                          "limit": 1,
+                          "properties": {{$listDealProperties.results}},
+                          "filterGroups": [
+                            {
+                              "filters": [
+                                {
+                                  "propertyName": "dealstage",
+                                  "value": "{{#Won Job Stage}}",
+                                  "operator": "EQ"
+                                },
+                                {
+                                  "propertyName": "hs_object_id",
+                                  "value": "{{$loopOverDeals.currentItem.objectId}}",
+                                  "operator": "EQ"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                    debugRequest:
+                      type: value
+                      value: "false"
+                    fileData:
+                      type: complex
+                      value: []
+                    fileDataFileNames:
+                      type: complex
+                      value: []
+                    formData:
+                      type: complex
+                      value: []
+                    headers:
+                      type: complex
+                      value:
+                        - name:
+                            type: value
+                            value: Content-Type
+                          type: value
+                          value: application/json
+                    maxRetries:
+                      type: value
+                      value: "0"
+                    method:
+                      type: value
+                      value: POST
+                    queryParams:
+                      type: complex
+                      value: []
+                    responseType:
+                      type: value
+                      value: json
+                    retryAllErrors:
+                      type: value
+                      value: "false"
+                    retryDelayMS:
+                      type: value
+                      value: "0"
+                    timeout:
+                      type: value
+                      value: ""
+                    url:
+                      type: value
+                      value: /crm/v3/objects/deals/search
+                    useExponentialBackoff:
+                      type: value
+                      value: "false"
+                  name: Get Deal
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  errorConfig:
+                    delaySeconds: null
+                    errorHandlerType: ignore
+                    ignoreFinalError: null
+                    maxAttempts: null
+                    usesExponentialBackoff: null
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+                          let dealData = stepResults?.getDeal?.results?.results?.[0]?.properties
+                            ? stepResults?.getDeal?.results?.results?.[0]?.properties
+                            : "";
+
+                          let configReadyToProcess = configVars?.["Choose the Ready to Process Property"];
+
+                          let readyToProcess = dealData?.[configReadyToProcess];
+                          logger.log(configReadyToProcess);
+                          logger.log("Deal value: " + readyToProcess);
+
+                          if (readyToProcess == "Yes" || readyToProcess == "Prismatic") {
+                            return true;
+                          } else {
+                            return false;
+                          }
+                        };
+                  name: Generate Ready To Process Field
+                - action:
+                    key: branchOnExpression
+                    component:
+                      isPublic: true
+                      key: branch
+                      version: LATEST
+                  branches:
+                    - name: Ready to Process
+                      steps:
+                        - action:
+                            key: branchOnExpression
+                            component:
+                              isPublic: true
+                              key: branch
+                              version: LATEST
+                          branches:
+                            - name: If Addendum Deal
+                              steps:
+                                - action:
+                                    key: invokeFlow
+                                    component:
+                                      isPublic: true
+                                      key: cross-flow
+                                      version: LATEST
+                                  description: ""
+                                  inputs:
+                                    data:
+                                      type: reference
+                                      value: getDeal.results
+                                    flowName:
+                                      type: value
+                                      value: 04 Process Change Order
+                                  name: Process Change Order
+                                - action:
+                                    key: writeLog
+                                    component:
+                                      isPublic: true
+                                      key: log
+                                      version: LATEST
+                                  description: ""
+                                  inputs:
+                                    level:
+                                      type: value
+                                      value: info
+                                    message:
+                                      type: value
+                                      value: Change Order Processed
+                                  name: Write Log Message 5
+                            - name: Else
+                              steps:
+                                - action:
+                                    key: listRecords
+                                    component:
+                                      isPublic: true
+                                      key: airtable
+                                      version: LATEST
+                                  description: ""
+                                  errorConfig:
+                                    delaySeconds: 10
+                                    errorHandlerType: retry
+                                    ignoreFinalError: false
+                                    maxAttempts: 5
+                                    usesExponentialBackoff: false
+                                  inputs:
+                                    airtableConnection:
+                                      type: configVar
+                                      value: Airtable Connection
+                                    baseId:
+                                      type: configVar
+                                      value: Project Management Base
+                                    fields:
+                                      type: complex
+                                      value: []
+                                    filterByFormula:
+                                      type: template
+                                      value: AND({HS User
+                                        ID}="{{$getDeal.results.results.0.properties.hubspot_owner_id}}",{HS
+                                        User ID}!="")
+                                    tableName:
+                                      type: configVar
+                                      value: People Table
+                                    view:
+                                      type: value
+                                      value: ""
+                                  name: Get Owner
+                                - action:
+                                    key: split
+                                    component:
+                                      isPublic: true
+                                      key: text-manipulation
+                                      version: LATEST
+                                  description: ""
+                                  inputs:
+                                    separator:
+                                      type: value
+                                      value: ;
+                                    text:
+                                      type: reference
+                                      value: getDeal.results.results.0.properties.project_type
+                                  name: Split Project Types
+                                - action:
+                                    key: loopOverItems
+                                    component:
+                                      isPublic: true
+                                      key: loop
+                                      version: LATEST
+                                  description: ""
+                                  inputs:
+                                    items:
+                                      type: reference
+                                      value: splitProjectTypes.results
+                                  name: Loop Over Project Types
+                                  steps:
+                                    - action:
+                                        key: listRecords
+                                        component:
+                                          isPublic: true
+                                          key: airtable
+                                          version: LATEST
+                                      description: ""
+                                      errorConfig:
+                                        delaySeconds: 10
+                                        errorHandlerType: retry
+                                        ignoreFinalError: false
+                                        maxAttempts: 5
+                                        usesExponentialBackoff: false
+                                      inputs:
+                                        airtableConnection:
+                                          type: configVar
+                                          value: Airtable Connection
+                                        baseId:
+                                          type: configVar
+                                          value: Project Management Base
+                                        fields:
+                                          type: complex
+                                          value: []
+                                        filterByFormula:
+                                          type: template
+                                          value: AND({Code}="{{$loopOverProjectTypes.currentItem}}",{Group}="Project
+                                            Type")
+                                        tableName:
+                                          type: configVar
+                                          value: Objects Table
+                                        view:
+                                          type: value
+                                          value: ""
+                                      name: Get Project Types
+                                - action:
+                                    key: runCode
+                                    component:
+                                      isPublic: true
+                                      key: code
+                                      version: LATEST
+                                  description: ""
+                                  inputs:
+                                    code:
+                                      type: value
+                                      value: >
+                                        module.exports = async ({ logger,
+                                        configVars }, stepResults) => {
+                                          let property = configVars["Tags/Project Sub-type Property"];
+                                          let tags = stepResults?.getDeal?.results?.results?.[0]?.properties || {};
+
+                                          let value = tags[property]?.split(";") || [];
+
+                                          return value;
+                                        };
+                                  name: Tags Reference
+                                - action:
+                                    key: loopOverItems
+                                    component:
+                                      isPublic: true
+                                      key: loop
+                                      version: LATEST
+                                  description: ""
+                                  inputs:
+                                    items:
+                                      type: reference
+                                      value: tagsReference.results
+                                  name: Loop Over Tags
+                                  steps:
+                                    - action:
+                                        key: listRecords
+                                        component:
+                                          isPublic: true
+                                          key: airtable
+                                          version: LATEST
+                                      description: ""
+                                      errorConfig:
+                                        delaySeconds: 10
+                                        errorHandlerType: retry
+                                        ignoreFinalError: false
+                                        maxAttempts: 5
+                                        usesExponentialBackoff: false
+                                      inputs:
+                                        airtableConnection:
+                                          type: configVar
+                                          value: Airtable Connection
+                                        baseId:
+                                          type: configVar
+                                          value: Project Management Base
+                                        fields:
+                                          type: complex
+                                          value: []
+                                        filterByFormula:
+                                          type: template
+                                          value: AND({Code}="{{$loopOverTags.currentItem}}",{Group}="Project Tag")
+                                        tableName:
+                                          type: configVar
+                                          value: Objects Table
+                                        view:
+                                          type: value
+                                          value: ""
+                                      name: Get Project Tags
+                                - action:
+                                    key: rawRequest
+                                    component:
+                                      isPublic: true
+                                      key: airtable
+                                      version: LATEST
+                                  description: ""
+                                  errorConfig:
+                                    delaySeconds: 5
+                                    errorHandlerType: retry
+                                    ignoreFinalError: false
+                                    maxAttempts: 2
+                                    usesExponentialBackoff: false
+                                  inputs:
+                                    connection:
+                                      type: configVar
+                                      value: Airtable Connection
+                                    data:
+                                      type: value
+                                      value: ""
+                                    debugRequest:
+                                      type: value
+                                      value: "false"
+                                    fileData:
+                                      type: complex
+                                      value: []
+                                    fileDataFileNames:
+                                      type: complex
+                                      value: []
+                                    formData:
+                                      type: complex
+                                      value: []
+                                    headers:
+                                      type: complex
+                                      value: []
+                                    maxRetries:
+                                      type: value
+                                      value: "0"
+                                    method:
+                                      type: value
+                                      value: GET
+                                    queryParams:
+                                      type: complex
+                                      value: []
+                                    responseType:
+                                      type: value
+                                      value: json
+                                    retryAllErrors:
+                                      type: value
+                                      value: "false"
+                                    retryDelayMS:
+                                      type: value
+                                      value: "0"
+                                    timeout:
+                                      type: value
+                                      value: ""
+                                    url:
+                                      type: template
+                                      value: /v0/meta/bases/{{#Project Management Base}}/tables
+                                    useExponentialBackoff:
+                                      type: value
+                                      value: "false"
+                                  name: Get Fields
+                                - action:
+                                    key: runCode
+                                    component:
+                                      isPublic: true
+                                      key: code
+                                      version: LATEST
+                                  description: ""
+                                  inputs:
+                                    code:
+                                      type: value
+                                      value: >
+                                        module.exports = async ({ logger,
+                                        configVars }, stepResults) => {
+                                          let jobsTable = configVars?.["Jobs Table"];
+
+                                          // Retrieve all tables
+                                          let fields = stepResults?.getFields?.results?.data?.tables || [];
+                                          logger.log("Fields from API:", fields);
+
+                                          // Filter for the jobs table
+                                          let jobsFields = fields?.filter(tbl => tbl?.id === jobsTable)?.[0]?.fields || [];
+                                          logger.log("Jobs Fields after filtering table:", jobsFields);
+
+                                          // Log field types to debug filtering
+                                          jobsFields?.forEach(field => logger.log(`Field Name: ${field?.name}, Type: ${field?.type}`));
+
+                                          // Filter non-mappable fields
+                                          let mappableFields = jobsFields?.filter(fld => {
+                                            return (
+                                              fld?.type !== "formula" &&
+                                              fld?.type !== "rollup" &&
+                                              fld?.type !== "lookup" &&
+                                              fld?.type !== "singleCollaborator" &&
+                                              fld?.type !== "multipleCollaborators" &&
+                                              fld?.type !== "multipleAttachments" &&
+                                              fld?.type !== "createdTime" &&
+                                              fld?.type !== "multipleLookupValues" &&
+                                              fld?.type !== "autoNumber" &&
+                                              fld?.type !== "lastModifiedTime" &&
+                                              fld?.type !== "button" &&
+                                              fld?.type !== "createdBy" &&
+                                              fld?.type !== "lastModifiedBy"
+                                            );
+                                          });
+
+                                          logger.log("Mappable Fields:", mappableFields);
+
+                                          return mappableFields;
+                                        };
+                                  name: Mappable Fields
+                                - action:
+                                    key: runCode
+                                    component:
+                                      isPublic: true
+                                      key: code
+                                      version: LATEST
+                                  description: ""
+                                  inputs:
+                                    code:
+                                      type: value
+                                      value: >
+                                        module.exports = async ({ logger,
+                                        configVars }, stepResults) => {
+                                          // Get HubSpot data from the previous step results
+                                          const hubspotData = Array.isArray(stepResults?.getDeal?.results?.results)
+                                            ? stepResults?.getDeal?.results?.results?.[0]?.properties
+                                            : {};
+                                          const projectType = stepResults?.loopOverProjectTypes?.results?.flat?.() || [];
+                                          const projectTag = stepResults?.loopOverTags?.results?.flat?.() || [];
+                                          const ownerData = stepResults?.getOwner?.results ? stepResults?.getOwner?.results?.[0] : "";
+                                          const ownerId = ownerData?.id || "";
+                                          const mappableFields = stepResults?.mappableFields?.results || [];
+                                          const JobDetailBadge = configVars["Job Detail Badge"] || 2;
+                                          const JobDifficultyBadge  = configVars["Job Difficulty Badge"] || 2;
+                                          const JobCommunicationBadge  = configVars["Job Communication Badge"] || 2;
+
+                                          // Log the initial data for debugging
+                                          logger.info(`HubSpot Account Properties: ${JSON.stringify(hubspotData)}`);
+                                          logger.info(`Project Types: ${JSON.stringify(projectType)}`);
+                                          logger.info(`Project Tags: ${JSON.stringify(projectTag)}`);
+
+                                          // Get the mapping Config Variable
+                                          const mapping = configVars?.["HubSpot Deal Properties to Airtable Jobs Fields Mapping"];
+
+                                          // Map properties of the HubSpot data to the specified field mappings
+                                          const mappedFields = mapping?.reduce((acc, { source, destination }) => {
+                                            let value = hubspotData?.[source];
+                                            // Find the destination field details in mappableFields
+                                            const destinationField = mappableFields?.find((field) => field?.name === destination);
+
+                                            if (source === "job_detail_badge" && !value) {
+                                                value = JobDetailBadge;
+                                            }
+                                            if (source === "job_difficulty_badge" && !value) {
+                                                value = JobDifficultyBadge;
+                                            }
+                                            if (source === "job_communication_badge" && !value) {
+                                                value = JobCommunicationBadge;
+                                            }
+                                              
+                                              logger.info("source:", source);
+
+                                            if (destinationField) {
+                                              // Convert to number for currency/number types
+                                              if ((destinationField?.type === "currency" || destinationField?.type === "number" || destinationField?.type === "rating") && value) {
+                                                value = Number(value);
+                                              }
+
+                                              // Split and wrap in an array for multipleSelects
+                                              if (destinationField?.type === "multipleSelects" && value) {
+                                                value = value?.split(";")?.map((item) => item?.trim());
+                                              }
+
+                                              // Split and wrap in an array for multipleRecordLinks
+                                              if (destinationField?.type === "multipleRecordLinks" && value) {
+                                                value = value?.split(";")?.map((item) => item?.trim());
+                                              }
+
+                                              // Convert acceptable date
+                                              if (destinationField?.type === "date" && value) {
+                                                const date = new Date(value);
+                                                value = date?.toISOString()?.split("T")?.[0]; // Extract YYYY-MM-DD from ISO string
+                                              }
+                                            }
+
+                                            // Add to accumulator if the value is not null or undefined
+                                            if (value !== undefined && value !== null && value !== "") {
+                                              acc[destination] = value;
+                                            }
+
+                                            return acc;
+                                          }, {}) || {};
+
+                                          // Add static fields
+                                          const projectTypeIds = projectType?.map((type) => type?.id);
+                                          const projectTagIds = projectTag?.map((tag) => tag?.id);
+
+                                          mappedFields["Coordinator"] = [configVars?.["Job Coordinator"]];
+                                          mappedFields["Sales"] = ownerId ? [ownerId] : [];
+                                          mappedFields["Project Type(s)"] = projectTypeIds;
+                                          mappedFields["Project Tag(s)"] = projectTagIds;
+                                          mappedFields["Job Status"] = "New";
+
+                                          // Log the processed project types and tags
+                                          logger.info(`Processed Project Type(s): ${JSON.stringify(projectTypeIds)}`);
+                                          logger.info(`Processed Project Tag(s): ${JSON.stringify(projectTagIds)}`);
+
+                                          // Validate the final structure before returning
+                                          logger.info(`Final Mapped Fields: ${JSON.stringify(mappedFields)}`);
+
+                                          // Return the mapped fields in the required format
+                                          return { data: { records: [{ fields: mappedFields }] } };
+                                        };
+                                  name: Generate Deal Payload
+                                - action:
+                                    key: rawRequest
+                                    component:
+                                      isPublic: true
+                                      key: airtable
+                                      version: LATEST
+                                  description: ""
+                                  errorConfig:
+                                    delaySeconds: 5
+                                    errorHandlerType: retry
+                                    ignoreFinalError: false
+                                    maxAttempts: 2
+                                    usesExponentialBackoff: false
+                                  inputs:
+                                    connection:
+                                      type: configVar
+                                      value: Airtable Connection
+                                    data:
+                                      type: reference
+                                      value: generateDealPayload.results
+                                    debugRequest:
+                                      type: value
+                                      value: "false"
+                                    fileData:
+                                      type: complex
+                                      value: []
+                                    fileDataFileNames:
+                                      type: complex
+                                      value: []
+                                    formData:
+                                      type: complex
+                                      value: []
+                                    headers:
+                                      type: complex
+                                      value:
+                                        - name:
+                                            type: value
+                                            value: Content-Type
+                                          type: value
+                                          value: application/json
+                                    maxRetries:
+                                      type: value
+                                      value: "0"
+                                    method:
+                                      type: value
+                                      value: POST
+                                    queryParams:
+                                      type: complex
+                                      value: []
+                                    responseType:
+                                      type: value
+                                      value: json
+                                    retryAllErrors:
+                                      type: value
+                                      value: "false"
+                                    retryDelayMS:
+                                      type: value
+                                      value: "0"
+                                    timeout:
+                                      type: value
+                                      value: ""
+                                    url:
+                                      type: template
+                                      value: /v0/{{#Project Management Base}}/{{#Jobs Table}}
+                                    useExponentialBackoff:
+                                      type: value
+                                      value: "false"
+                                  name: Create Job
+                                - action:
+                                    key: invokeFlow
+                                    component:
+                                      isPublic: true
+                                      key: cross-flow
+                                      version: LATEST
+                                  description: Sync File Properties
+                                  inputs:
+                                    data:
+                                      type: template
+                                      value: |-
+                                        {    
+
+                                        "hs_object_id":{{$getDeal.results.results.0.id}},    "airtable_id":"{{$createJob.results.data.records.0.id}}"
+
+                                        }
+                                    flowName:
+                                      type: value
+                                      value: 12 Hubspot mapper to file field
+                                  name: "Invoke: Sync File Properties"
+                                - action:
+                                    key: runCode
+                                    component:
+                                      isPublic: true
+                                      key: code
+                                      version: LATEST
+                                  description: Checks if the HS Deal Property uses Job Contact Email or Project
+                                    Contact Email and outputs whichever has a
+                                    value.
+                                  inputs:
+                                    code:
+                                      type: value
+                                      value: >
+                                        module.exports = async ({ logger },
+                                        stepResults) => {
+                                          // Get HubSpot data from the previous step results
+                                          const hubspotData = Array.isArray(stepResults?.getDeal?.results?.results) 
+                                            ? stepResults?.getDeal?.results?.results?.[0]?.properties 
+                                            : {};
+
+                                          // Extract job_contact_email and project_contact_email
+                                          const jobContactEmail = hubspotData?.job_contact_email || "";
+                                          const projectContactEmail = hubspotData?.project_contact_email || "";
+
+                                          // Determine the contact email to use
+                                          const contactEmail = jobContactEmail || projectContactEmail;
+
+                                          // Log the chosen contact email for debugging
+                                          logger.info(`Determined Contact Email: ${contactEmail}`);
+
+                                          // Return the contact email
+                                          return { contactEmail };
+                                        };
+                                  name: Email Version Comparator
+                                - action:
+                                    key: readAssociations
+                                    component:
+                                      isPublic: true
+                                      key: hubspot
+                                      version: LATEST
+                                  description: ""
+                                  inputs:
+                                    debugRequest:
+                                      type: value
+                                      value: "false"
+                                    fromObjectType:
+                                      type: value
+                                      value: Deals
+                                    hubspotConnection:
+                                      type: configVar
+                                      value: HubSpot Private App Connection
+                                    timeout:
+                                      type: value
+                                      value: ""
+                                    toId:
+                                      type: reference
+                                      value: getDeal.results.results.0.id
+                                    toObjectType:
+                                      type: value
+                                      value: Contacts
+                                  name: Get Associated Contact
+                                - action:
+                                    key: getContact
+                                    component:
+                                      isPublic: true
+                                      key: hubspot
+                                      version: LATEST
+                                  description: ""
+                                  errorConfig:
+                                    delaySeconds: null
+                                    errorHandlerType: ignore
+                                    ignoreFinalError: null
+                                    maxAttempts: null
+                                    usesExponentialBackoff: null
+                                  inputs:
+                                    additionalProperties:
+                                      type: complex
+                                      value:
+                                        - type: value
+                                          value: firstname
+                                        - type: value
+                                          value: lastname
+                                        - type: value
+                                          value: email
+                                        - type: value
+                                          value: phone
+                                        - type: value
+                                          value: address
+                                        - type: value
+                                          value: city
+                                        - type: value
+                                          value: state
+                                        - type: value
+                                          value: zip
+                                    archived:
+                                      type: value
+                                      value: "false"
+                                    associationsList:
+                                      type: complex
+                                      value: []
+                                    contactEmail:
+                                      type: value
+                                      value: ""
+                                    contactId:
+                                      type: reference
+                                      value: getAssociatedContact.results.results.0.to.0.id
+                                    debugRequest:
+                                      type: value
+                                      value: "false"
+                                    hubspotConnection:
+                                      type: configVar
+                                      value: HubSpot Private App Connection
+                                    timeout:
+                                      type: value
+                                      value: ""
+                                  name: Get Contact 2
+                                - action:
+                                    key: branchOnExpression
+                                    component:
+                                      isPublic: true
+                                      key: branch
+                                      version: LATEST
+                                  branches:
+                                    - name: If company is empty
+                                      steps:
+                                        - action:
+                                            key: writeLog
+                                            component:
+                                              isPublic: true
+                                              key: log
+                                              version: LATEST
+                                          description: ""
+                                          inputs:
+                                            level:
+                                              type: value
+                                              value: info
+                                            message:
+                                              type: value
+                                              value: No contact found
+                                          name: Write Log Message 4
+                                    - name: Else
+                                      steps:
+                                        - action:
+                                            key: runCode
+                                            component:
+                                              isPublic: true
+                                              key: code
+                                              version: LATEST
+                                          description: ""
+                                          inputs:
+                                            code:
+                                              type: value
+                                              value: >
+                                                module.exports = async ({
+                                                logger, configVars },
+                                                stepResults) => {
+                                                  const hubspotData = Array.isArray(stepResults?.getContact2?.results)
+                                                    ? stepResults?.getContact2?.results?.[0]
+                                                    : stepResults?.getContact2?.results || {};
+
+                                                  return { data: hubspotData?.properties?.["email"] || '' };
+                                                };
+                                          name: HS Email
+                                        - action:
+                                            key: listRecords
+                                            component:
+                                              isPublic: true
+                                              key: airtable
+                                              version: LATEST
+                                          description: ""
+                                          inputs:
+                                            airtableConnection:
+                                              type: configVar
+                                              value: Airtable Connection
+                                            baseId:
+                                              type: configVar
+                                              value: Project Management Base
+                                            fields:
+                                              type: complex
+                                              value: []
+                                            filterByFormula:
+                                              type: template
+                                              value: '{email}="{{$hsEmail.results}}"'
+                                            tableName:
+                                              type: configVar
+                                              value: Contacts Table
+                                            view:
+                                              type: value
+                                              value: ""
+                                          name: Get AT Contact
+                                        - action:
+                                            key: runCode
+                                            component:
+                                              isPublic: true
+                                              key: code
+                                              version: LATEST
+                                          description: ""
+                                          inputs:
+                                            code:
+                                              type: value
+                                              value: >
+                                                module.exports = async ({
+                                                logger, configVars },
+                                                stepResults) => {
+                                                  // Get HubSpot data from the previous step results
+                                                  const hubspotData = Array.isArray(stepResults?.getContact2?.results)
+                                                    ? stepResults?.getContact2?.results?.[0] 
+                                                    : stepResults?.getContact2?.results || {};
+
+                                                  const contactData = stepResults?.getAtContact?.results?.[0]?.fields;
+                                                  const jobRecord = stepResults?.createJob?.results?.data?.records?.[0]?.id;
+
+                                                  let associatedJobs;
+
+                                                  if (contactData) {
+                                                    associatedJobs = contactData?.["Associated Jobs"] ? contactData?.["Associated Jobs"] : [];
+                                                    associatedJobs?.push?.(jobRecord);
+                                                  } else {
+                                                    associatedJobs = [jobRecord];
+                                                  }
+
+                                                  // Log the HubSpot Account properties for debugging
+                                                  logger.info(`HubSpot Account Properties: ${JSON.stringify(hubspotData)}`);
+
+                                                  let payload = {
+                                                    "performUpsert": {
+                                                      "fieldsToMergeOn": [
+                                                        "Email"
+                                                      ]
+                                                    },
+                                                    "records": [
+                                                      {
+                                                        "fields": {
+                                                          "First Name": hubspotData?.properties?.["firstname"] || '',
+                                                          "Last Name": hubspotData?.properties?.["lastname"] || '',
+                                                          "Email": hubspotData?.properties?.["email"] || '',
+                                                          "Phone Number": hubspotData?.properties?.["phone"] || '',
+                                                          "Street Address": hubspotData?.properties?.["address"] || '',
+                                                          "City": hubspotData?.properties?.["city"] || '',
+                                                          "State": hubspotData?.properties?.["state"] || '',
+                                                          "Postal Code": hubspotData?.properties?.["zip"] || '',
+                                                          "Associated Jobs": associatedJobs
+                                                        }
+                                                      }
+                                                    ]
+                                                  };
+
+                                                  // Return the mapped fields in the required format
+                                                  return payload;
+                                                };
+                                          name: Generate Contact Payload
+                                        - action:
+                                            key: rawRequest
+                                            component:
+                                              isPublic: true
+                                              key: airtable
+                                              version: LATEST
+                                          description: ""
+                                          errorConfig:
+                                            delaySeconds: 10
+                                            errorHandlerType: retry
+                                            ignoreFinalError: false
+                                            maxAttempts: 5
+                                            usesExponentialBackoff: false
+                                          inputs:
+                                            connection:
+                                              type: configVar
+                                              value: Airtable Connection
+                                            data:
+                                              type: reference
+                                              value: generateContactPayload.results
+                                            debugRequest:
+                                              type: value
+                                              value: "false"
+                                            fileData:
+                                              type: complex
+                                              value: []
+                                            fileDataFileNames:
+                                              type: complex
+                                              value: []
+                                            formData:
+                                              type: complex
+                                              value: []
+                                            headers:
+                                              type: complex
+                                              value:
+                                                - name:
+                                                    type: value
+                                                    value: Content-Type
+                                                  type: value
+                                                  value: application/json
+                                            maxRetries:
+                                              type: value
+                                              value: "0"
+                                            method:
+                                              type: value
+                                              value: PATCH
+                                            queryParams:
+                                              type: complex
+                                              value: []
+                                            responseType:
+                                              type: value
+                                              value: json
+                                            retryAllErrors:
+                                              type: value
+                                              value: "false"
+                                            retryDelayMS:
+                                              type: value
+                                              value: "0"
+                                            timeout:
+                                              type: value
+                                              value: ""
+                                            url:
+                                              type: template
+                                              value: /v0/{{#Project Management Base}}/{{#Contacts Table}}
+                                            useExponentialBackoff:
+                                              type: value
+                                              value: "false"
+                                          name: Create Contact
+                                  description: ""
+                                  inputs:
+                                    conditions:
+                                      type: complex
+                                      value:
+                                        - name: If company is empty
+                                          type: complex
+                                          value:
+                                            - and
+                                            - - doesNotExist
+                                              - name: ""
+                                                type: reference
+                                                value: getContact2.results.properties
+                                  name: Branch on Value 2
+                                - action:
+                                    key: readAssociations
+                                    component:
+                                      isPublic: true
+                                      key: hubspot
+                                      version: LATEST
+                                  description: ""
+                                  inputs:
+                                    debugRequest:
+                                      type: value
+                                      value: "false"
+                                    fromObjectType:
+                                      type: value
+                                      value: Deals
+                                    hubspotConnection:
+                                      type: configVar
+                                      value: HubSpot Private App Connection
+                                    timeout:
+                                      type: value
+                                      value: ""
+                                    toId:
+                                      type: reference
+                                      value: getDeal.results.results.0.id
+                                    toObjectType:
+                                      type: value
+                                      value: Companies
+                                  name: Get Associated Company
+                                - action:
+                                    key: getCompany
+                                    component:
+                                      isPublic: true
+                                      key: hubspot
+                                      version: LATEST
+                                  description: ""
+                                  errorConfig:
+                                    delaySeconds: null
+                                    errorHandlerType: ignore
+                                    ignoreFinalError: null
+                                    maxAttempts: null
+                                    usesExponentialBackoff: null
+                                  inputs:
+                                    additionalProperties:
+                                      type: complex
+                                      value:
+                                        - type: value
+                                          value: firstname
+                                        - type: value
+                                          value: lastname
+                                        - type: value
+                                          value: email
+                                        - type: value
+                                          value: phone
+                                        - type: value
+                                          value: address
+                                        - type: value
+                                          value: city
+                                        - type: value
+                                          value: state
+                                        - type: value
+                                          value: zip
+                                        - type: value
+                                          value: owneremail
+                                    archived:
+                                      type: value
+                                      value: "false"
+                                    associationsList:
+                                      type: complex
+                                      value: []
+                                    companyId:
+                                      type: reference
+                                      value: getAssociatedCompany.results.results.0.to.0.id
+                                    companyName:
+                                      type: value
+                                      value: ""
+                                    debugRequest:
+                                      type: value
+                                      value: "false"
+                                    domain:
+                                      type: value
+                                      value: ""
+                                    hubspotConnection:
+                                      type: configVar
+                                      value: HubSpot Private App Connection
+                                    timeout:
+                                      type: value
+                                      value: ""
+                                  name: Get Company 2
+                                - action:
+                                    key: branchOnExpression
+                                    component:
+                                      isPublic: true
+                                      key: branch
+                                      version: LATEST
+                                  branches:
+                                    - name: If company is empty
+                                      steps:
+                                        - action:
+                                            key: writeLog
+                                            component:
+                                              isPublic: true
+                                              key: log
+                                              version: LATEST
+                                          description: ""
+                                          inputs:
+                                            level:
+                                              type: value
+                                              value: info
+                                            message:
+                                              type: value
+                                              value: No company found
+                                          name: Write Log Message 3
+                                    - name: Else
+                                      steps:
+                                        - action:
+                                            key: runCode
+                                            component:
+                                              isPublic: true
+                                              key: code
+                                              version: LATEST
+                                          description: ""
+                                          inputs:
+                                            code:
+                                              type: value
+                                              value: >
+                                                module.exports = async ({
+                                                logger, configVars },
+                                                stepResults) => {
+                                                  const hubspotData = Array.isArray(stepResults?.getCompany2?.results)
+                                                    ? stepResults?.getCompany2?.results?.[0]
+                                                    : stepResults?.getCompany2?.results;
+                                                    
+                                                  return { data: hubspotData?.properties?.["name"] || "" };
+                                                };
+                                          name: HS Client Name
+                                        - action:
+                                            key: listRecords
+                                            component:
+                                              isPublic: true
+                                              key: airtable
+                                              version: LATEST
+                                          description: ""
+                                          inputs:
+                                            airtableConnection:
+                                              type: configVar
+                                              value: Airtable Connection
+                                            baseId:
+                                              type: configVar
+                                              value: Project Management Base
+                                            fields:
+                                              type: complex
+                                              value: []
+                                            filterByFormula:
+                                              type: template
+                                              value: '{Client Name}="{{$hsClientName.results}}"'
+                                            tableName:
+                                              type: configVar
+                                              value: Company Table
+                                            view:
+                                              type: value
+                                              value: ""
+                                          name: Get AT Company
+                                        - action:
+                                            key: runCode
+                                            component:
+                                              isPublic: true
+                                              key: code
+                                              version: LATEST
+                                          description: ""
+                                          inputs:
+                                            code:
+                                              type: value
+                                              value: >
+                                                module.exports = async ({
+                                                logger, configVars },
+                                                stepResults) => {
+                                                  // Get HubSpot data from the previous step results
+                                                  const hubspotData = Array.isArray(stepResults?.getCompany2?.results)
+                                                    ? stepResults?.getCompany2?.results?.[0]
+                                                    : stepResults?.getCompany2?.results;
+
+                                                  const companyData = stepResults?.getAtCompany?.results?.[0]?.fields;
+                                                  const jobRecord = stepResults?.createJob?.results?.data?.records?.[0]?.id;
+                                                  const contactRecord = stepResults?.createContact?.results?.data?.records?.[0]?.id;
+
+                                                  let associatedJobs;
+
+                                                  if (companyData) {
+                                                    associatedJobs = companyData?.["Associated Jobs"]
+                                                      ? companyData?.["Associated Jobs"]
+                                                      : [];
+                                                    associatedJobs?.push?.(jobRecord);
+                                                  } else {
+                                                    associatedJobs = [jobRecord];
+                                                  }
+
+                                                  // Log the HubSpot Account properties for debugging
+                                                  logger.info(`HubSpot Account Properties: ${JSON.stringify(hubspotData)}`);
+
+                                                  let payload = {
+                                                    performUpsert: {
+                                                      fieldsToMergeOn: ["Client Name"],
+                                                    },
+                                                    records: [
+                                                      {
+                                                        fields: {
+                                                          "Client Name": hubspotData?.properties?.["name"] || "",
+                                                          Email: hubspotData?.properties?.["owneremail"] || "",
+                                                          "Phone Number": hubspotData?.properties?.["phone"] || "",
+                                                          Address: hubspotData?.properties?.["address"] || "",
+                                                          City: hubspotData?.properties?.["city"] || "",
+                                                          State: hubspotData?.properties?.["state"] || "",
+                                                          "Postal Code": hubspotData?.properties?.["zip"] || "",
+                                                          "Date Added": new Date().toISOString().split("T")[0],
+                                                          "Associated Contacts": contactRecord ? [contactRecord] : [],
+                                                          "Associated Jobs": associatedJobs,
+                                                        },
+                                                      },
+                                                    ],
+                                                  };
+
+                                                  // Return the mapped fields in the required format
+                                                  return payload;
+                                                };
+                                          name: Upsert Company Payload
+                                        - action:
+                                            key: rawRequest
+                                            component:
+                                              isPublic: true
+                                              key: airtable
+                                              version: LATEST
+                                          description: ""
+                                          errorConfig:
+                                            delaySeconds: 10
+                                            errorHandlerType: retry
+                                            ignoreFinalError: false
+                                            maxAttempts: 5
+                                            usesExponentialBackoff: false
+                                          inputs:
+                                            connection:
+                                              type: configVar
+                                              value: Airtable Connection
+                                            data:
+                                              type: reference
+                                              value: upsertCompanyPayload.results
+                                            debugRequest:
+                                              type: value
+                                              value: "false"
+                                            fileData:
+                                              type: complex
+                                              value: []
+                                            fileDataFileNames:
+                                              type: complex
+                                              value: []
+                                            formData:
+                                              type: complex
+                                              value: []
+                                            headers:
+                                              type: complex
+                                              value:
+                                                - name:
+                                                    type: value
+                                                    value: Content-Type
+                                                  type: value
+                                                  value: application/json
+                                            maxRetries:
+                                              type: value
+                                              value: "0"
+                                            method:
+                                              type: value
+                                              value: PATCH
+                                            queryParams:
+                                              type: complex
+                                              value: []
+                                            responseType:
+                                              type: value
+                                              value: json
+                                            retryAllErrors:
+                                              type: value
+                                              value: "false"
+                                            retryDelayMS:
+                                              type: value
+                                              value: "0"
+                                            timeout:
+                                              type: value
+                                              value: ""
+                                            url:
+                                              type: template
+                                              value: /v0/{{#Project Management Base}}/{{#Company Table}}
+                                            useExponentialBackoff:
+                                              type: value
+                                              value: "false"
+                                          name: Create Company
+                                  description: ""
+                                  inputs:
+                                    conditions:
+                                      type: complex
+                                      value:
+                                        - name: If company is empty
+                                          type: complex
+                                          value:
+                                            - and
+                                            - - doesNotExist
+                                              - name: ""
+                                                type: reference
+                                                value: getCompany2.results.properties
+                                  name: Branch on Value
+                                - action:
+                                    key: runCode
+                                    component:
+                                      isPublic: true
+                                      key: code
+                                      version: LATEST
+                                  description: ""
+                                  inputs:
+                                    code:
+                                      type: value
+                                      value: >
+                                        module.exports = async ({ logger,
+                                        configVars }, stepResults) => {
+
+                                          // Get job data
+                                          let jobdata = stepResults?.createJob?.results?.data?.records?.[0] || "";
+                                          let jobId = jobdata?.id || "";
+
+                                          let readyToProcess = configVars?.["Choose the Ready to Process Property"];
+                                          let configAirtableRecordId = configVars["Airtable Job Record ID Property"];
+
+                                          // Prepare payload with the correct key
+                                          let payload = {
+                                            "properties": {
+                                              [readyToProcess]: "Done", // Use the dynamically determined key
+                                              [configAirtableRecordId]: jobId
+                                            }
+                                          };
+
+                                          // Return the payload
+                                          return payload;
+                                        };
+                                  name: Update Deal Payload
+                                - action:
+                                    key: rawRequest
+                                    component:
+                                      isPublic: true
+                                      key: hubspot
+                                      version: LATEST
+                                  description: ""
+                                  inputs:
+                                    connection:
+                                      type: configVar
+                                      value: HubSpot Private App Connection
+                                    data:
+                                      type: reference
+                                      value: updateDealPayload.results
+                                    debugRequest:
+                                      type: value
+                                      value: "false"
+                                    fileData:
+                                      type: complex
+                                      value: []
+                                    fileDataFileNames:
+                                      type: complex
+                                      value: []
+                                    formData:
+                                      type: complex
+                                      value: []
+                                    headers:
+                                      type: complex
+                                      value:
+                                        - name:
+                                            type: value
+                                            value: Content-Type
+                                          type: value
+                                          value: application/json
+                                    maxRetries:
+                                      type: value
+                                      value: "0"
+                                    method:
+                                      type: value
+                                      value: PATCH
+                                    queryParams:
+                                      type: complex
+                                      value: []
+                                    responseType:
+                                      type: value
+                                      value: json
+                                    retryAllErrors:
+                                      type: value
+                                      value: "false"
+                                    retryDelayMS:
+                                      type: value
+                                      value: "0"
+                                    timeout:
+                                      type: value
+                                      value: ""
+                                    url:
+                                      type: template
+                                      value: /crm/v3/objects/deals/{{$loopOverDeals.currentItem.objectId}}
+                                    useExponentialBackoff:
+                                      type: value
+                                      value: "false"
+                                  name: Update Deal
+                          description: ""
+                          inputs:
+                            conditions:
+                              type: complex
+                              value:
+                                - name: If Addendum Deal
+                                  type: complex
+                                  value:
+                                    - and
+                                    - - equal
+                                      - name: ""
+                                        type: reference
+                                        value: getDeal.results.results.0.properties.contract_type
+                                      - name: ""
+                                        type: value
+                                        value: Addendum - Change Order
+                          name: Branch on Expression
+                    - name: Else
+                      steps:
+                        - action:
+                            key: writeLog
+                            component:
+                              isPublic: true
+                              key: log
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            level:
+                              type: value
+                              value: info
+                            message:
+                              type: value
+                              value: Ready to process is set to No
+                          name: Write Log Message
+                  description: ""
+                  inputs:
+                    conditions:
+                      type: complex
+                      value:
+                        - name: Ready to Process
+                          type: complex
+                          value:
+                            - or
+                            - - isTrue
+                              - name: ""
+                                type: reference
+                                value: generateReadyToProcessField.results
+                  name: Ready to Process Branch
+            - name: Else
+              steps:
+                - action:
+                    key: writeLog
+                    component:
+                      isPublic: true
+                      key: log
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    level:
+                      type: value
+                      value: info
+                    message:
+                      type: value
+                      value: Not a Won Deal
+                  name: Write Log Message 2
+          description: ""
+          inputs:
+            conditions:
+              type: complex
+              value:
+                - name: If Won
+                  type: complex
+                  value:
+                    - and
+                    - - equal
+                      - name: ""
+                        type: reference
+                        value: loopOverDeals.currentItem.propertyValue
+                      - name: ""
+                        type: configVar
+                        value: Won Job Stage
+          name: Won Stage Branch

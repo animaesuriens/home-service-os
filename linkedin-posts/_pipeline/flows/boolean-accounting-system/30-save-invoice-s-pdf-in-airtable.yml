@@ -1,0 +1,254 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 30 Save Invoice's PDF in Airtable
+  description: Early version of a subflow to upload invoice pdfs to drive.
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: quickbooks
+          version: LATEST
+      description: Binary
+      inputs:
+        connection:
+          type: configVar
+          value: QuickBooks Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value: []
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: arraybuffer
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: template
+          value: /invoice/{{$trigger.results.body.data.qboInvoiceId}}/pdf
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Invoice PDF
+    - action:
+        key: httpPost
+        component:
+          isPublic: true
+          key: http
+          version: LATEST
+      description: Calls Internal Drive Integration
+      inputs:
+        connection:
+          type: configVar
+          value: ""
+        data:
+          type: reference
+          value: getInvoicePdf.results
+        debugRequest:
+          type: value
+          value: "false"
+        headers:
+          type: complex
+          value: []
+        ignoreSslErrors:
+          type: value
+          value: "false"
+        includeFullResponse:
+          type: value
+          value: "false"
+        maxRetries:
+          type: value
+          value: "0"
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: binary
+        retryDelayMS:
+          type: value
+          value: "0"
+        retryOnAllErrors:
+          type: value
+          value: "false"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: https://hooks.prismatic.io/trigger/SW5zdGFuY2VGbG93Q29uZmlnOmZlMWYzY2QyLWQxNDctNDBlMS1hZGU2LTFkNTU1ODhjZTFlYg==
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Upload to Drive
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Yes
+          steps:
+            - action:
+                key: updateRecord
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: Save/download PDF
+              errorConfig:
+                delaySeconds: null
+                errorHandlerType: ignore
+                ignoreFinalError: null
+                maxAttempts: null
+                usesExponentialBackoff: null
+              inputs:
+                airtableConnection:
+                  type: configVar
+                  value: Airtable Connection
+                baseId:
+                  type: configVar
+                  value: Project Management Base
+                dynamicFields:
+                  type: value
+                  value: ""
+                record:
+                  type: reference
+                  value: trigger.results.body.data.atInvoiceId
+                recordFields:
+                  type: complex
+                  value:
+                    - name:
+                        type: value
+                        value: Invoice PDF
+                      type: reference
+                      value: uploadToDrive.results.publicUrl
+                tableName:
+                  type: configVar
+                  value: Invoices Table
+              name: Update Record
+            - action:
+                key: sleep
+                component:
+                  isPublic: true
+                  key: sleep
+                  version: LATEST
+              description: Make sure AT saved the PDF
+              inputs:
+                ms:
+                  type: value
+                  value: "1000"
+              name: Sleep
+            - action:
+                key: httpPost
+                component:
+                  isPublic: true
+                  key: http
+                  version: LATEST
+              description: Calls Internal Drive Integration
+              inputs:
+                connection:
+                  type: configVar
+                  value: ""
+                data:
+                  type: template
+                  value: '{ "resourceId": "{{$uploadToDrive.results.id}}" }'
+                debugRequest:
+                  type: value
+                  value: "false"
+                headers:
+                  type: complex
+                  value:
+                    - name:
+                        type: value
+                        value: Content-Type
+                      type: value
+                      value: application/json
+                ignoreSslErrors:
+                  type: value
+                  value: "false"
+                includeFullResponse:
+                  type: value
+                  value: "false"
+                maxRetries:
+                  type: value
+                  value: "0"
+                queryParams:
+                  type: complex
+                  value: []
+                responseType:
+                  type: value
+                  value: json
+                retryDelayMS:
+                  type: value
+                  value: "0"
+                retryOnAllErrors:
+                  type: value
+                  value: "false"
+                timeout:
+                  type: value
+                  value: ""
+                url:
+                  type: value
+                  value: https://hooks.prismatic.io/trigger/SW5zdGFuY2VGbG93Q29uZmlnOjRjYWVjMjQ0LWE2ODQtNGQ2ZS1iMWI1LWFmOTBlYjRlMGMzMA==
+                useExponentialBackoff:
+                  type: value
+                  value: "false"
+              name: Delete PDF from Drive
+        - name: Else
+          steps: []
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Yes
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: uploadToDrive.results.id
+      name: File uploaded successfuly?

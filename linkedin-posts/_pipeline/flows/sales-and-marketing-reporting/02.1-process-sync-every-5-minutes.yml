@@ -1,0 +1,531 @@
+sourceFile: sales-and-marketing-reporting-export.yml
+category: Marketing and Sales System
+flow:
+  name: 02.1 Process Sync Every 5 Minutes
+  description: ""
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Cross Flow
+    - action:
+        key: adjustDateTime
+        component:
+          isPublic: true
+          key: datetime
+          version: LATEST
+      description: ""
+      inputs:
+        dateTimeInput:
+          type: reference
+          value: crossFlow.results.startedAt
+        daysInput:
+          type: value
+          value: ""
+        hoursInput:
+          type: value
+          value: ""
+        minutesInput:
+          type: value
+          value: "-2"
+        secondsInput:
+          type: value
+          value: ""
+      name: Adjust Date/Time
+    - action:
+        key: convertToEpoch
+        component:
+          isPublic: true
+          key: datetime
+          version: LATEST
+      description: ""
+      inputs:
+        dateTimeInput:
+          type: reference
+          value: adjustDateTime.results
+        displayEpochInSeconds:
+          type: value
+          value: "false"
+      name: Time 2 Minutes Ago to Epoch
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const access_token = stepResults?.crossFlow?.results?.body?.data?.hubspotTokenId;
+              const clientVariableName = stepResults?.crossFlow?.results?.body?.data?.clientVariableName;
+              const fieldCondition = configVars["Field Settings"]?.[clientVariableName] || {};
+              const time = stepResults?.time2MinutesAgoToEpoch?.results;
+
+              const headers = {
+                Authorization: `Bearer ${access_token}`,
+                "Content-Type": "application/json"
+              };
+
+              // 1. Fetch all available deal properties
+              const dealPropsResponse = await fetch("https://api.hubapi.com/crm/v3/properties/deals", { headers });
+              if (!dealPropsResponse.ok) {
+                const errorText = await dealPropsResponse.text();
+                logger.error(`Error fetching HubSpot deal properties: ${errorText}`);
+                throw new Error("Failed to fetch deal properties from HubSpot.");
+              }
+              const dealProps = await dealPropsResponse.json();
+
+              // 2. Get all valid deal fields (excluding analytics_history)
+              const validDealFields = (dealProps.results || [])
+                .filter(p => p.groupName !== "analytics_history")
+                .map(p => p.name);
+
+              // 3. Flatten and dedupe fields from fieldCondition, preserving order
+              const conditionalFields = Object.values(fieldCondition)
+                .flat()
+                .map(obj => Object.values(obj))
+                .flat();
+              const orderedUniqueFields = conditionalFields.filter(
+                (field, index, self) => self.indexOf(field) === index
+              );
+
+              // 4. Keep only valid HubSpot fields and preserve order
+              const uniqueFields = orderedUniqueFields.filter(field =>
+                validDealFields.includes(field)
+              );
+
+              ["closedate", "dealstage", "pipeline","hs_merged_object_ids"].forEach(requiredField => {
+                if (validDealFields.includes(requiredField) && !uniqueFields.includes(requiredField)) {
+                  uniqueFields.push(requiredField);
+                }
+              });
+
+              // ----------------- GET PIPELINES ---------------- //
+              const pipelinesRes = await fetch("https://api.hubapi.com/crm/v3/pipelines/deals", { headers });
+              if (!pipelinesRes.ok) {
+                const error = await pipelinesRes.text();
+                throw new Error(`Failed to fetch pipelines: ${error}`);
+              }
+              const pipelinesData = await pipelinesRes.json();
+              const pipelines = pipelinesData.results;
+
+              let stages = [];
+              for (let pipe of pipelines) {
+                for (let stage of pipe.stages) {
+                  stages.push({ id: stage?.id, label: stage?.label });
+                }
+              }
+
+              const findStageLabel = (stageId) =>
+                stages.find((s) => s.id === stageId)?.label || stageId;
+
+              const findPipeLineLabel = (pipelineId) =>
+                pipelines.find((s) => s.id === pipelineId)?.label || pipelineId;
+
+              // ----------------- GET OWNERS ---------------- //
+              const ownersRes = await fetch("https://api.hubapi.com/crm/v3/owners", { headers });
+              const ownersData = await ownersRes.json();
+              if (ownersData.errors && ownersData.errors?.length > 0) {
+                throw Error(ownersData.errors[0]?.message);
+              }
+              const owners = ownersData.results;
+
+              const findOwnerName = (ownerId) => {
+                const owner = owners.find((o) => o.id === ownerId);
+                if (!owner) return ownerId;
+                const firstName = owner?.firstName || "";
+                const lastName = owner?.lastName || "";
+                return `${firstName} ${lastName}`.trim();
+              };
+
+              const changeOrderLogic = (deal, displayValue) => {
+                let findContractTypefield = fieldCondition?.contract_type;
+                let contracTypeValue = "";
+
+                for (let item of findContractTypefield) {
+                  let value = deal[item?.contract_type];
+                  if (value) {
+                    contracTypeValue = value;
+                    break;
+                  }
+                }
+                return contracTypeValue?.toLowerCase()?.includes("change order")
+                  ? ""
+                  : displayValue;
+              };
+
+              const wonLogic = (deal) => {
+                const stageLabel = findStageLabel(deal.dealstage);
+                const pipelineLabel = findPipeLineLabel(deal.pipeline);
+
+                if (!stageLabel?.toLowerCase().includes("won")) return null;
+                
+                if (pipelineLabel?.toLowerCase().includes("sales pipeline") && stageLabel?.toLowerCase().includes("won")) {
+                  return deal.closedate || null;
+                }
+                return '';
+              };
+
+              // ----------------- FETCH DEALS ---------------- //
+              let deals = [];
+              let after = undefined;
+              let hasMore = true;
+
+              while (hasMore) {
+                const payload = {
+                  filterGroups: [
+                    {
+                      filters: [
+                        {
+                          propertyName: "hs_lastmodifieddate",
+                          operator: "GT",
+                          value: time
+                        }
+                      ]
+                    }
+                  ],
+                  properties: uniqueFields,
+                  limit: 100
+                };
+
+                if (after) payload.after = after;
+
+                const response = await fetch("https://api.hubapi.com/crm/v3/objects/deals/search", {
+                  method: "POST",
+                  headers,
+                  body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                  const errorText = await response.text();
+                  logger.error(`Error fetching deals: ${errorText}`);
+                  throw new Error("Failed to fetch deals from HubSpot.");
+                }
+
+                const json = await response.json();
+                deals = deals.concat(json.results || []);
+                hasMore = Boolean(json.paging?.next?.after);
+                after = json.paging?.next?.after;
+              }
+
+              // ----------------- FETCH ASSOCIATIONS (CRM v4) ---------------- //
+              const associationMap = {};
+              await Promise.all(
+                deals.map(async (deal) => {
+                  const url = `https://api.hubapi.com/crm/v4/objects/deals/${deal.id}/associations/contacts`;
+                  try {
+                    const res = await fetch(url, { headers });
+                    if (!res.ok) {
+                      logger.warn(`No associations for deal ${deal.id}: ${await res.text()}`);
+                      associationMap[deal.id] = [];
+                      return;
+                    }
+                    const json = await res.json();
+                    associationMap[deal.id] = json.results?.map(r => r.toObjectId) || [];
+                  } catch (err) {
+                    logger.warn(`Failed to fetch associations for deal ${deal.id}: ${err.message}`);
+                    associationMap[deal.id] = [];
+                  }
+                })
+              );
+
+              // ----------------- FETCH CONTACTS ---------------- //
+              const allContactIds = [
+                ...new Set(Object.values(associationMap).flat())
+              ].filter(Boolean);
+
+              const contactMap = {};
+              if (allContactIds.length) {
+                // 1. Get all contact properties
+                let contactPropertyNames = [];
+                try {
+                  const propsRes = await fetch("https://api.hubapi.com/crm/v3/properties/contacts", { headers });
+                  if (propsRes.ok) {
+                    const propsJson = await propsRes.json();
+                    contactPropertyNames = (propsJson.results || []).map(p => p.name);
+                  }
+                } catch (e) {
+                  logger.warn("Could not fetch full contact property list, using defaults");
+                }
+                if (!contactPropertyNames.length) {
+                  contactPropertyNames = ["firstname", "lastname", "email", "phone"];
+                }
+
+                // 2. Fetch contacts in batches
+                const BATCH_SIZE = 100;
+                for (let i = 0; i < allContactIds.length; i += BATCH_SIZE) {
+                  const batch = allContactIds.slice(i, i + BATCH_SIZE);
+                  const contactRes = await fetch("https://api.hubapi.com/crm/v3/objects/contacts/batch/read", {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify({
+                      inputs: batch.map(id => ({ id })),
+                      properties: contactPropertyNames
+                    })
+                  });
+                  if (!contactRes.ok) {
+                    logger.warn(`Contact batch failed: ${await contactRes.text()}`);
+                    continue;
+                  }
+                  const contactJson = await contactRes.json();
+                  for (const c of contactJson.results || []) {
+                    contactMap[c.id] = c.properties || {};
+                  }
+                }
+              }
+
+              // ----------------- MAP DEALS WITH CONTACT DATA ---------------- //
+              const mappedDeals = deals.map(deal => {
+                const mappedRecord = {};
+                const contactIds = associationMap[deal.id] || [];
+                const associatedContacts = contactIds.map(id => contactMap[id] || {});
+
+                for (const [targetField, mappings] of Object.entries(fieldCondition)) {
+                  let value = null;
+
+                  for (const mapObj of mappings) {
+                    const hubspotField = Object.values(mapObj)[0];
+
+                    // 1. Try deal properties
+                    if (deal.properties?.[hubspotField]) {
+                      value = deal.properties[hubspotField];
+                      break;
+                    }
+
+                    // 2. Try contact properties
+                    for (const contact of associatedContacts) {
+                      if (contact[hubspotField]) {
+                        value = contact[hubspotField];
+                        break;
+                      }
+                    }
+                    if (value !== null) break;
+                  }
+
+                  let displayValue = value;
+                  const lowerTarget = targetField.toLowerCase();
+                  if (lowerTarget.includes("deal_stage")) {
+                    displayValue = findStageLabel(value);
+                  } else if (lowerTarget.includes("deal_owner")) {
+                    displayValue = findOwnerName(value);
+                  } else if (lowerTarget.includes("pipeline")) {
+                    displayValue = findPipeLineLabel(value);
+                  } else if (lowerTarget.includes("won_date")) {
+                    displayValue = wonLogic(deal.properties);
+                  } else if (lowerTarget.includes("createdate") || lowerTarget.includes("create_date")) {
+                    displayValue = changeOrderLogic(deal.properties, displayValue);
+                  } else if (lowerTarget.includes("estimate_date")) {
+                    displayValue = changeOrderLogic(deal.properties, displayValue);
+                  }
+
+                  mappedRecord[targetField.replace(/_/g, " ")
+                    .replace(/\b\w/g, (c) => c.toUpperCase())] = displayValue || null;
+                }
+
+                mappedRecord["Associated Contacts"] = associatedContacts;
+                return mappedRecord;
+              });
+
+              return {
+                data: {
+                  payload: mappedDeals,
+                  deals
+                }
+              };
+            };
+      name: Generate get deal payload
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: generateGetDealPayload.results.payload
+      name: Loop Over Items
+      steps:
+        - action:
+            key: invokeFlow
+            component:
+              isPublic: true
+              key: cross-flow
+              version: LATEST
+          description: ""
+          inputs:
+            data:
+              type: template
+              value: |-
+                {
+                "currentItem":{{$loopOverItems.currentItem}},
+                "config":{{$crossFlow.results.body.data}}
+                }
+            flowName:
+              type: value
+              value: 02.2 Process Upsert/Data
+          name: Invoke Flow 02.2
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: ""
+      inputs:
+        code:
+          type: value
+          value: >
+            const axios = require("axios");
+
+
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              try {
+                const data = stepResults?.crossFlow?.results?.body?.data || {};
+                const access_token = data?.hubspotTokenId;
+                let deals = stepResults?.generateGetDealPayload?.results?.deals
+                deals = [...new Set(
+                  deals
+                    ?.filter(item => {
+                      const ids = item?.properties?.hs_merged_object_ids;
+                      return ids && ids.trim() !== '';
+                    })
+                    .flatMap(item => item.properties.hs_merged_object_ids.split(';'))
+                    .map(id => id.trim())
+                    .filter(id => id !== '')
+                )];
+                // --- 1) HubSpot: get ALL archived (deleted) deals (paginate) ---
+                let deletedDeals = deals;
+                let after;
+                do {
+                  const url = new URL("https://api.hubapi.com/crm/v3/objects/deals");
+                  url.searchParams.set("archived", "true");
+                  url.searchParams.set("limit", "100");
+                  if (after) url.searchParams.set("after", after);
+
+                  const resp = await axios.get(url.toString(), {
+                    headers: { Authorization: `Bearer ${access_token}` }
+                  });
+
+                  const body = resp.data || {};
+                  deletedDeals.push(...(body.results || []).map(d => String(d.id)));
+                  after = body.paging?.next?.after;
+                } while (after);
+
+                // No deletions to process
+                if (!Array.isArray(deletedDeals) || deletedDeals.length === 0) {
+                  logger.info("No Deal IDs to delete.");
+                  return { success: true, deletedCount: 0 };
+                }
+                const deletedSet = new Set(deletedDeals);
+
+                // --- 2) Google Sheets setup ---
+                const accessToken = configVars["Google Sheets Connection"]?.token?.access_token;
+                const spreadsheetId = data.spreadsheetId;
+                const sheetName = data.worksheetTabName;
+
+                if (!spreadsheetId || !sheetName) {
+                  throw new Error("Missing spreadsheetId or worksheetTabName in config data.");
+                }
+
+                // Resolve numeric sheetId (required by deleteDimension)
+                let sheetId = data.sheetId;
+                if (sheetId == null) {
+                  const metaRes = await fetch(
+                    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets(properties(sheetId,title))`,
+                    { headers: { Authorization: `Bearer ${accessToken}` } }
+                  );
+                  if (!metaRes.ok) {
+                    throw new Error(`Failed to fetch spreadsheet metadata: ${await metaRes.text()}`);
+                  }
+                  const meta = await metaRes.json();
+                  sheetId = meta?.sheets?.find(s => s?.properties?.title === sheetName)?.properties?.sheetId;
+                  if (sheetId == null) {
+                    throw new Error(`Worksheet "${sheetName}" not found in spreadsheet ${spreadsheetId}`);
+                  }
+                }
+
+                // --- 3) Read headers + rows ---
+                const headerRes = await fetch(
+                  `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetName)}!1:1`,
+                  { headers: { Authorization: `Bearer ${accessToken}` } }
+                );
+                if (!headerRes.ok) throw new Error(`Failed to fetch headers: ${await headerRes.text()}`);
+                const headerData = await headerRes.json();
+                const headers = headerData?.values?.[0] || [];
+
+                const dealIdIndex = headers.findIndex(
+                  h => String(h).trim().toLowerCase() === "deal id"
+                );
+                if (dealIdIndex === -1) throw new Error("No 'Deal Id' column found.");
+
+                const getRes = await fetch(
+                  `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetName)}`,
+                  { headers: { Authorization: `Bearer ${accessToken}` } }
+                );
+                if (!getRes.ok) throw new Error(`Failed to fetch sheet data: ${await getRes.text()}`);
+                const sheetData = await getRes.json();
+                const rows = sheetData.values || [];
+
+                // --- 4) Collect rows to delete (skip header) ---
+                const rowsToDelete = [];
+                rows.forEach((row, idx) => {
+                  if (idx === 0) return; // header
+                  const cell = row?.[dealIdIndex];
+                  if (!cell) return;
+                  if (deletedSet.has(String(cell))) rowsToDelete.push(idx);
+                });
+
+                if (rowsToDelete.length === 0) {
+                  logger.info("No matching rows found to delete.");
+                  return { success: true, deletedCount: 0 };
+                }
+
+                // --- 5) Build delete requests (bottom-up). Use sheetId, NOT spreadsheetId ---
+                const deleteRequests = rowsToDelete
+                  .sort((a, b) => b - a)
+                  .map(idx => ({
+                    deleteDimension: {
+                      range: {
+                        sheetId,           // <-- correct field
+                        dimension: "ROWS",
+                        startIndex: idx,   // 0-based row index in the sheet
+                        endIndex: idx + 1
+                      }
+                    }
+                  }));
+
+                const deleteRes = await fetch(
+                  `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`,
+                  {
+                    method: "POST",
+                    headers: {
+                      Authorization: `Bearer ${accessToken}`,
+                      "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ requests: deleteRequests })
+                  }
+                );
+                if (!deleteRes.ok) throw new Error(`Failed to delete rows: ${await deleteRes.text()}`);
+
+                logger.info(`🗑️ Deleted ${rowsToDelete.length} rows for Deal IDs found in archived deals.`);
+                return { success: true, deletedCount: rowsToDelete.length };
+
+              } catch (error) {
+                logger.error(`Error deleting rows from Google Sheet: ${error.message}`);
+                return { success: false, error: error.message };
+              }
+            };
+      name: Process Delete Sync

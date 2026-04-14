@@ -1,0 +1,192 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 19 Fetch Tax Codes
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: webhook
+        component:
+          isPublic: true
+          key: webhook-triggers
+          version: LATEST
+      description: ""
+      inputs:
+        body:
+          type: value
+          value: ""
+        contentType:
+          type: value
+          value: ""
+        headers:
+          type: complex
+          value: []
+        statusCode:
+          type: value
+          value: ""
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: quickbooks
+          version: LATEST
+      description: ""
+      inputs:
+        connection:
+          type: configVar
+          value: QuickBooks Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value: []
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: /query?query=SELECT * FROM TaxCode
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Fetch All TaxCodes
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: fetchAllTaxcodes.results.QueryResponse.TaxCode
+      name: Loop Over TaxCodes
+      steps:
+        - action:
+            key: runCode
+            component:
+              isPublic: true
+              key: code
+              version: LATEST
+          description: ""
+          inputs:
+            code:
+              type: value
+              value: >
+                module.exports = async ({ logger, configVars }, stepResults) =>
+                {
+                  const taxCode = stepResults.loopOverTaxcodes.currentItem;
+
+                  const payload = {
+                    performUpsert: {
+                      fieldsToMergeOn: [
+                        "QBO Object ID",
+                        "Group",
+                        "QBO Object - Project Type Mapping",
+                      ],
+                    },
+                    records: [
+                      {
+                        fields: {
+                          "QBO Object ID": taxCode.Id,
+                          Group: "QBO Object",
+                          Name: taxCode.Name,
+                          "QBO Object - Project Type Mapping": "Tax Code",
+                        },
+                      },
+                    ],
+                  };
+
+                  return { data: payload };
+                };
+          name: Generate Tax Code Payload
+        - action:
+            key: rawRequest
+            component:
+              isPublic: true
+              key: airtable
+              version: LATEST
+          description: ""
+          inputs:
+            connection:
+              type: configVar
+              value: Airtable Connection
+            data:
+              type: reference
+              value: generateTaxCodePayload.results
+            debugRequest:
+              type: value
+              value: "true"
+            fileData:
+              type: complex
+              value: []
+            fileDataFileNames:
+              type: complex
+              value: []
+            formData:
+              type: complex
+              value: []
+            headers:
+              type: complex
+              value: []
+            maxRetries:
+              type: value
+              value: "0"
+            method:
+              type: value
+              value: PATCH
+            queryParams:
+              type: complex
+              value: []
+            responseType:
+              type: value
+              value: json
+            retryAllErrors:
+              type: value
+              value: "false"
+            retryDelayMS:
+              type: value
+              value: "0"
+            timeout:
+              type: value
+              value: ""
+            url:
+              type: template
+              value: /v0/{{#Project Management Base}}/{{#Project Type(s) Table}}
+            useExponentialBackoff:
+              type: value
+              value: "false"
+          name: Upsert TaxCode

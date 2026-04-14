@@ -1,0 +1,662 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 14 Grab Items/Classes from QB
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: schedule
+        component:
+          isPublic: true
+          key: schedule-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Update Class in QB Trigger
+      schedule:
+        meta:
+          scheduleType: day
+          timeZone: America/Los_Angeles
+        type: value
+        value: 00 08 */1 * *
+    - action:
+        key: loopNTimes
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        iterationCount:
+          type: value
+          value: "5"
+      name: Loop Over Existing Accounts
+      steps:
+        - action:
+            key: getExecutionValue
+            component:
+              isPublic: true
+              key: persist-data
+              version: LATEST
+          description: ""
+          inputs:
+            defaultValueInput:
+              type: value
+              value: "1"
+            keyInput:
+              type: value
+              value: i
+          name: Execution - Get Value
+        - action:
+            key: writeLog
+            component:
+              isPublic: true
+              key: log
+              version: LATEST
+          description: ""
+          inputs:
+            level:
+              type: value
+              value: info
+            message:
+              type: reference
+              value: executionGetValue.results
+          name: Write Log Message
+        - action:
+            key: rawRequest
+            component:
+              isPublic: true
+              key: quickbooks
+              version: LATEST
+          description: ""
+          inputs:
+            connection:
+              type: configVar
+              value: QuickBooks Connection
+            data:
+              type: value
+              value: ""
+            debugRequest:
+              type: value
+              value: "false"
+            fileData:
+              type: complex
+              value: []
+            formData:
+              type: complex
+              value: []
+            headers:
+              type: complex
+              value: []
+            maxRetries:
+              type: value
+              value: "0"
+            method:
+              type: value
+              value: GET
+            queryParams:
+              type: complex
+              value: []
+            responseType:
+              type: value
+              value: json
+            retryAllErrors:
+              type: value
+              value: "false"
+            retryDelayMS:
+              type: value
+              value: "0"
+            timeout:
+              type: value
+              value: ""
+            url:
+              type: template
+              value: /query?query=select * from Account STARTPOSITION
+                {{$executionGetValue.results}} MAXRESULTS 100 &minorversion=73
+            useExponentialBackoff:
+              type: value
+              value: "false"
+          name: Get Accounts
+        - action:
+            key: incrementExecutionValue
+            component:
+              isPublic: true
+              key: persist-data
+              version: LATEST
+          description: ""
+          inputs:
+            amountInput:
+              type: value
+              value: "100"
+            keyInput:
+              type: value
+              value: i
+          name: Execution - Increment Value
+        - action:
+            key: writeLog
+            component:
+              isPublic: true
+              key: log
+              version: LATEST
+          description: ""
+          inputs:
+            level:
+              type: value
+              value: info
+            message:
+              type: reference
+              value: executionIncrementValue.results
+          name: Write Log Message 2
+        - action:
+            key: branchOnExpression
+            component:
+              isPublic: true
+              key: branch
+              version: LATEST
+          branches:
+            - name: If Accounts Exist
+              steps:
+                - action:
+                    key: selectExecutedStepResult
+                    component:
+                      isPublic: true
+                      key: branch
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    stepResults:
+                      type: complex
+                      value:
+                        - type: reference
+                          value: getAccounts.results.QueryResponse.Account
+                  name: Output Accounts
+            - name: Else
+              steps:
+                - action:
+                    key: breakLoop
+                    component:
+                      isPublic: true
+                      key: loop
+                      version: LATEST
+                  description: ""
+                  inputs: {}
+                  name: Break Loop
+          description: ""
+          inputs:
+            conditions:
+              type: complex
+              value:
+                - name: If Accounts Exist
+                  type: complex
+                  value:
+                    - and
+                    - - exists
+                      - name: ""
+                        type: reference
+                        value: getAccounts.results.QueryResponse.Account
+          name: Existing Account Branch
+    - action:
+        key: flatten
+        component:
+          isPublic: true
+          key: collection-tools
+          version: LATEST
+      description: ""
+      inputs:
+        listInput:
+          type: reference
+          value: loopOverExistingAccounts.results
+      name: Create List
+    - action:
+        key: filter
+        component:
+          isPublic: true
+          key: collection-tools
+          version: LATEST
+      description: ""
+      inputs:
+        filterCodeInput:
+          type: value
+          value: (item, index) => { return item; }
+        listInput:
+          type: reference
+          value: createList.results
+      name: Filtered List
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: filteredList.results
+      name: Loop Over Accounts
+      steps:
+        - action:
+            key: writeLog
+            component:
+              isPublic: true
+              key: log
+              version: LATEST
+          description: ""
+          inputs:
+            level:
+              type: value
+              value: info
+            message:
+              type: reference
+              value: loopOverAccounts.currentItem
+          name: Write Log Message 3
+        - action:
+            key: rawRequest
+            component:
+              isPublic: true
+              key: airtable
+              version: LATEST
+          description: ""
+          errorConfig:
+            delaySeconds: 5
+            errorHandlerType: retry
+            ignoreFinalError: false
+            maxAttempts: 3
+            usesExponentialBackoff: false
+          inputs:
+            connection:
+              type: configVar
+              value: Airtable Connection
+            data:
+              type: template
+              value: >-
+                {
+                    "performUpsert": {
+                      "fieldsToMergeOn": [
+                        "QBO Object ID",
+                        "QBO Object - Project Type Mapping"
+                      ]
+                    },
+                    "records": [
+                      {
+                        "fields": {
+                          "QBO Object ID": "{{$loopOverAccounts.currentItem.Id}}",
+                          "Name": "{{$loopOverAccounts.currentItem.Name}}",
+                          "QBO Object Name": "{{$loopOverAccounts.currentItem.FullyQualifiedName}}",
+                          "QBO Object - Project Type Mapping": "Account"
+                        }
+                      }
+                    ]
+                  }
+            debugRequest:
+              type: value
+              value: "false"
+            fileData:
+              type: complex
+              value: []
+            fileDataFileNames:
+              type: complex
+              value: []
+            formData:
+              type: complex
+              value: []
+            headers:
+              type: complex
+              value:
+                - name:
+                    type: value
+                    value: Content-Type
+                  type: value
+                  value: application/json
+            maxRetries:
+              type: value
+              value: "0"
+            method:
+              type: value
+              value: PATCH
+            queryParams:
+              type: complex
+              value: []
+            responseType:
+              type: value
+              value: json
+            retryAllErrors:
+              type: value
+              value: "false"
+            retryDelayMS:
+              type: value
+              value: "0"
+            timeout:
+              type: value
+              value: ""
+            url:
+              type: template
+              value: /v0/{{#Project Management Base}}/{{#Project Type(s) Table}}
+            useExponentialBackoff:
+              type: value
+              value: "false"
+          name: Upsert Accounts
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: quickbooks
+          version: LATEST
+      description: ""
+      inputs:
+        connection:
+          type: configVar
+          value: QuickBooks Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value: []
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: /query?query=select * from Item
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Items
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: getItems.results.QueryResponse.Item
+      name: Loop Over Items
+      steps:
+        - action:
+            key: runCode
+            component:
+              isPublic: true
+              key: code
+              version: LATEST
+          description: ""
+          inputs:
+            code:
+              type: value
+              value: >
+                module.exports = async ({ logger, configVars }, stepResults) =>
+                {
+                  const item = stepResults.loopOverItems.currentItem;
+                  const payload = {
+                    performUpsert: {
+                      fieldsToMergeOn: ["QBO Object ID", "QBO Object - Project Type Mapping"],
+                    },
+                    records: [
+                      {
+                        fields: {
+                          "QBO Object ID": item.Id,
+                          "QBO Object Name": item.Name,
+                          "QBO Object - Project Type Mapping": "Item",
+                          "Item Income Account Ref Name": item?.IncomeAccountRef?.name ?? "",
+                          "Item Income Account Ref Value": item?.IncomeAccountRef?.value ?? "",
+                        },
+                      },
+                    ],
+                  };
+
+                  return { data: payload };
+                };
+          name: Item Payload
+        - action:
+            key: rawRequest
+            component:
+              isPublic: true
+              key: airtable
+              version: LATEST
+          description: ""
+          errorConfig:
+            delaySeconds: 10
+            errorHandlerType: retry
+            ignoreFinalError: true
+            maxAttempts: 5
+            usesExponentialBackoff: false
+          inputs:
+            connection:
+              type: configVar
+              value: Airtable Connection
+            data:
+              type: reference
+              value: itemPayload.results
+            debugRequest:
+              type: value
+              value: "false"
+            fileData:
+              type: complex
+              value: []
+            fileDataFileNames:
+              type: complex
+              value: []
+            formData:
+              type: complex
+              value: []
+            headers:
+              type: complex
+              value:
+                - name:
+                    type: value
+                    value: Content-Type
+                  type: value
+                  value: application/json
+            maxRetries:
+              type: value
+              value: "0"
+            method:
+              type: value
+              value: PATCH
+            queryParams:
+              type: complex
+              value: []
+            responseType:
+              type: value
+              value: json
+            retryAllErrors:
+              type: value
+              value: "false"
+            retryDelayMS:
+              type: value
+              value: "0"
+            timeout:
+              type: value
+              value: ""
+            url:
+              type: template
+              value: /v0/{{#Project Management Base}}/{{#Project Type(s) Table}}
+            useExponentialBackoff:
+              type: value
+              value: "false"
+          name: Upsert Items
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: quickbooks
+          version: LATEST
+      description: ""
+      inputs:
+        connection:
+          type: configVar
+          value: QuickBooks Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value: []
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: /query?query=select * from Class&minorversion=73
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Classes
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: getClasses.results.QueryResponse.Class
+      name: Loop Over Class
+      steps:
+        - action:
+            key: rawRequest
+            component:
+              isPublic: true
+              key: airtable
+              version: LATEST
+          description: ""
+          errorConfig:
+            delaySeconds: 10
+            errorHandlerType: retry
+            ignoreFinalError: true
+            maxAttempts: 5
+            usesExponentialBackoff: false
+          inputs:
+            connection:
+              type: configVar
+              value: Airtable Connection
+            data:
+              type: template
+              value: >-
+                {
+                    "performUpsert": {
+                      "fieldsToMergeOn": [
+                        "QBO Object ID",
+                        "QBO Object - Project Type Mapping"
+                      ]
+                    },
+                    "records": [
+                      {
+                        "fields": {
+                          "QBO Object ID": "{{$loopOverClass.currentItem.Id}}",
+                          "QBO Object Name": "{{$loopOverClass.currentItem.Name}}",
+                          "QBO Object - Project Type Mapping": "Class"
+                        }
+                      }
+                    ]
+                  }
+            debugRequest:
+              type: value
+              value: "false"
+            fileData:
+              type: complex
+              value: []
+            fileDataFileNames:
+              type: complex
+              value: []
+            formData:
+              type: complex
+              value: []
+            headers:
+              type: complex
+              value:
+                - name:
+                    type: value
+                    value: Content-Type
+                  type: value
+                  value: application/json
+            maxRetries:
+              type: value
+              value: "0"
+            method:
+              type: value
+              value: PATCH
+            queryParams:
+              type: complex
+              value: []
+            responseType:
+              type: value
+              value: json
+            retryAllErrors:
+              type: value
+              value: "false"
+            retryDelayMS:
+              type: value
+              value: "0"
+            timeout:
+              type: value
+              value: ""
+            url:
+              type: template
+              value: /v0/{{#Project Management Base}}/{{#Project Type(s) Table}}
+            useExponentialBackoff:
+              type: value
+              value: "false"
+          name: Upsert Class

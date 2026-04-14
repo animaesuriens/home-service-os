@@ -1,0 +1,255 @@
+sourceFile: job-management-integration-export.yml
+category: Boolean PaintOS
+flow:
+  name: 09 Company Sync
+  description: Sync Companies between HubSpot and Airtable
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: schedule
+        component:
+          isPublic: true
+          key: schedule-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Cron
+      schedule:
+        meta:
+          scheduleType: minute
+          timeZone: ""
+        type: value
+        value: "*/5 * * * *"
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Enabled Feature
+          steps:
+            - action:
+                key: adjustDateTime
+                component:
+                  isPublic: true
+                  key: datetime
+                  version: LATEST
+              description: ""
+              inputs:
+                dateTimeInput:
+                  type: reference
+                  value: cron.results.startedAt
+                daysInput:
+                  type: value
+                  value: ""
+                hoursInput:
+                  type: value
+                  value: ""
+                minutesInput:
+                  type: value
+                  value: "-5"
+                secondsInput:
+                  type: value
+                  value: ""
+              name: Adjust Date/Time
+            - action:
+                key: convertToEpoch
+                component:
+                  isPublic: true
+                  key: datetime
+                  version: LATEST
+              description: ""
+              inputs:
+                dateTimeInput:
+                  type: reference
+                  value: adjustDateTime.results
+                displayEpochInSeconds:
+                  type: value
+                  value: "false"
+              name: Time 2 Minutes Ago to Epoch
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >+
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      const accessToken = configVars["HubSpot Private App Connection"]?.fields?.accessToken;
+                      const time = stepResults.time2MinutesAgoToEpoch?.results;
+
+                      if (!accessToken) {
+                        return { data: { success: false, message: "Access token is missing." } };
+                      }
+
+                      if (!time || typeof time !== "number") {
+                        return { data: { success: false, message: "Invalid or missing timestamp from time2MinutesAgoToEpoch." } };
+                      }
+
+                      logger.info("⏰ Time for filtering (Epoch ms):", time);
+
+                      // Step 1: Fetch all company properties
+                      const propertiesResponse = await fetch("https://api.hubapi.com/crm/v3/properties/companies", {
+                        method: "GET",
+                        headers: {
+                          Authorization: `Bearer ${accessToken}`,
+                          "Content-Type": "application/json"
+                        }
+                      });
+
+                      if (!propertiesResponse.ok) {
+                        const errorText = await propertiesResponse.text();
+                        logger.error("❌ Failed to fetch company properties:", errorText);
+                        return {
+                          data: {
+                            success: false,
+                            message: "Failed to retrieve company properties.",
+                            error: errorText
+                          }
+                        };
+                      }
+
+                      const propertiesData = await propertiesResponse.json();
+                      const allPropertyNames = propertiesData.results?.map(p => p.name) || [];
+
+                      // Step 2: Build the search payload
+                      const searchPayload = {
+                        filterGroups: [
+                          {
+                            filters: [
+                              {
+                                propertyName: "hs_lastmodifieddate",
+                                operator: "GT",
+                                value: time
+                              }
+                            ]
+                          }
+                        ],
+                        properties: allPropertyNames,
+                        limit: 50,
+                        sorts: [
+                          {
+                            propertyName: "hs_lastmodifieddate",
+                            direction: "DESCENDING"
+                          }
+                        ]
+                      };
+                    logger.info("Search time (ms epoch):", time);
+
+                    logger.info("Final company search payload:",
+                    JSON.stringify(searchPayload, null, 2));
+
+                      logger.info("📦 Sending Search Payload:", JSON.stringify(searchPayload, null, 2));
+
+                      // Step 3: Perform search request
+                      const searchResponse = await fetch("https://api.hubapi.com/crm/v3/objects/companies/search", {
+                        method: "POST",
+                        headers: {
+                          Authorization: `Bearer ${accessToken}`,
+                          "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(searchPayload)
+                      });
+
+                      if (!searchResponse.ok) {
+                        const errorText = await searchResponse.text();
+                        logger.error("❌ Failed to fetch companies:", errorText);
+                        return {
+                          data: {
+                            success: false,
+                            message: "Failed to retrieve companies.",
+                            error: errorText
+                          }
+                        };
+                      }
+
+                      const companiesData = await searchResponse.json();
+
+                      
+
+                      return {
+                        data: {
+                          success: true,
+                          total: companiesData.total,
+                          companies: companiesData.results
+                        }
+                      };
+                    };
+
+              name: Generate Search Company Payload
+            - action:
+                key: loopOverItems
+                component:
+                  isPublic: true
+                  key: loop
+                  version: LATEST
+              description: ""
+              inputs:
+                items:
+                  type: reference
+                  value: generateSearchCompanyPayload.results.companies
+              name: Loop Over Items
+              steps:
+                - action:
+                    key: invokeFlow
+                    component:
+                      isPublic: true
+                      key: cross-flow
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    data:
+                      type: reference
+                      value: loopOverItems.currentItem
+                    flowName:
+                      type: value
+                      value: 09 Subflow Company Sync
+                  name: Invoke Flow
+        - name: Else
+          steps:
+            - action:
+                key: stopExecution
+                component:
+                  isPublic: true
+                  key: stop-execution
+                  version: LATEST
+              description: ""
+              inputs:
+                contentType:
+                  type: value
+                  value: application/json
+                headers:
+                  type: complex
+                  value: []
+                jsonBody:
+                  type: value
+                  value: ""
+                statusCode:
+                  type: value
+                  value: "200"
+              name: Stop Execution
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Enabled Feature
+              type: complex
+              value:
+                - and
+                - - equal
+                  - name: ""
+                    type: configVar
+                    value: Company Sync Preferences
+                  - name: ""
+                    type: value
+                    value: Always
+      name: Branch on Expression

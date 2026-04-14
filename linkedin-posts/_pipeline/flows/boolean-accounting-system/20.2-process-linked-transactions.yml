@@ -1,0 +1,272 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 20.2 Process Linked Transactions
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: runCode
+        component:
+          isPublic: true
+          key: code
+          version: LATEST
+      description: By Payment
+      inputs:
+        code:
+          type: value
+          value: >
+            module.exports = async ({ logger, configVars }, stepResults) => {
+              const transactions = stepResults.trigger.results.body.data.invoice.LinkedTxn;
+              const payments = transactions.filter((txn) => txn.TxnType === "Payment");
+
+              return { data: payments };
+            };
+      name: Filter Transactions
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: quickbooks
+          version: LATEST
+      description: ""
+      inputs:
+        connection:
+          type: configVar
+          value: QuickBooks Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value: []
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: query?query=SELECT%20*%20FROM%20PaymentMethod
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get All Payment Methods
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: trigger.results.body.data.invoice.LinkedTxn
+      name: Loop Over Payments
+      steps:
+        - action:
+            key: rawRequest
+            component:
+              isPublic: true
+              key: quickbooks
+              version: LATEST
+          description: ""
+          errorConfig:
+            delaySeconds: 10
+            errorHandlerType: retry
+            ignoreFinalError: false
+            maxAttempts: 3
+            usesExponentialBackoff: false
+          inputs:
+            connection:
+              type: configVar
+              value: QuickBooks Connection
+            data:
+              type: value
+              value: ""
+            debugRequest:
+              type: value
+              value: "false"
+            fileData:
+              type: complex
+              value: []
+            formData:
+              type: complex
+              value: []
+            headers:
+              type: complex
+              value: []
+            maxRetries:
+              type: value
+              value: "0"
+            method:
+              type: value
+              value: GET
+            queryParams:
+              type: complex
+              value: []
+            responseType:
+              type: value
+              value: json
+            retryAllErrors:
+              type: value
+              value: "false"
+            retryDelayMS:
+              type: value
+              value: "0"
+            timeout:
+              type: value
+              value: ""
+            url:
+              type: template
+              value: /payment/{{$loopOverPayments.currentItem.TxnId}}
+            useExponentialBackoff:
+              type: value
+              value: "false"
+          name: Get Payment
+        - action:
+            key: runCode
+            component:
+              isPublic: true
+              key: code
+              version: LATEST
+          description: ""
+          inputs:
+            code:
+              type: value
+              value: >
+                module.exports = async ({ logger, configVars }, stepResults) =>
+                {
+                  const job = stepResults.trigger.results.body.data?.job;
+                  // const atInvoiceId = stepResults.findInvoice.results?.[0]?.id;
+                  const topLevelPayment = stepResults.getPayment.results.Payment;
+                  // const lineLevelPayment = stepResults.loopOverLines.currentItem;
+
+                  const paymentMethods = stepResults.getAllPaymentMethods.results.QueryResponse?.PaymentMethod || []
+                  const paymentMethodId = String(topLevelPayment?.PaymentMethodRef?.value || "");
+                  const currentPaymentMethod = paymentMethods.find(
+                    m => String(m.Id) === paymentMethodId
+                  );
+
+                  const payload = {
+                    performUpsert: {
+                      fieldsToMergeOn: ["Payment ID"],
+                    },
+                    records: [
+                      {
+                        fields: {
+                          Job: job ? [job.id] : [],
+                          "Payment Date": topLevelPayment.TxnDate,
+                          "Payment Amount": topLevelPayment.TotalAmt,
+                          "Type/Source": "QuickBooks",
+                          "Payment ID": topLevelPayment.Id,
+                          Notes: topLevelPayment?.PrivateNote,
+                          "Payment Method": currentPaymentMethod?.Name || ""
+                        },
+                      },
+                    ],
+                  };
+
+                  return { data: payload };
+                };
+          name: Upsert Payload
+        - action:
+            key: rawRequest
+            component:
+              isPublic: true
+              key: airtable
+              version: LATEST
+          description: ""
+          errorConfig:
+            delaySeconds: 5
+            errorHandlerType: retry
+            ignoreFinalError: false
+            maxAttempts: 3
+            usesExponentialBackoff: false
+          inputs:
+            connection:
+              type: configVar
+              value: Airtable Connection
+            data:
+              type: reference
+              value: upsertPayload.results
+            debugRequest:
+              type: value
+              value: "false"
+            fileData:
+              type: complex
+              value: []
+            fileDataFileNames:
+              type: complex
+              value: []
+            formData:
+              type: complex
+              value: []
+            headers:
+              type: complex
+              value: []
+            maxRetries:
+              type: value
+              value: "0"
+            method:
+              type: value
+              value: PATCH
+            queryParams:
+              type: complex
+              value: []
+            responseType:
+              type: value
+              value: json
+            retryAllErrors:
+              type: value
+              value: "false"
+            retryDelayMS:
+              type: value
+              value: "0"
+            timeout:
+              type: value
+              value: ""
+            url:
+              type: template
+              value: /v0/{{#Project Management Base}}/{{#Customer Transactions Table}}
+            useExponentialBackoff:
+              type: value
+              value: "false"
+          name: Upsert Customer Transactions

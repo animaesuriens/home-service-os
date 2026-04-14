@@ -1,0 +1,290 @@
+sourceFile: boolean-sales-integration-export.yml
+category: Marketing and Sales System
+flow:
+  name: 12 Customer-Selected Project Type -> Project Type Conversion
+  description: ""
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Project Type Exist
+          steps:
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+
+                      let triggerData = stepResults.trigger.results.body.data || ""
+                      let projectTypes = triggerData.properties?.customer_selected_project_type || ""
+                      let convert = projectTypes.includes(';') ? projectTypes.split(';') : projectTypes.split(',')
+
+                      const trimmed = convert.map(type => String(type).trim())
+
+
+                      return trimmed;
+                    };
+              name: Convert Project Type
+            - action:
+                key: loopOverItems
+                component:
+                  isPublic: true
+                  key: loop
+                  version: LATEST
+              description: ""
+              inputs:
+                items:
+                  type: reference
+                  value: convertProjectType.results
+              name: Loop Over Project Types
+              steps:
+                - action:
+                    key: runCode
+                    component:
+                      isPublic: true
+                      key: code
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    code:
+                      type: value
+                      value: >
+                        module.exports = async ({ logger, configVars },
+                        stepResults) => {
+                          let data = stepResults.loopOverProjectTypes.currentItem;
+                          let payload = {
+                              "performUpsert": {
+                                "fieldsToMergeOn": [
+                                  "Input"
+                                ]
+                              },
+                              "records": [
+                                {
+                                  "fields": {
+                                    "Input": data
+                                  }
+                                }
+                              ]
+                            };
+
+                          return payload;
+                        };
+                  name: Generate Payload
+                - action:
+                    key: rawRequest
+                    component:
+                      isPublic: true
+                      key: airtable
+                      version: LATEST
+                  description: ""
+                  errorConfig:
+                    delaySeconds: 10
+                    errorHandlerType: retry
+                    ignoreFinalError: false
+                    maxAttempts: 3
+                    usesExponentialBackoff: false
+                  inputs:
+                    connection:
+                      type: configVar
+                      value: Airtable Connection
+                    data:
+                      type: reference
+                      value: generatePayload.results
+                    debugRequest:
+                      type: value
+                      value: "false"
+                    fileData:
+                      type: complex
+                      value: []
+                    fileDataFileNames:
+                      type: complex
+                      value: []
+                    formData:
+                      type: complex
+                      value: []
+                    headers:
+                      type: complex
+                      value: []
+                    maxRetries:
+                      type: value
+                      value: "0"
+                    method:
+                      type: value
+                      value: PATCH
+                    queryParams:
+                      type: complex
+                      value: []
+                    responseType:
+                      type: value
+                      value: json
+                    retryAllErrors:
+                      type: value
+                      value: "false"
+                    retryDelayMS:
+                      type: value
+                      value: "0"
+                    timeout:
+                      type: value
+                      value: ""
+                    url:
+                      type: template
+                      value: /v0/{{#Project Management Base}}/{{#Lead Intake Conversion Table}}
+                    useExponentialBackoff:
+                      type: value
+                      value: "false"
+                  name: Get Project Type
+            - action:
+                key: map
+                component:
+                  isPublic: true
+                  key: collection-tools
+                  version: LATEST
+              description: ""
+              inputs:
+                contextInput:
+                  type: value
+                  value: ""
+                filterCodeInput:
+                  type: value
+                  value: (item, index) => { return true; }
+                listInput:
+                  type: reference
+                  value: loopOverProjectTypes.results
+                transformCodeInput:
+                  type: value
+                  value: |-
+                    (item, index) => {    
+                        
+                        return item.data.records[0]; 
+
+                    }
+              name: Flatten by Record Data
+            - action:
+                key: map
+                component:
+                  isPublic: true
+                  key: collection-tools
+                  version: LATEST
+              description: ""
+              inputs:
+                contextInput:
+                  type: value
+                  value: ""
+                filterCodeInput:
+                  type: value
+                  value: (item, index) => { return true; }
+                listInput:
+                  type: reference
+                  value: flattenByRecordData.results
+                transformCodeInput:
+                  type: value
+                  value: |-
+                    (item, index) => {    
+                        
+                        return item.fields["Output"]; 
+
+                    }
+              name: Flatten by Output Field
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+
+                      let types = stepResults.flattenByOutputField.results
+
+
+                      return types.toString().replace(/\,/g, ';') 
+                    };
+              name: Convert to String
+        - name: Else
+          steps:
+            - action:
+                key: writeLog
+                component:
+                  isPublic: true
+                  key: log
+                  version: LATEST
+              description: ""
+              inputs:
+                level:
+                  type: value
+                  value: info
+                message:
+                  type: value
+                  value: No Project Type Exist
+              name: Write Log Message
+            - action:
+                key: stopExecution
+                component:
+                  isPublic: true
+                  key: stop-execution
+                  version: LATEST
+              description: ""
+              inputs:
+                contentType:
+                  type: value
+                  value: application/json
+                headers:
+                  type: complex
+                  value: []
+                jsonBody:
+                  type: value
+                  value: ""
+                statusCode:
+                  type: value
+                  value: "200"
+              name: Stop Execution
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Project Type Exist
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: trigger.results.body.data.properties.customer_selected_project_type
+                - - isNotEmpty
+                  - name: ""
+                    type: reference
+                    value: trigger.results.body.data.properties.customer_selected_project_type
+                  - name: ""
+                    type: value
+                    value: ""
+      name: Branch on Value

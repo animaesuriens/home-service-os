@@ -1,0 +1,171 @@
+sourceFile: job-management-integration-export.yml
+category: Boolean PaintOS
+flow:
+  name: 02 Register HS Users
+  description: Update People table in PaintOS with HubSpot active users.
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: instanceDeploy
+        component:
+          isPublic: true
+          key: management-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: HS User IDs Trigger
+    - action:
+        key: rawRequest
+        component:
+          isPublic: true
+          key: hubspot
+          version: LATEST
+      description: ""
+      errorConfig:
+        delaySeconds: 10
+        errorHandlerType: retry
+        ignoreFinalError: false
+        maxAttempts: 5
+        usesExponentialBackoff: false
+      inputs:
+        connection:
+          type: configVar
+          value: HubSpot Private App Connection
+        data:
+          type: value
+          value: ""
+        debugRequest:
+          type: value
+          value: "false"
+        fileData:
+          type: complex
+          value: []
+        fileDataFileNames:
+          type: complex
+          value: []
+        formData:
+          type: complex
+          value: []
+        headers:
+          type: complex
+          value: []
+        maxRetries:
+          type: value
+          value: "0"
+        method:
+          type: value
+          value: GET
+        queryParams:
+          type: complex
+          value: []
+        responseType:
+          type: value
+          value: json
+        retryAllErrors:
+          type: value
+          value: "false"
+        retryDelayMS:
+          type: value
+          value: "0"
+        timeout:
+          type: value
+          value: ""
+        url:
+          type: value
+          value: /crm/v3/owners/
+        useExponentialBackoff:
+          type: value
+          value: "false"
+      name: Get Owner
+    - action:
+        key: loopOverItems
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        items:
+          type: reference
+          value: getOwner.results.results
+      name: Loop Over Owners
+      steps:
+        - action:
+            key: runCode
+            component:
+              isPublic: true
+              key: code
+              version: LATEST
+          description: ""
+          inputs:
+            code:
+              type: value
+              value: >
+                module.exports = async ({ logger, configVars }, stepResults) =>
+                {
+                  const hubspotData = stepResults?.loopOverOwners?.currentItem;
+
+                  const emailDomain = hubspotData?.email || "";
+                  const isBooleanEmail = emailDomain.includes("helloboolean.com");
+
+                  // Validation: must contain at least one A-Z letter
+                  const isValidName = (value) => {
+                    if (!value || typeof value !== "string") return false;
+
+                    // Regex: must contain at least one alphabetical character
+                    return /[A-Za-z]/.test(value);
+                  };
+
+                  // Build fields dynamically
+                  const fields = {
+                    "Work Email": hubspotData?.email,
+                    "HS User ID": hubspotData?.id,
+                    "Employment Status": isBooleanEmail ? "Inactive" : "Active"
+                  };
+
+                  // Conditionally add valid first name
+                  if (isValidName(hubspotData?.firstName)) {
+                    fields["First Name"] = hubspotData.firstName;
+                  }
+
+                  // Conditionally add valid last name
+                  if (isValidName(hubspotData?.lastName)) {
+                    fields["Last Name"] = hubspotData.lastName;
+                  }
+
+                  // helloboolean.com email → add role
+                  if (isBooleanEmail) {
+                    fields["Role"] = ["Automation"];
+                  }
+
+                  const payload = {
+                    performUpsert: {
+                      fieldsToMergeOn: ["Work Email"]
+                    },
+                    records: [
+                      {
+                        fields
+                      }
+                    ]
+                  };
+
+                  return payload;
+                };
+          name: Generate Upsert Payload
+        - action:
+            key: invokeFlow
+            component:
+              isPublic: true
+              key: cross-flow
+              version: LATEST
+          description: ""
+          inputs:
+            data:
+              type: reference
+              value: generateUpsertPayload.results
+            flowName:
+              type: value
+              value: Subflow - 02 Register HS Users
+          name: Invoke Flow

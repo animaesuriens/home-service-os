@@ -1,0 +1,650 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: 09.1 Quickbooks Bills
+  description: ""
+  isSynchronous: false
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: schedule
+        component:
+          isPublic: true
+          key: schedule-triggers
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Runs Every Day
+      schedule:
+        meta:
+          scheduleType: day
+          timeZone: America/Los_Angeles
+        type: value
+        value: 00 05 */1 * *
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Yes
+          steps: []
+        - name: Else
+          steps:
+            - action:
+                key: stopExecution
+                component:
+                  isPublic: true
+                  key: stop-execution
+                  version: LATEST
+              description: Flow is not enabled.
+              inputs:
+                contentType:
+                  type: value
+                  value: application/json
+                headers:
+                  type: complex
+                  value: []
+                jsonBody:
+                  type: value
+                  value: ""
+                statusCode:
+                  type: value
+                  value: "200"
+              name: Stop Execution
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Yes
+              type: complex
+              value:
+                - and
+                - - equal
+                  - name: ""
+                    type: configVar
+                    value: Sync Bills and Vendor Credits
+                  - name: ""
+                    type: value
+                    value: "true"
+      name: Flow is enabled in Wizard?
+    - action:
+        key: adjustDateTime
+        component:
+          isPublic: true
+          key: datetime
+          version: LATEST
+      description: with Days Ago variable
+      inputs:
+        dateTimeInput:
+          type: reference
+          value: runsEveryDay.results.startedAt
+        daysInput:
+          type: value
+          value: "-3"
+        hoursInput:
+          type: value
+          value: ""
+        minutesInput:
+          type: value
+          value: ""
+        secondsInput:
+          type: value
+          value: ""
+      name: Calculated Date
+    - action:
+        key: formatDateTime
+        component:
+          isPublic: true
+          key: datetime
+          version: LATEST
+      description: ""
+      inputs:
+        dateTime:
+          type: reference
+          value: calculatedDate.results
+        format:
+          type: value
+          value: YYYY-MM-DDTHH:mm:ss
+        timeZone:
+          type: value
+          value: etc/UTC
+      name: Format Date/Time
+    - action:
+        key: saveExecutionValue
+        component:
+          isPublic: true
+          key: persist-data
+          version: LATEST
+      description: ""
+      inputs:
+        dynamicValues:
+          type: complex
+          value: []
+        keyInput:
+          type: value
+          value: index
+        valueInput:
+          type: value
+          value: "0"
+      name: Start Index
+    - action:
+        key: loopNTimes
+        component:
+          isPublic: true
+          key: loop
+          version: LATEST
+      description: ""
+      inputs:
+        iterationCount:
+          type: value
+          value: "50"
+      name: Loop N Times
+      steps:
+        - action:
+            key: getExecutionValue
+            component:
+              isPublic: true
+              key: persist-data
+              version: LATEST
+          description: ""
+          inputs:
+            defaultValueInput:
+              type: value
+              value: "1"
+            keyInput:
+              type: value
+              value: index
+          name: Get Start Position
+        - action:
+            key: runCode
+            component:
+              isPublic: true
+              key: code
+              version: LATEST
+          description: ""
+          inputs:
+            code:
+              type: value
+              value: >
+                module.exports = async ({ logger, configVars }, stepResults) =>
+                {
+                  const date = stepResults.formatDateTime.results;
+                  const startPos = stepResults.getStartPosition.results;
+                  const query = `SELECT * FROM Bill WHERE MetaData.LastUpdatedTime > '${date}' STARTPOSITION ${startPos} MAXRESULTS 100`;
+                  return { data: encodeURIComponent(query) };
+                };
+          name: Create Query
+        - action:
+            key: rawRequest
+            component:
+              isPublic: true
+              key: quickbooks
+              version: LATEST
+          description: ""
+          inputs:
+            connection:
+              type: configVar
+              value: QuickBooks Connection
+            data:
+              type: value
+              value: ""
+            debugRequest:
+              type: value
+              value: "false"
+            fileData:
+              type: complex
+              value: []
+            formData:
+              type: complex
+              value: []
+            headers:
+              type: complex
+              value: []
+            maxRetries:
+              type: value
+              value: "0"
+            method:
+              type: value
+              value: GET
+            queryParams:
+              type: complex
+              value: []
+            responseType:
+              type: value
+              value: json
+            retryAllErrors:
+              type: value
+              value: "false"
+            retryDelayMS:
+              type: value
+              value: "0"
+            timeout:
+              type: value
+              value: ""
+            url:
+              type: template
+              value: /query?query={{$createQuery.results}}
+            useExponentialBackoff:
+              type: value
+              value: "false"
+          name: Get Bills
+        - action:
+            key: branchOnExpression
+            component:
+              isPublic: true
+              key: branch
+              version: LATEST
+          branches:
+            - name: If Bills Exist
+              steps:
+                - action:
+                    key: loopOverItems
+                    component:
+                      isPublic: true
+                      key: loop
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    items:
+                      type: reference
+                      value: getBills.results.QueryResponse.Bill
+                  name: Loop Over Bills
+                  steps:
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              let vendorData = stepResults.loopOverBills.currentItem["VendorRef"];
+                              let vendorId = vendorData?.value;
+                              let vendorName = vendorData?.name;
+
+                              let payload = {
+                                performUpsert: {
+                                  fieldsToMergeOn: ["QBO Vendor ID"],
+                                },
+                                records: [
+                                  {
+                                    fields: {
+                                      "QBO Vendor ID": vendorId,
+                                      Status: "Whitelist",
+                                      "Display Name": vendorName,
+                                    },
+                                  },
+                                ],
+                              };
+
+                              return payload;
+                            };
+                      name: Vendor Payload
+                    - action:
+                        key: rawRequest
+                        component:
+                          isPublic: true
+                          key: airtable
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 10
+                        errorHandlerType: retry
+                        ignoreFinalError: true
+                        maxAttempts: 5
+                        usesExponentialBackoff: false
+                      inputs:
+                        connection:
+                          type: configVar
+                          value: Airtable Connection
+                        data:
+                          type: reference
+                          value: vendorPayload.results
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        fileData:
+                          type: complex
+                          value: []
+                        fileDataFileNames:
+                          type: complex
+                          value: []
+                        formData:
+                          type: complex
+                          value: []
+                        headers:
+                          type: complex
+                          value:
+                            - name:
+                                type: value
+                                value: Content-Type
+                              type: value
+                              value: application/json
+                        maxRetries:
+                          type: value
+                          value: "0"
+                        method:
+                          type: value
+                          value: PATCH
+                        queryParams:
+                          type: complex
+                          value: []
+                        responseType:
+                          type: value
+                          value: json
+                        retryAllErrors:
+                          type: value
+                          value: "false"
+                        retryDelayMS:
+                          type: value
+                          value: "0"
+                        timeout:
+                          type: value
+                          value: ""
+                        url:
+                          type: template
+                          value: /v0/{{#Project Management Base}}/{{#Vendors Table}}
+                        useExponentialBackoff:
+                          type: value
+                          value: "false"
+                      name: Upsert Vendor Record
+                    - action:
+                        key: loopOverItems
+                        component:
+                          isPublic: true
+                          key: loop
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        items:
+                          type: reference
+                          value: loopOverBills.currentItem.Line
+                      name: Loop Line Items
+                      steps:
+                        - action:
+                            key: runCode
+                            component:
+                              isPublic: true
+                              key: code
+                              version: LATEST
+                          description: ""
+                          inputs:
+                            code:
+                              type: value
+                              value: >
+                                module.exports = async ({ logger, configVars },
+                                stepResults) => {
+                                  const bill = stepResults.loopOverBills.currentItem;
+                                  const line = stepResults.loopLineItems.currentItem;
+                                  const upsertVendorResult =
+                                    stepResults?.upsertVendorRecord?.results?.data?.records[0];
+
+                                  const payload = {
+                                    bill: bill,
+                                    currentLine: line,
+                                    vendor: upsertVendorResult ? upsertVendorResult : null,
+                                  };
+
+                                  return { data: payload };
+                                };
+                          name: Subflow Payload
+                        - action:
+                            key: invokeFlow
+                            component:
+                              isPublic: true
+                              key: cross-flow
+                              version: LATEST
+                          description: Upsert expense
+                          errorConfig:
+                            delaySeconds: null
+                            errorHandlerType: ignore
+                            ignoreFinalError: null
+                            maxAttempts: null
+                            usesExponentialBackoff: null
+                          inputs:
+                            data:
+                              type: reference
+                              value: subflowPayload.results
+                            flowName:
+                              type: value
+                              value: 09.1 Quickbooks Bills - Subflow
+                          name: Invoke Subflow
+                    - action:
+                        key: listRecords
+                        component:
+                          isPublic: true
+                          key: airtable
+                          version: LATEST
+                      description: ""
+                      errorConfig:
+                        delaySeconds: 10
+                        errorHandlerType: retry
+                        ignoreFinalError: true
+                        maxAttempts: 3
+                        usesExponentialBackoff: false
+                      inputs:
+                        airtableConnection:
+                          type: configVar
+                          value: Airtable Connection
+                        baseId:
+                          type: configVar
+                          value: Project Management Base
+                        fields:
+                          type: complex
+                          value: []
+                        filterByFormula:
+                          type: template
+                          value: AND({QBO Expense ID} = "{{$loopOverBills.currentItem.Id}}", {Type} =
+                            "Bill")
+                        tableName:
+                          type: configVar
+                          value: Expenses Table
+                        view:
+                          type: value
+                          value: ""
+                      name: Get Existing AT Expenses
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              const bill = stepResults.loopOverBills.currentItem;
+                              const existingRecords = stepResults.getExistingAtExpenses.results || [];
+
+                              // Get all valid Line IDs from the current QBO bill
+                              const qboLineIds = (bill.Line || [])
+                                .filter(line => line.Id)
+                                .map(line => String(line.Id));
+
+                              // Find AT records whose Line ID is NOT in the current QBO bill lines
+                              const orphans = existingRecords
+                                .filter(record => {
+                                  const atLineId = record.fields?.["Line ID"];
+                                  return atLineId && !qboLineIds.includes(String(atLineId));
+                                })
+                                .map(record => record.id);
+
+                              logger.info(`Bill ${bill.Id}: ${existingRecords.length} AT records, ${qboLineIds.length} QBO lines, ${orphans.length} orphans`);
+
+                              return { data: orphans };
+                            };
+                      name: Find Orphaned Records
+                    - action:
+                        key: branchOnExpression
+                        component:
+                          isPublic: true
+                          key: branch
+                          version: LATEST
+                      branches:
+                        - name: Orphans Found
+                          steps:
+                            - action:
+                                key: loopOverItems
+                                component:
+                                  isPublic: true
+                                  key: loop
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                items:
+                                  type: reference
+                                  value: findOrphanedRecords.results
+                              name: Loop Over Orphans
+                              steps:
+                                - action:
+                                    key: rawRequest
+                                    component:
+                                      isPublic: true
+                                      key: airtable
+                                      version: LATEST
+                                  description: ""
+                                  errorConfig:
+                                    delaySeconds: 10
+                                    errorHandlerType: retry
+                                    ignoreFinalError: true
+                                    maxAttempts: 3
+                                    usesExponentialBackoff: false
+                                  inputs:
+                                    connection:
+                                      type: configVar
+                                      value: Airtable Connection
+                                    data:
+                                      type: value
+                                      value: ""
+                                    debugRequest:
+                                      type: value
+                                      value: "false"
+                                    fileData:
+                                      type: complex
+                                      value: []
+                                    fileDataFileNames:
+                                      type: complex
+                                      value: []
+                                    formData:
+                                      type: complex
+                                      value: []
+                                    headers:
+                                      type: complex
+                                      value:
+                                        - name:
+                                            type: value
+                                            value: Content-Type
+                                          type: value
+                                          value: application/json
+                                    maxRetries:
+                                      type: value
+                                      value: "0"
+                                    method:
+                                      type: value
+                                      value: DELETE
+                                    queryParams:
+                                      type: complex
+                                      value: []
+                                    responseType:
+                                      type: value
+                                      value: json
+                                    retryAllErrors:
+                                      type: value
+                                      value: "false"
+                                    retryDelayMS:
+                                      type: value
+                                      value: "0"
+                                    timeout:
+                                      type: value
+                                      value: ""
+                                    url:
+                                      type: template
+                                      value: /v0/{{#Project Management Base}}/{{#Expenses
+                                        Table}}/{{$loopOverOrphans.currentItem}}
+                                    useExponentialBackoff:
+                                      type: value
+                                      value: "false"
+                                  name: Delete Expense Record
+                        - name: Else
+                          steps: []
+                      description: ""
+                      inputs:
+                        conditions:
+                          type: complex
+                          value:
+                            - name: Orphans Found
+                              type: complex
+                              value:
+                                - and
+                                - - exists
+                                  - name: ""
+                                    type: reference
+                                    value: findOrphanedRecords.results.0
+                      name: Orphans Exist?
+                - action:
+                    key: incrementExecutionValue
+                    component:
+                      isPublic: true
+                      key: persist-data
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    amountInput:
+                      type: value
+                      value: "100"
+                    keyInput:
+                      type: value
+                      value: index
+                  name: Increment Start Position
+            - name: Else
+              steps:
+                - action:
+                    key: writeLog
+                    component:
+                      isPublic: true
+                      key: log
+                      version: LATEST
+                  description: ""
+                  inputs:
+                    level:
+                      type: value
+                      value: info
+                    message:
+                      type: value
+                      value: No Bills Found
+                  name: Write Log Message
+                - action:
+                    key: breakLoop
+                    component:
+                      isPublic: true
+                      key: loop
+                      version: LATEST
+                  description: ""
+                  inputs: {}
+                  name: Break Loop
+          description: ""
+          inputs:
+            conditions:
+              type: complex
+              value:
+                - name: If Bills Exist
+                  type: complex
+                  value:
+                    - and
+                    - - exists
+                      - name: ""
+                        type: reference
+                        value: getBills.results.QueryResponse.Bill.0
+          name: Bills Branch

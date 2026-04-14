@@ -1,0 +1,548 @@
+sourceFile: job-management-integration-export.yml
+category: Boolean PaintOS
+flow:
+  name: 08 Subflow Contact Sync
+  description: Subflow Sync Contacts between HubSpot and Airtable
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Cron
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Has Deal ID
+          steps:
+            - action:
+                key: branchOnExpression
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              branches:
+                - name: Has associated company
+                  steps:
+                    - action:
+                        key: getCompany
+                        component:
+                          isPublic: true
+                          key: hubspot
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        additionalProperties:
+                          type: complex
+                          value:
+                            - type: value
+                              value: name
+                            - type: value
+                              value: owneremail
+                            - type: value
+                              value: phone
+                            - type: value
+                              value: address
+                            - type: value
+                              value: city
+                            - type: value
+                              value: state
+                            - type: value
+                              value: zip
+                        archived:
+                          type: value
+                          value: "false"
+                        associationsList:
+                          type: complex
+                          value: []
+                        companyId:
+                          type: reference
+                          value: cron.results.body.data.properties.associatedcompanyid
+                        companyName:
+                          type: value
+                          value: ""
+                        debugRequest:
+                          type: value
+                          value: "false"
+                        domain:
+                          type: value
+                          value: ""
+                        hubspotConnection:
+                          type: configVar
+                          value: HubSpot Private App Connection
+                        timeout:
+                          type: value
+                          value: ""
+                      name: Get Company
+                    - action:
+                        key: branchOnExpression
+                        component:
+                          isPublic: true
+                          key: branch
+                          version: LATEST
+                      branches:
+                        - name: Company Found
+                          steps:
+                            - action:
+                                key: runCode
+                                component:
+                                  isPublic: true
+                                  key: code
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                code:
+                                  type: value
+                                  value: >
+                                    module.exports = async ({ logger, configVars
+                                    }, stepResults) => {
+                                      const hubspotData = Array.isArray(stepResults?.getCompany?.results)
+                                        ? stepResults?.getCompany?.results?.[0]
+                                        : stepResults?.getCompany?.results;
+                                        
+                                      return { data: hubspotData?.properties?.["name"] || "" };
+                                    };
+                              name: HS Client Name
+                            - action:
+                                key: listRecords
+                                component:
+                                  isPublic: true
+                                  key: airtable
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                airtableConnection:
+                                  type: configVar
+                                  value: Airtable Connection
+                                baseId:
+                                  type: configVar
+                                  value: Project Management Base
+                                fields:
+                                  type: complex
+                                  value: []
+                                filterByFormula:
+                                  type: template
+                                  value: '{Client Name}="{{$hsClientName.results}}"'
+                                tableName:
+                                  type: configVar
+                                  value: Company Table
+                                view:
+                                  type: value
+                                  value: ""
+                              name: Get AT Company
+                            - action:
+                                key: runCode
+                                component:
+                                  isPublic: true
+                                  key: code
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                code:
+                                  type: value
+                                  value: >
+                                    module.exports = async ({ logger, configVars
+                                    }, stepResults) => {
+                                      // Get HubSpot data from the previous step results
+                                      const hubspotData = Array.isArray(stepResults?.getCompany?.results)
+                                        ? stepResults?.getCompany?.results?.[0]
+                                        : stepResults?.getCompany?.results;
+
+                                      const companyData = stepResults?.getAtCompany?.results?.[0]?.fields;
+                                      const contactRecord = stepResults?.createContact?.results?.data?.records?.[0]?.id;
+
+                                      let associatedJobs;
+
+                                      // Log the HubSpot Account properties for debugging
+                                      logger.info(`HubSpot Account Properties: ${JSON.stringify(hubspotData)}`);
+
+                                      let payload = {
+                                        performUpsert: {
+                                          fieldsToMergeOn: ["Client Name"],
+                                        },
+                                        records: [
+                                          {
+                                            fields: {
+                                              "Client Name": hubspotData?.properties?.["name"] || "",
+                                              Email: hubspotData?.properties?.["owneremail"] || "",
+                                              "Phone Number": hubspotData?.properties?.["phone"] || "",
+                                              Address: hubspotData?.properties?.["address"] || "",
+                                              City: hubspotData?.properties?.["city"] || "",
+                                              State: hubspotData?.properties?.["state"] || "",
+                                              "Postal Code": hubspotData?.properties?.["zip"] || "",
+                                              "Date Added": new Date().toISOString().split("T")[0],
+                                              "Associated Contacts": contactRecord ? [contactRecord] : []
+                                            },
+                                          },
+                                        ],
+                                      };
+
+                                      // Return the mapped fields in the required format
+                                      return payload;
+                                    };
+                              name: Upsert Company Payload
+                            - action:
+                                key: rawRequest
+                                component:
+                                  isPublic: true
+                                  key: airtable
+                                  version: LATEST
+                              description: ""
+                              inputs:
+                                connection:
+                                  type: configVar
+                                  value: Airtable Connection
+                                data:
+                                  type: reference
+                                  value: upsertCompanyPayload.results
+                                debugRequest:
+                                  type: value
+                                  value: "false"
+                                fileData:
+                                  type: complex
+                                  value: []
+                                fileDataFileNames:
+                                  type: complex
+                                  value: []
+                                formData:
+                                  type: complex
+                                  value: []
+                                headers:
+                                  type: complex
+                                  value: []
+                                maxRetries:
+                                  type: value
+                                  value: "0"
+                                method:
+                                  type: value
+                                  value: PATCH
+                                queryParams:
+                                  type: complex
+                                  value: []
+                                responseType:
+                                  type: value
+                                  value: json
+                                retryAllErrors:
+                                  type: value
+                                  value: "false"
+                                retryDelayMS:
+                                  type: value
+                                  value: "0"
+                                timeout:
+                                  type: value
+                                  value: ""
+                                url:
+                                  type: template
+                                  value: /v0/{{#Project Management Base}}/{{#Company Table}}
+                                useExponentialBackoff:
+                                  type: value
+                                  value: "false"
+                              name: Upsert Company
+                        - name: Else
+                          steps: []
+                      description: ""
+                      inputs:
+                        conditions:
+                          type: complex
+                          value:
+                            - name: Company Found
+                              type: complex
+                              value:
+                                - and
+                                - - exists
+                                  - name: ""
+                                    type: reference
+                                    value: getCompany.results.id
+                      name: Branch on Expression 3
+                - name: Else
+                  steps: []
+              description: ""
+              inputs:
+                conditions:
+                  type: complex
+                  value:
+                    - name: Has associated company
+                      type: complex
+                      value:
+                        - and
+                        - - exists
+                          - name: ""
+                            type: reference
+                            value: cron.results.body.data.properties.associatedcompanyid
+              name: Associated Company
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                        const accessToken =configVars["HubSpot Private App Connection"]?.fields?.accessToken;
+                        const contactId = stepResults?.cron?.results?.body?.data?.id;
+                        const jobRecordIdField = configVars["Airtable Job Record ID Property"];
+
+                        if (!accessToken || !contactId) {
+                            return {
+                                data: {
+                                    success: false,
+                                    message: "Missing accessToken or contactId.",
+                                },
+                            };
+                        }
+
+                        // Step 1: Get associated deal IDs
+                        const assocUrl = `https://api.hubapi.com/crm/v3/objects/contacts/${contactId}/associations/deals`;
+                        const assocRes = await fetch(assocUrl, {
+                            method: "GET",
+                            headers: {
+                                Authorization: `Bearer ${accessToken}`,
+                                "Content-Type": "application/json",
+                            },
+                        });
+
+                        if (!assocRes.ok) {
+                            const error = await assocRes.text();
+                            return {
+                                data: {
+                                    success: false,
+                                    message: "Failed to get associated deals.",
+                                    error,
+                                },
+                            };
+                        }
+
+                        const assocData = await assocRes.json();
+                        const dealIds = assocData.results?.map((r) => r.id) || [];
+
+                        if (dealIds.length === 0) {
+                            return {
+                                data: {
+                                    success: true,
+                                    jobRecordIds: [],
+                                    message: "No associated deals found.",
+                                },
+                            };
+                        }
+
+                        // Step 2: Batch read the deals to get jobRecordId fields
+                        const batchUrl = `https://api.hubapi.com/crm/v3/objects/deals/batch/read`;
+                        const batchPayload = {
+                            properties: [jobRecordIdField],
+                            inputs: dealIds.map((id) => ({ id })),
+                        };
+
+                        const batchRes = await fetch(batchUrl, {
+                            method: "POST",
+                            headers: {
+                                Authorization: `Bearer ${accessToken}`,
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify(batchPayload),
+                        });
+
+                        if (!batchRes.ok) {
+                            const error = await batchRes.text();
+                            return {
+                                data: {
+                                    success: false,
+                                    message: "Failed to batch read deals.",
+                                    error,
+                                },
+                            };
+                        }
+
+                        const batchData = await batchRes.json();
+
+                        const jobRecordIds = [
+                            ...new Set(
+                                batchData.results
+                                ?.map((deal) => deal.properties?.[jobRecordIdField])
+                                .filter(Boolean)
+                            )
+                            ] || [];
+
+                        return {
+                            data: {
+                                success: true,
+                                totalDeals: dealIds.length,
+                                jobRecordIds,
+                            },
+                        };
+                    };
+              name: Get Associated Jobs
+            - action:
+                key: listRecords
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: ""
+              inputs:
+                airtableConnection:
+                  type: configVar
+                  value: Airtable Connection
+                baseId:
+                  type: configVar
+                  value: Project Management Base
+                fields:
+                  type: complex
+                  value: []
+                filterByFormula:
+                  type: template
+                  value: AND({Email}="{{$cron.results.body.data.properties.email}}",{Email})
+                tableName:
+                  type: configVar
+                  value: Contacts Table
+                view:
+                  type: value
+                  value: ""
+              name: List Records
+            - action:
+                key: runCode
+                component:
+                  isPublic: true
+                  key: code
+                  version: LATEST
+              description: ""
+              inputs:
+                code:
+                  type: value
+                  value: >
+                    module.exports = async ({ logger, configVars }, stepResults)
+                    => {
+                      // Get Hubspot data from the previous step results
+                      const hsData = stepResults?.cron?.results?.body?.data?.properties;
+                      const associatedCompany = stepResults?.upsertCompany?.results?.data?.records[0]?.id;
+                      const associatedJob = stepResults?.getAssociatedJobs?.results?.jobRecordIds || [];
+                      const currentJobs = stepResults?.listRecords?.results?.[0]?.fields?.["Associated Jobs"] || [];
+                      
+                      // Get the mapping Config Variable
+                      const mapping = configVars["HubSpot Contact to Airtable Contact Mapping"];
+
+                      // Map properties from HubSpot to Airtable based on the config mapping
+                      let mappedFields = mapping.reduce((acc, { source, destination }) => {
+                        const value = hsData?.[source];
+                        logger.info("value:", value);
+                        if (value !== undefined && value !== null && value !== "") {
+                          acc[destination] = value;
+                        }
+                        return acc;
+                      }, {});
+
+                      // ✅ Ensure Email field exists — if not, add with empty string
+                      if (!mappedFields.Email) {
+                        mappedFields.Email = "";
+                      }
+
+                      // Company mapping
+                      mappedFields.Company = associatedCompany ? [associatedCompany] : [];
+
+                      // ✅ Merge Associated Jobs without duplicates
+                      if (associatedJob.length > 0 || currentJobs.length > 0) {
+                        mappedFields["Associated Jobs"] = Array.from(new Set([
+                          ...currentJobs,
+                          ...associatedJob
+                        ]));
+                      }
+
+                      return {
+                        performUpsert: {
+                          fieldsToMergeOn: ["Email"]
+                        },
+                        records: [
+                          {
+                            fields: mappedFields
+                          }
+                        ]
+                      };
+                    };
+              name: Contact Payload AT
+            - action:
+                key: rawRequest
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: ""
+              inputs:
+                connection:
+                  type: configVar
+                  value: Airtable Connection
+                data:
+                  type: reference
+                  value: contactPayloadAt.results
+                debugRequest:
+                  type: value
+                  value: "false"
+                fileData:
+                  type: complex
+                  value: []
+                fileDataFileNames:
+                  type: complex
+                  value: []
+                formData:
+                  type: complex
+                  value: []
+                headers:
+                  type: complex
+                  value: []
+                maxRetries:
+                  type: value
+                  value: "0"
+                method:
+                  type: value
+                  value: PATCH
+                queryParams:
+                  type: complex
+                  value: []
+                responseType:
+                  type: value
+                  value: json
+                retryAllErrors:
+                  type: value
+                  value: "false"
+                retryDelayMS:
+                  type: value
+                  value: "0"
+                timeout:
+                  type: value
+                  value: ""
+                url:
+                  type: template
+                  value: /v0/{{#Project Management Base}}/{{#Contacts Table}}
+                useExponentialBackoff:
+                  type: value
+                  value: "false"
+              name: Upsert Conntact
+        - name: Else
+          steps: []
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Has Deal ID
+              type: complex
+              value:
+                - and
+                - - exists
+                  - name: ""
+                    type: reference
+                    value: cron.results.body.data.id
+      name: Deal ID Found

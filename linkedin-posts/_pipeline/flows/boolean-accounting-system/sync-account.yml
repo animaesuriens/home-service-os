@@ -1,0 +1,191 @@
+sourceFile: boolean-accounting-system-export.yml
+category: Boolean PaintOS
+flow:
+  name: Sync Account
+  description: ""
+  isSynchronous: true
+  endpointSecurityType: customer_optional
+  steps:
+    - action:
+        key: crossFlow
+        component:
+          isPublic: true
+          key: cross-flow
+          version: LATEST
+      description: ""
+      inputs: {}
+      isTrigger: true
+      name: Trigger
+    - action:
+        key: stopExecution
+        component:
+          isPublic: true
+          key: stop-execution
+          version: LATEST
+      description: ""
+      inputs:
+        contentType:
+          type: value
+          value: application/json
+        headers:
+          type: complex
+          value: []
+        jsonBody:
+          type: value
+          value: ""
+        statusCode:
+          type: value
+          value: "200"
+      name: Stop Execution
+    - action:
+        key: branchOnExpression
+        component:
+          isPublic: true
+          key: branch
+          version: LATEST
+      branches:
+        - name: Updated
+          steps:
+            - action:
+                key: queryResource
+                component:
+                  isPublic: true
+                  key: quickbooks
+                  version: LATEST
+              description: ""
+              inputs:
+                debug:
+                  type: value
+                  value: "false"
+                minorVersion:
+                  type: value
+                  value: ""
+                queryString:
+                  type: template
+                  value: select * from account where id = '{{$trigger.results.body.data.id}}' AND
+                    Active IN (true, false)
+                quickbooksConnection:
+                  type: configVar
+                  value: QuickBooks Connection
+              name: Get Resource
+            - action:
+                key: listRecords
+                component:
+                  isPublic: true
+                  key: airtable
+                  version: LATEST
+              description: ""
+              inputs:
+                airtableConnection:
+                  type: configVar
+                  value: Airtable Connection
+                baseId:
+                  type: configVar
+                  value: Project Management Base
+                fields:
+                  type: complex
+                  value: []
+                filterByFormula:
+                  type: template
+                  value: "{QBO Object ID} = '{{$trigger.results.body.data.id}}'"
+                tableName:
+                  type: configVar
+                  value: Project Type(s) Table
+                view:
+                  type: value
+                  value: ""
+              name: List Accounts
+            - action:
+                key: branchOnExpression
+                component:
+                  isPublic: true
+                  key: branch
+                  version: LATEST
+              branches:
+                - name: Yes
+                  steps:
+                    - action:
+                        key: runCode
+                        component:
+                          isPublic: true
+                          key: code
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        code:
+                          type: value
+                          value: >
+                            module.exports = async ({ logger, configVars },
+                            stepResults) => {
+                              const account = stepResults.getResource.results.QueryResponse.Account[0];
+
+                              return { data: account.Active ? "Yes" : "No" };
+                            };
+                      name: Active Value
+                    - action:
+                        key: updateRecord
+                        component:
+                          isPublic: true
+                          key: airtable
+                          version: LATEST
+                      description: ""
+                      inputs:
+                        airtableConnection:
+                          type: configVar
+                          value: Airtable Connection
+                        baseId:
+                          type: configVar
+                          value: Project Management Base
+                        dynamicFields:
+                          type: value
+                          value: ""
+                        record:
+                          type: reference
+                          value: listAccounts.results.0.id
+                        recordFields:
+                          type: complex
+                          value:
+                            - name:
+                                type: value
+                                value: Active
+                              type: reference
+                              value: activeValue.results
+                        tableName:
+                          type: configVar
+                          value: Project Type(s) Table
+                      name: Update Account
+                - name: Else
+                  steps: []
+              description: ""
+              inputs:
+                conditions:
+                  type: complex
+                  value:
+                    - name: Yes
+                      type: complex
+                      value:
+                        - and
+                        - - exists
+                          - name: ""
+                            type: reference
+                            value: listAccounts.results.0.id
+              name: Account Found?
+        - name: Else
+          steps: []
+      description: ""
+      inputs:
+        conditions:
+          type: complex
+          value:
+            - name: Updated
+              type: complex
+              value:
+                - and
+                - - equal
+                  - name: ""
+                    type: reference
+                    value: trigger.results.body.data.operation
+                  - name: ""
+                    type: value
+                    value: Update
+      name: Check Operation
