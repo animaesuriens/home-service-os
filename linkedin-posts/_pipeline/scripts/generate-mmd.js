@@ -106,6 +106,18 @@ const DECISION_CONFIG = {
     decisionIdx: 1,
     decisionLabel: 'Select Channel\\nBased on Event Type',
     leftLabel: 'Email', rightLabel: 'SMS'
+  },
+  'hubspot-contact-sync': {
+    decisionIdx: 3,
+    decisionLabel: 'Contact Already\\nExists?',
+    leftLabel: 'Update',
+    rightLabel: 'Create'
+  },
+  'message-transpiler': {
+    decisionIdx: 3,
+    decisionLabel: 'Message\\nType?',
+    leftLabel: 'Booking',
+    rightLabel: 'Follow-up'
   }
 };
 

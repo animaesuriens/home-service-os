@@ -1,0 +1,21 @@
+---
+title: HubSpot Contact Sync — n8n
+---
+flowchart TD
+    A["Override contact payload\nwith incoming data"]:::trigger
+    B["Search for existing\ncontact by ID in CRM"]
+    C["Search for existing\ncontact by email in CRM"]
+    D{"Contact Already\nExists?"}
+    E["Merge incoming data with\nexisting contact data"]
+    F["Route to create or update\nbased on search result"]
+    G["Return final contact\ndetails for downstream use"]
+
+    A --> B
+    B --> C
+    C --> D
+    D -->|Update| E
+    D -->|Create| F
+    E --> G
+    F --> G
+
+    classDef trigger fill:#2E7D32,stroke:#4CAF50,stroke-width:3px,color:#fff

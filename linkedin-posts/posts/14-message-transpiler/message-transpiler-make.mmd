@@ -1,0 +1,14 @@
+---
+title: Message Transpiler — Make
+---
+flowchart TD
+    A(("Retrieve latest open\ndeal for contact")):::trigger
+    B["Generate personalized\nbooking link from deal\ncontext"]
+    C["Shorten booking URL\nfor customer message"]
+    D{"Message\nType?"}
+
+    A --> B
+    B --> C
+    C --> D
+
+    classDef trigger fill:#9b3dae,stroke:#fff,stroke-width:3px,color:#fff

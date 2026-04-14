@@ -1,0 +1,15 @@
+---
+title: HubSpot Contact Sync — Zapier
+---
+flowchart TD
+    T["Override contact payload\nwith incoming data"]:::trigger
+    A1["Search for existing\ncontact by ID in CRM"]
+    A2["Search for existing\ncontact by email in CRM"]
+    A3["Select which search\nresult to use"]
+    A4["Merge incoming data with\nexisting contact data"]
+    A5["Route to create or update\nbased on search result"]
+    A6["Return final contact\ndetails for downstream use"]
+
+    T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6
+
+    classDef trigger fill:#FF4A00,stroke:#cc3b00,stroke-width:3px,color:#fff

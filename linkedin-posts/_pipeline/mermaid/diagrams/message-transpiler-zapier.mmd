@@ -1,0 +1,12 @@
+---
+title: Message Transpiler — Zapier
+---
+flowchart TD
+    T["Retrieve latest open\ndeal for contact"]:::trigger
+    A1["Generate personalized\nbooking link from deal\ncontext"]
+    A2["Shorten booking URL\nfor customer message"]
+    A3["Route message to\nappropriate channel based\non context"]
+
+    T --> A1 --> A2 --> A3
+
+    classDef trigger fill:#FF4A00,stroke:#cc3b00,stroke-width:3px,color:#fff

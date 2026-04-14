@@ -1,21 +1,21 @@
-Your sales rep just missed a $15K lead because it came in Saturday night and sat in your contact form until Monday morning.
+Your sales rep just missed a $15K lead because it came in at 9pm Friday and sat in a form until Monday morning.
 
-**BEFORE:** Your team is drowning in manual lead entry. Someone submits a form on your website, and now it's a race against time. Your sales rep has to manually copy all that information into HubSpot, figure out if this is actually a qualified lead, send a welcome email, and hope they didn't miss anything important. Meanwhile, that potential customer is getting instant responses from your competitors who have their act together.
+**BEFORE:** Your team is drowning in manual data entry. Every web form, Facebook lead, or phone inquiry gets copy-pasted into your CRM by hand. Weekend leads sit untouched until Monday. Hot prospects get cold responses three days later. You're losing deals to competitors who respond faster, and your sales reps are burning out on admin work instead of selling.
 
-**AFTER:** Every single lead gets the VIP treatment, whether it's Tuesday at 2pm or Sunday at 2am. They submit your form, get a personalized welcome email within 60 seconds, and your sales team gets a perfectly formatted lead summary with all the details they need to close the deal. No manual work, no missed opportunities, no inconsistent follow-up.
+**AFTER:** Every single lead flows seamlessly into your system within seconds. They get a personalized welcome message before they finish their coffee. Your CRM automatically scores them based on project size and urgency. The right salesperson gets notified immediately with all the context they need. Even that Sunday night inquiry gets captured, qualified, and responded to instantly.
 
-**Here's exactly how Make handles this for you:**
+**THE BRIDGE:** Here's how Make transforms your lead chaos into a conversion machine.
 
-When someone fills out your contact form, Make immediately grabs all their information and project details. It doesn't matter if they came from your website, Facebook ads, or Google — Make standardizes everything into the same clean format.
+When someone submits a form anywhere — your website, Facebook, Google Ads — Make instantly grabs that data and standardizes it into a clean format your CRM loves. It looks up the project type they selected and matches it to your service categories. The system tracks exactly which marketing channel brought them in, so you know where your best leads come from.
 
-The automation instantly creates or updates their contact in HubSpot with all the relevant details. Then it gets smart about qualification. Based on their project type and budget, Make automatically scores the lead so your sales team knows exactly how hot this prospect is.
+Make then builds a complete contact profile, checking if they're already in your system or creating a fresh record. It automatically creates a deal associated with that contact, populating all the project details and estimated value. If something goes wrong, the system handles errors gracefully and tries again.
 
-Within 60 seconds, your new lead gets a personalized welcome email that feels like you wrote it just for them. At the same time, Make sends your sales team a detailed summary with everything they need to know — project details, contact info, lead score, the works.
+The magic happens next. Make pulls the deal information back out, analyzes the project size and urgency, then routes it to your booking flow if they're ready to schedule. It syncs contact properties, loops through any related deals to keep everything connected, and processes all the engagement history.
 
-The final step? Make automatically assigns the lead to your next available sales rep using a round-robin system, so everyone gets their fair share and nobody gets overwhelmed.
+Your sales team wakes up to perfectly organized leads with complete context — no more detective work figuring out where someone came from or what they want.
 
-The best part? This entire workflow runs 24/7 without you touching a thing. Your leads get instant attention, your sales team gets qualified prospects served up on a silver platter, and you never lose another deal to slow follow-up.
+The best part? This runs 24/7 without coffee breaks. That late-night lead gets the same instant, professional treatment as the Tuesday afternoon inquiry.
 
-What's the longest a lead has ever sat in your system before someone followed up? And if you're ready to never miss another hot prospect, let's chat about setting this up for your business.
+What's the biggest lead you've lost to slow follow-up? And if you're ready to never miss another hot prospect, let's chat about setting up your automated lead machine.
 
-#Automation #LeadGeneration #Make
+#Automation #LeadCapture #Make

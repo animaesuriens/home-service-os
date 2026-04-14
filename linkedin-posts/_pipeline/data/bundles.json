@@ -1,66 +1,92 @@
 {
-  "generatedAt": "2026-04-12T17:03:21.548Z",
-  "totalBundles": 12,
+  "generatedAt": "2026-04-14T04:22:41.763Z",
+  "totalBundles": 14,
   "bundles": [
     {
       "id": "lead-capture-qualification",
       "title": "Lead Capture & Qualification",
       "journeyStage": "Lead Capture",
       "journeySlug": "lead-capture",
-      "processIds": [
-        "P-23",
-        "P-25",
-        "P-24",
-        "P-34"
-      ],
-      "constituentProcesses": [
-        "Marketing Vendor / Channel Lead Data Mapping",
-        "MQL HubSpot Webform Submission",
-        "MQL to SQL Initiator Webhook",
-        "- Message Transpiler"
-      ],
+      "processIds": [],
+      "constituentProcesses": [],
       "idealizedSteps": [
         {
-          "label": "Web form submitted by potential customer",
-          "actor": "Customer"
-        },
-        {
-          "label": "Extract contact info and project details",
+          "label": "Generate standardized lead payload from vendor data",
           "actor": "System"
         },
         {
-          "label": "Standardize lead data from any marketing source",
+          "label": "Lookup project type from customer selection",
           "actor": "System"
         },
         {
-          "label": "Create or update contact in HubSpot",
+          "label": "Lookup marketing sources for attribution",
+          "actor": "System"
+        },
+        {
+          "label": "Build final contact payload with enriched data",
+          "actor": "System"
+        },
+        {
+          "label": "Create or update contact in CRM",
+          "actor": "System"
+        },
+        {
+          "label": "Build final deal payload with contact association",
+          "actor": "System"
+        },
+        {
+          "label": "Create or update deal in CRM",
+          "actor": "System"
+        },
+        {
+          "label": "Handle deal creation errors gracefully",
+          "actor": "System"
+        },
+        {
+          "label": "Fetch deal properties from CRM",
           "actor": "CRM"
         },
         {
-          "label": "Score lead based on project type and budget",
-          "actor": "CRM"
-        },
-        {
-          "label": "Send personalized welcome email",
+          "label": "Extract deal properties for processing",
           "actor": "System"
         },
         {
-          "label": "Notify sales team with lead summary",
+          "label": "Extract deal details for routing",
           "actor": "System"
         },
         {
-          "label": "Assign to next available sales rep",
+          "label": "Route to booking flow based on deal stage",
+          "actor": "System"
+        },
+        {
+          "label": "Fetch contact properties from CRM",
           "actor": "CRM"
+        },
+        {
+          "label": "Extract contact properties for processing",
+          "actor": "System"
+        },
+        {
+          "label": "Loop over associated deals for sync",
+          "actor": "System"
+        },
+        {
+          "label": "Wait before processing engagements",
+          "actor": "System"
+        },
+        {
+          "label": "Loop over call and meeting engagements",
+          "actor": "System"
         }
       ],
       "pain": "Sales reps manually copying form submissions into the CRM, missing hot leads during evenings and weekends, inconsistent follow-up timing costing deals",
       "solution": "Every lead is captured instantly from any marketing channel, scored automatically, welcomed within 60 seconds, and routed to the right salesperson — even at 2am on a Sunday",
       "inefficiencies": [
-        "Complex flow could be simplified (15+ steps)",
-        "Custom code could be replaced with native actions"
+        "Manual processes with no automation"
       ],
       "layout": "swimlane",
-      "sourceFileCount": 1
+      "type": "process",
+      "sourceFileCount": 0
     },
     {
       "id": "appointment-booking-scheduling",
@@ -68,47 +94,83 @@
       "journeyStage": "Appointment Booking",
       "journeySlug": "appointment-booking",
       "processIds": [
-        "P-27",
-        "P-31",
-        "P-28"
+        "P-05",
+        "P-06",
+        "P-07"
       ],
       "constituentProcesses": [
         "New Appointment",
-        "Contact Level Booking Link",
-        "Appointment Cancelled"
+        "Appointment Cancelled",
+        "Appointment Reschedule"
       ],
       "idealizedSteps": [
         {
-          "label": "Customer selects available time slot online",
-          "actor": "Customer"
-        },
-        {
-          "label": "Generate personalized booking link for contact",
+          "label": "Route booking data based on source",
           "actor": "System"
         },
         {
-          "label": "Confirm appointment and sync to team calendar",
-          "actor": "Calendar"
-        },
-        {
-          "label": "Send confirmation email with appointment details",
+          "label": "Select booking payload from routing decision",
           "actor": "System"
         },
         {
-          "label": "Create preparation checklist for estimator",
+          "label": "Retrieve owner assignment from database",
+          "actor": "Database"
+        },
+        {
+          "label": "Build initial deal payload with appointment data",
           "actor": "System"
         },
         {
-          "label": "Send reminder 24 hours before appointment",
+          "label": "Lookup project type from booking details",
           "actor": "System"
         },
         {
-          "label": "Handle cancellation or reschedule requests automatically",
-          "actor": "Calendar"
+          "label": "Lookup marketing sources for attribution",
+          "actor": "System"
         },
         {
-          "label": "Update CRM with appointment status",
+          "label": "Extract customer email from booking",
+          "actor": "System"
+        },
+        {
+          "label": "Prepare contact sync payload for CRM",
+          "actor": "System"
+        },
+        {
+          "label": "Check if contact is searchable",
+          "actor": "System"
+        },
+        {
+          "label": "Select contact result from search",
+          "actor": "System"
+        },
+        {
+          "label": "Build array of project types for deal",
+          "actor": "System"
+        },
+        {
+          "label": "Check deal stage for routing",
+          "actor": "System"
+        },
+        {
+          "label": "Route to appropriate pipeline based on deal stage",
+          "actor": "System"
+        },
+        {
+          "label": "Process cancellation data",
+          "actor": "System"
+        },
+        {
+          "label": "Search for appointment in CRM",
           "actor": "CRM"
+        },
+        {
+          "label": "Update deal and calendar with cancellation",
+          "actor": "System"
+        },
+        {
+          "label": "Validate reschedule booking data",
+          "actor": "System"
         }
       ],
       "pain": "Phone tag with customers trying to schedule estimates, double-booked calendars, no-shows because reminders were forgotten, and hours lost to manual calendar management",
@@ -118,6 +180,7 @@
         "Custom code could be replaced with native actions"
       ],
       "layout": "swimlane",
+      "type": "process",
       "sourceFileCount": 1
     },
     {
@@ -125,18 +188,8 @@
       "title": "Estimate-to-Deal Pipeline",
       "journeyStage": "Estimating",
       "journeySlug": "estimate-to-deal",
-      "processIds": [
-        "P-35",
-        "P-39",
-        "P-46",
-        "P-45"
-      ],
-      "constituentProcesses": [
-        "estimating tool > HubSpot | Process Quote - Estimate > Deal Sync",
-        "Deal Naming System Trigger",
-        "Set/Update HS Deal Name & photo storage Project Name",
-        "estimating tool All Data Sync to HubSpot"
-      ],
+      "processIds": [],
+      "constituentProcesses": [],
       "idealizedSteps": [
         {
           "label": "Create estimate in estimating tool after site visit",
@@ -174,27 +227,19 @@
       "pain": "Estimates sitting in one tool while deals live in another, sales managers manually copying numbers between systems, inconsistent deal naming making pipeline reports useless",
       "solution": "The moment an estimate is created, every system updates automatically — the CRM deal is created, named consistently, and the sales team sees real-time pipeline value without touching a spreadsheet",
       "inefficiencies": [
-        "Complex flow could be simplified (15+ steps)",
-        "Custom code could be replaced with native actions"
+        "Manual processes with no automation"
       ],
       "layout": "swimlane",
-      "sourceFileCount": 1
+      "type": "process",
+      "sourceFileCount": 0
     },
     {
       "id": "change-order-management",
       "title": "Change Order Management",
       "journeyStage": "Sales/Proposal",
       "journeySlug": "change-orders",
-      "processIds": [
-        "P-40",
-        "P-36",
-        "P-59"
-      ],
-      "constituentProcesses": [
-        "Change Order Label Processor",
-        "Change Order Process",
-        "Process Change Order"
-      ],
+      "processIds": [],
+      "constituentProcesses": [],
       "idealizedSteps": [
         {
           "label": "Customer requests scope change on existing project",
@@ -232,28 +277,19 @@
       "pain": "Change orders scribbled on paper, forgotten price adjustments that eat into margins, crew showing up without knowing the scope changed, and deals stuck showing the wrong value for weeks",
       "solution": "Every change order flows through automatically — pricing updates, the CRM reflects the real deal value, and the production team knows about scope changes before they arrive on site",
       "inefficiencies": [
-        "Complex flow could be simplified (15+ steps)",
-        "Custom code could be replaced with native actions",
-        "Repetitive collection-tools API calls could be batched (6 calls)"
+        "Manual processes with no automation"
       ],
       "layout": "vertical",
-      "sourceFileCount": 2
+      "type": "process",
+      "sourceFileCount": 0
     },
     {
       "id": "contract-lifecycle",
       "title": "Contract Lifecycle",
       "journeyStage": "Contract Management",
       "journeySlug": "contract-lifecycle",
-      "processIds": [
-        "P-60",
-        "P-61",
-        "P-62"
-      ],
-      "constituentProcesses": [
-        "Contract Sent",
-        "Contract Signed",
-        "Create Addendums"
-      ],
+      "processIds": [],
+      "constituentProcesses": [],
       "idealizedSteps": [
         {
           "label": "Generate contract from approved estimate",
@@ -291,30 +327,19 @@
       "pain": "Contracts emailed as PDFs, customers printing and scanning to sign, nobody knowing when a contract was actually signed until someone checks email, and jobs delayed waiting for paperwork",
       "solution": "Contracts go out with one click, customers sign on their phone, and the moment ink hits the digital page the entire back office starts spinning up the job — zero waiting, zero chasing",
       "inefficiencies": [
-        "Custom code could be replaced with native actions"
+        "Manual processes with no automation"
       ],
       "layout": "swimlane",
-      "sourceFileCount": 1
+      "type": "process",
+      "sourceFileCount": 0
     },
     {
       "id": "deal-to-job-processing",
       "title": "Deal-to-Job Processing",
       "journeyStage": "Job Setup",
       "journeySlug": "deal-to-job",
-      "processIds": [
-        "P-58",
-        "P-48",
-        "P-66",
-        "P-65",
-        "P-63"
-      ],
-      "constituentProcesses": [
-        "Process Deal",
-        "Register HS Deal Owner",
-        "Company Sync",
-        "Contact Sync",
-        "Hubspot mapper to file field"
-      ],
+      "processIds": [],
+      "constituentProcesses": [],
       "idealizedSteps": [
         {
           "label": "Deal marked as won in CRM",
@@ -355,25 +380,16 @@
         "Manual processes with no automation"
       ],
       "layout": "vertical",
-      "sourceFileCount": 2
+      "type": "process",
+      "sourceFileCount": 0
     },
     {
       "id": "production-crew-tracking",
       "title": "Production & Crew Tracking",
       "journeyStage": "Production Tracking",
       "journeySlug": "production-tracking",
-      "processIds": [
-        "P-49",
-        "P-50",
-        "P-51",
-        "P-52"
-      ],
-      "constituentProcesses": [
-        "Update DPD Schedule",
-        "Update DPD",
-        "Process Timelog",
-        "Sync QBT"
-      ],
+      "processIds": [],
+      "constituentProcesses": [],
       "idealizedSteps": [
         {
           "label": "Update daily production schedule from field data",
@@ -414,29 +430,16 @@
         "Manual processes with no automation"
       ],
       "layout": "swimlane",
-      "sourceFileCount": 1
+      "type": "process",
+      "sourceFileCount": 0
     },
     {
       "id": "time-tracking-sync-engine",
       "title": "Time Tracking Sync Engine",
       "journeyStage": "Time Tracking",
       "journeySlug": "time-tracking",
-      "processIds": [
-        "P-68",
-        "P-71",
-        "P-69",
-        "P-73",
-        "P-74",
-        "P-70"
-      ],
-      "constituentProcesses": [
-        "Time Tracking System",
-        "Initial Timelogs Sync",
-        "Job Codes Sync",
-        "Jobcodes Location Sync",
-        "Sync Delete Timelogs",
-        "User Sync"
-      ],
+      "processIds": [],
+      "constituentProcesses": [],
       "idealizedSteps": [
         {
           "label": "Employees clock in and out via time tracking app",
@@ -474,10 +477,11 @@
       "pain": "Time entries in one app, job codes in another, payroll staff spending hours reconciling who worked where, deleted entries causing phantom hours, and new employees waiting days to be set up in the time system",
       "solution": "Every clock-in, correction, and deletion flows between systems in real-time — job codes stay current, employee profiles sync automatically, and payroll gets clean data without manual reconciliation",
       "inefficiencies": [
-        "Custom code could be replaced with native actions"
+        "Manual processes with no automation"
       ],
       "layout": "vertical",
-      "sourceFileCount": 1
+      "type": "process",
+      "sourceFileCount": 0
     },
     {
       "id": "invoice-lifecycle",
@@ -486,21 +490,15 @@
       "journeySlug": "invoice-lifecycle",
       "processIds": [
         "P-04",
-        "P-20",
         "P-11",
-        "P-18",
         "P-05",
-        "P-06",
-        "P-41"
+        "P-06"
       ],
       "constituentProcesses": [
-        "Create Invoice in AT from Unbilled Line Items",
-        "Update Invoice in accounting software",
-        "Import Invoices from accounting software",
-        "Sync Modified Invoices and Transactions",
-        "Send or ReSend Invoice",
-        "Void Invoice",
-        "[Ongoing] 11 Invoice and Work Order URL"
+        "Lead Follow Up flow",
+        "Auto Reply Business Hours",
+        "New Appointment",
+        "Appointment Cancelled"
       ],
       "idealizedSteps": [
         {
@@ -543,7 +541,8 @@
         "Custom code could be replaced with native actions"
       ],
       "layout": "swimlane",
-      "sourceFileCount": 2
+      "type": "process",
+      "sourceFileCount": 1
     },
     {
       "id": "expense-management-pipeline",
@@ -552,19 +551,17 @@
       "journeySlug": "expense-management",
       "processIds": [
         "P-07",
-        "P-21",
         "P-03",
         "P-01",
         "P-02",
         "P-10"
       ],
       "constituentProcesses": [
-        "Initial Sync QB Bills",
-        "Save Expense's Attachments in Airtable",
-        "Sync accounting software Customer",
-        "Upsert accounting software Parent Customer Linked to Jobs",
-        "Upsert accounting software Sub Customer Linked to Projects",
-        "accounting software Transactions"
+        "Appointment Reschedule",
+        "MQL HubSpot Webform Submission",
+        "Marketing Vendor / Channel Lead Data Mapping",
+        "MQL to SQL Initiator Webhook",
+        "Get Latest Open Deal"
       ],
       "idealizedSteps": [
         {
@@ -607,6 +604,7 @@
         "Custom code could be replaced with native actions"
       ],
       "layout": "vertical",
+      "type": "process",
       "sourceFileCount": 1
     },
     {
@@ -614,14 +612,8 @@
       "title": "Reporting Dashboard Sync",
       "journeyStage": "Reporting",
       "journeySlug": "reporting-sync",
-      "processIds": [
-        "P-75",
-        "P-76"
-      ],
-      "constituentProcesses": [
-        "On deploy",
-        "Sync every 2 minutes"
-      ],
+      "processIds": [],
+      "constituentProcesses": [],
       "idealizedSteps": [
         {
           "label": "Pull latest deal and revenue data from CRM",
@@ -651,30 +643,19 @@
       "pain": "Sales managers manually pulling reports from the CRM every Monday, numbers that are already a week old by the time anyone sees them, and no early warning when pipeline health drops",
       "solution": "Dashboards refresh every two minutes with live CRM data — win rates, revenue trends, and pipeline health are always current, and anomalies trigger alerts before they become problems",
       "inefficiencies": [
-        "Custom code could be replaced with native actions"
+        "Manual processes with no automation"
       ],
       "layout": "vertical",
-      "sourceFileCount": 1
+      "type": "process",
+      "sourceFileCount": 0
     },
     {
       "id": "communication-hub",
       "title": "Communication Hub",
       "journeyStage": "Uncategorized",
       "journeySlug": "communication-hub",
-      "processIds": [
-        "P-67",
-        "P-53",
-        "P-55",
-        "P-47",
-        "P-56"
-      ],
-      "constituentProcesses": [
-        "Error Notification Sender",
-        "your email Sender",
-        "RC Text Sender",
-        "Hubspot SMS Sent Logger",
-        "Update Estimate Calendar"
-      ],
+      "processIds": [],
+      "constituentProcesses": [],
       "idealizedSteps": [
         {
           "label": "System event triggers outbound communication",
@@ -712,10 +693,100 @@
       "pain": "Important updates buried in someone's inbox, text messages sent manually that get forgotten during busy days, error notifications that nobody sees, and no record of what was communicated to whom",
       "solution": "Every system event automatically triggers the right communication on the right channel — emails, texts, calendar updates, and error alerts all fire without human intervention, with full audit trails in the CRM",
       "inefficiencies": [
-        "Custom code could be replaced with native actions"
+        "Manual processes with no automation"
       ],
       "layout": "swimlane",
-      "sourceFileCount": 3
+      "type": "process",
+      "sourceFileCount": 0
+    },
+    {
+      "id": "hubspot-contact-sync",
+      "title": "HubSpot Contact Sync",
+      "journeyStage": "Lead Capture",
+      "journeySlug": "hubspot-contact-sync",
+      "processIds": [
+        "P-01"
+      ],
+      "constituentProcesses": [
+        "Marketing Vendor / Channel Lead Data Mapping"
+      ],
+      "idealizedSteps": [
+        {
+          "label": "Override contact payload with incoming data",
+          "actor": "System"
+        },
+        {
+          "label": "Search for existing contact by ID in CRM",
+          "actor": "CRM"
+        },
+        {
+          "label": "Search for existing contact by email in CRM",
+          "actor": "CRM"
+        },
+        {
+          "label": "Select which search result to use",
+          "actor": "System"
+        },
+        {
+          "label": "Merge incoming data with existing contact data",
+          "actor": "System"
+        },
+        {
+          "label": "Route to create or update based on search result",
+          "actor": "System"
+        },
+        {
+          "label": "Return final contact details for downstream use",
+          "actor": "System"
+        }
+      ],
+      "pain": "Sales reps manually searching for contacts before every call, duplicate records piling up in the CRM, and no consistent process for merging contact data from different marketing channels",
+      "solution": "Every contact is automatically searched by ID and email, merged with existing data if found, or created fresh if new — zero duplicates, zero manual lookups, always the latest info",
+      "inefficiencies": [
+        "Complex flow could be simplified (15+ steps)",
+        "Custom code could be replaced with native actions"
+      ],
+      "layout": "vertical",
+      "type": "process",
+      "sourceFileCount": 1
+    },
+    {
+      "id": "message-transpiler",
+      "title": "Message Transpiler",
+      "journeyStage": "Communication",
+      "journeySlug": "message-transpiler",
+      "processIds": [
+        "P-12"
+      ],
+      "constituentProcesses": [
+        "- Message Transpiler"
+      ],
+      "idealizedSteps": [
+        {
+          "label": "Retrieve latest open deal for contact",
+          "actor": "System"
+        },
+        {
+          "label": "Generate personalized booking link from deal context",
+          "actor": "System"
+        },
+        {
+          "label": "Shorten booking URL for customer message",
+          "actor": "System"
+        },
+        {
+          "label": "Route message to appropriate channel based on context",
+          "actor": "System"
+        }
+      ],
+      "pain": "Staff manually looking up deals, copying booking links, and shortening URLs before every customer message — slow, error-prone, and impossible to scale during peak season",
+      "solution": "Every outbound customer message automatically pulls the latest deal context, generates a personalized booking link, shortens it, and routes the right message format — customers get the right link in seconds, not minutes",
+      "inefficiencies": [
+        "Manual processes with no automation"
+      ],
+      "layout": "vertical",
+      "type": "process",
+      "sourceFileCount": 1
     }
   ]
 }
