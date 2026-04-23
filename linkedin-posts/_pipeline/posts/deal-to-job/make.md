@@ -1,23 +1,19 @@
-Your ops team is drowning in manual job setup while won deals pile up in your CRM waiting to be processed into actual work orders.
+Your CRM shows "Deal Won" but your ops team is still manually creating job records, copy-pasting customer data between systems, and losing track of change orders during crunch time.
 
-I see this chaos every day in home service companies. A sales rep closes a big deal, marks it "won" in the CRM, then disappears to chase the next lead. Meanwhile, your operations manager is stuck playing data entry clerk — copying customer details, project specs, and pricing from the deal record into your job management system. 
+**BEFORE:** Every closed deal triggers a scramble. Someone has to dig through the CRM, find all the addendums and change orders tied to that project, then manually create job records in your project management system. Half the time, a change order gets missed because it wasn't properly linked, or worse — it gets double-processed because two people were working on the same deal.
 
-Worse yet, those change order addendums that got negotiated during the sales process? Half of them get forgotten in the rush to get crews scheduled. By the time someone realizes a critical scope change is missing, you're already on-site explaining to an angry customer why the work doesn't match what they expected.
+**AFTER:** The second HubSpot marks a deal as won, your system automatically parses all the job details, hunts down every linked change order, and creates clean job records for everything that needs one. No manual data entry. No missed addendums. No duplicate work.
 
-Here's what happens instead when Make handles your deal-to-job processing automatically:
+**THE BRIDGE:** Here's how Make handles the heavy lifting for you.
 
-The second someone marks a deal as "won" in your CRM, Make receives that event and immediately gets to work. It parses all the deal data from your CRM's webhook, then systematically hunts down every related document that matters for the job.
+When HubSpot sends the won deal event, Make immediately parses the customer info, project scope, and contract details from that deal record. Then it searches your system for every addendum and change order linked to this specific deal ID.
 
-The automation loops through all linked change orders and addendums, checking each one to see if it's already been assigned to an existing job record. This prevents duplicate processing while ensuring nothing falls through the cracks. For any change orders that haven't been processed yet, Make validates the assignment logic and prepares the data for conversion.
+Here's where it gets smart — the automation loops through each change order and checks: "Does this already have a job record assigned?" If yes, it skips that one and moves to the next. If no, it creates a proper job record with all the project data attached.
 
-The really clever part is how Make handles the timing. Instead of rushing through everything at once and potentially overwhelming your job management system, it includes strategic pauses to let each step complete properly. This prevents the dreaded "partial sync" scenarios where half your job data makes it over but critical details get lost in transit.
+The whole process runs in about 30 seconds. Your ops team opens their project dashboard and sees every won deal already converted to active jobs, with all change orders properly assigned and ready to work.
 
-Once all the addendums and change orders are accounted for, Make processes the complete job package. Your new job record gets created with all the customer details, project specifications, pricing adjustments, and scope changes already in place. No manual copy-paste. No forgotten addendums. No panicked calls from the field asking why the job specs don't match the signed contract.
+No more hunting through the CRM. No more copy-paste errors. No more change orders falling through the cracks when you're swamped with new business.
 
-Your ops team goes from spending hours each week on data entry to simply reviewing completed job records that are ready for scheduling. Sales reps can focus on selling instead of worrying about whether their deals will get processed correctly. And your customers get exactly what they paid for because every scope change is captured and tracked from day one.
+What's the biggest bottleneck in your deal-to-job handoff process? And if you're tired of manual data entry eating up your team's time, let's talk about getting this kind of automation working in your business.
 
-The best part? This entire workflow runs in the background using native Make actions, so there's no custom code to maintain or debug when something breaks. Just clean, reliable automation that turns won deals into properly configured jobs without human intervention.
-
-What's the biggest bottleneck in your deal-to-job handoff process? And if you're tired of watching profitable deals sit in limbo while your team plays catch-up with manual data entry, let's talk about getting Make set up for your operation.
-
-#Automation #ProjectManagement #Make
+#Automation #JobSetup #Make

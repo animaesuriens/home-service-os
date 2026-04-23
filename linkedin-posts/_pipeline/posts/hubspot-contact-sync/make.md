@@ -1,25 +1,25 @@
-Your sales rep just spent 15 minutes hunting through HubSpot for a contact record before realizing they created a duplicate last week. Sound familiar?
+Your sales rep opens HubSpot to prep for a call. Three versions of the same contact stare back at them. Which one has the real phone number?
 
-**BEFORE:** Your team is drowning in manual contact management chaos. Sales reps waste precious minutes before every call searching through your CRM, trying to figure out if a lead already exists. Meanwhile, duplicate records multiply like rabbits — the same person shows up three times with slightly different emails or phone numbers. Marketing channels dump contacts into your system with zero coordination, creating a messy patchwork of incomplete data that nobody trusts.
+**BEFORE:** Your team wastes 10 minutes before every call hunting through duplicate contacts. Marketing channels dump leads differently — some use contact IDs, others just emails. Your CRM becomes a messy pile of "John Smith," "J. Smith," and "John Smith (2)" records. Sales reps guess which version has the latest info.
 
-**AFTER:** Every single contact flows into your CRM with surgical precision. Whether it's a Facebook lead, website form, or referral call, the system automatically searches by both ID and email to find existing records. If found, it intelligently merges the new data with what you already have. If it's genuinely new, it creates a clean, complete record. Your sales team opens HubSpot and finds exactly what they need — no duplicates, no guesswork, just accurate contact information ready for action.
+**AFTER:** Every lead automatically gets searched, merged, and cleaned before it hits your CRM. One contact per person. Always current. Zero hunting.
 
-**THE BRIDGE:** Here's how Make transforms this nightmare into a dream workflow.
+**HERE'S HOW MAKE HANDLES THE CHAOS:**
 
-When new lead data hits your system, Make doesn't rush straight into creating records. It takes a strategic pause with a sleep step, then systematically loops through all engagement data to build the complete picture. The magic happens in the payload generation phase — Make constructs the perfect data package by looking up project details and marketing sources, ensuring every piece of information has context.
+When lead data arrives from any marketing channel, Make immediately starts a two-step search process. First, it hunts for an existing contact using the unique ID — this catches leads from sources that track people consistently.
 
-Before touching your CRM, Make runs dual searches — first by contact ID, then by email address. This double-check catches contacts that might exist under different identifiers. The system then evaluates which search actually found a match and merges that data intelligently with your new information.
+No ID match? Make pivots to search by email address instead. Different vendors use different identifiers, so this backup search catches contacts that might exist under a different system.
 
-But Make doesn't stop there. It pulls existing contact properties and loops through associated deals, making sure nothing gets lost in the process. The real genius is in the branching logic — Make routes contacts differently based on project type and marketing source, ensuring each lead gets handled according to your business rules.
+If Make finds a match through either search, it pulls the existing contact properties and merges them with the fresh lead data. All the historical info stays intact while new details get layered in.
 
-The contact branch logic determines whether you're updating an existing record or creating a new one, while property checks ensure data integrity throughout the entire process. Every step builds on the previous one, creating an unbreakable chain that eliminates human error.
+If no match exists anywhere, Make creates a clean new contact record with standardized formatting.
 
-What used to require your team to manually cross-reference multiple systems now happens automatically in seconds. Make handles the complex decision-making about when to merge versus create, which data takes priority, and how to maintain clean relationships between contacts and deals.
+The final step generates one unified contact payload that gets pushed back to HubSpot. Whether the contact was found by ID, email, or created fresh, your sales team sees exactly one clean record with all the merged data from every source.
 
-The result? Your sales team clicks into HubSpot and finds exactly one record per person, with complete information from every touchpoint. No more "Is this the same John from last month?" conversations. No more accidentally calling the wrong number because someone entered data twice.
+Your reps open HubSpot and find one contact. One phone number. One complete history. They dial and sell instead of detective work.
 
-Your CRM becomes a single source of truth instead of a digital junkyard of duplicate contacts and incomplete records.
+The whole process runs automatically every time a lead comes in. No manual searching. No duplicate guessing. Just clean data that lets your team focus on closing deals.
 
-What's your biggest CRM data nightmare — duplicate contacts or incomplete information? And if you're tired of your team spending more time managing data than talking to prospects, let's chat about setting up a system that actually works for your business.
+What's your biggest CRM data headache right now? And if you're tired of playing contact detective, let's chat about setting up a system that actually works.
 
 #Automation #LeadGeneration #Make

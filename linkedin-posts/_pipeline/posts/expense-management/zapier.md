@@ -1,27 +1,21 @@
-Digging through emails, spreadsheets, and accounting software for an hour just to answer "what did we spend on the Wilson job?" — there has to be a better way.
+You're drowning in receipts scattered across email, bills buried in accounting software, and project costs hiding in spreadsheets — asking "how much did we spend on that job?" triggers an hour-long treasure hunt.
 
-**BEFORE:** Your expense tracking is a nightmare. Receipts pile up in your email inbox. Bills get entered into your accounting software under generic categories. Project costs live in a separate spreadsheet that nobody updates consistently. When a customer questions a charge or you need to review job profitability, you're stuck playing detective across three different systems. By the time you piece everything together, you've burned an hour and probably missed a few expenses anyway.
+**BEFORE:** Every expense lives in isolation. The lumber receipt is in your email. The equipment rental bill sits in your accounting software. Project costs are tracked in a separate spreadsheet. When a customer asks about job costs or you need to price similar work, you're playing detective across three different systems.
 
-**AFTER:** Every single expense automatically finds its way to the right job record with zero manual sorting. Bills from suppliers get matched to projects instantly. Receipt photos download and attach themselves to the correct customer files. You can pull up any job and see real-time costs — materials, labor, everything — without leaving your main system. No more treasure hunts, no more guessing, just clean job costing that updates itself.
+**AFTER:** Every bill automatically finds its home. Expenses flow from your accounting software straight into Airtable, matched to the right customer and project, with receipt attachments downloaded and linked. Job costing stays current without the manual chase.
 
-**THE BRIDGE:** Here's how Zapier makes this magic happen behind the scenes.
+**THE BRIDGE:** Here's how Zapier makes this happen:
 
-When expense data comes in from any source, the system immediately starts working. It captures the current time and sets up tracking to monitor the entire process. The automation loops through incoming expenses systematically, checking progress at each step to ensure nothing gets missed.
+When a new bill hits your accounting software, the automation immediately grabs the expense data — whether it's materials for the Henderson kitchen or fuel for the crew truck. It searches your Airtable records to find matching customer references, linking that vendor bill to the right client account.
 
-For each expense, Zapier searches your customer database to find the matching reference. Maybe it's pulling from an invoice number in the receipt description, or matching a supplier name to a specific project. Once it identifies the connection, it builds a complete expense payload with all the relevant details.
+Next, it downloads any attached receipts or invoices from the expense record. Photos, PDFs, whatever the vendor sent gets pulled into your system automatically.
 
-The system then upserts this information into your main expense records — creating new entries or updating existing ones as needed. But it doesn't stop there. If there are attachments like receipt photos or PDF invoices, Zapier downloads them automatically and links them to the expense record.
+The smart part: it checks whether this expense belongs to a main job or a specific project phase within that job. If it's a general job expense, it links directly to the main job record with full customer context. If it's tied to a specific phase like "kitchen demo" or "final walkthrough," it connects to that project while maintaining the parent job relationship.
 
-The real power comes next. The automation syncs with your job management system, looping through all active jobs and their associated projects. It checks whether expense syncing is enabled for each job, verifies customer references exist, and determines whether each item should be categorized as a job expense or project cost.
+Finally, it saves everything to Airtable — expense data, attachment links, customer connections, job and project relationships all locked in place.
 
-Throughout this process, Zapier handles the complex logic of matching expenses to the right place. It checks for parent customer IDs, sub-customer relationships, and project hierarchies in your accounting software. The system even includes built-in delays to avoid overwhelming your various platforms with too many requests at once.
+The result? Your job costing is always current. Every receipt knows exactly which project it belongs to. No more treasure hunts when customers ask about costs or you need to analyze profitability.
 
-The final step updates your parent customer records with the consolidated expense data, giving you a complete financial picture at every level — from individual receipts all the way up to total customer profitability.
-
-Your team keeps working exactly like they always have — forwarding receipts, entering bills, tracking costs. But now everything automatically organizes itself into meaningful job costing reports without anyone lifting a finger.
-
-The best part? This runs continuously in the background. Every new expense gets processed and filed correctly within minutes of hitting your system. No more monthly reconciliation marathons or surprise cost overruns that nobody saw coming.
-
-What's the biggest expense tracking headache in your business right now? And if you're ready to stop playing financial detective every time you need job cost data, let's chat about setting up your automated expense pipeline.
+What's your biggest headache with tracking job expenses right now? If you're ready to automate your expense matching and eliminate the manual chase, let's chat about setting this up for your business.
 
 #Automation #ExpenseManagement #Zapier

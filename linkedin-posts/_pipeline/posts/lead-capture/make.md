@@ -1,27 +1,23 @@
-Your sales rep just texted you at 11pm: "Did you see that hot lead from the website? Should I call them now?" Meanwhile, three more leads came in while you were sleeping. 🤦‍♂️
+Your sales rep just texted you at 9pm: "Did we lose that lead from this afternoon? I can't find it anywhere in HubSpot and the customer called asking why no one followed up."
 
-**BEFORE:** Your team is playing lead capture whack-a-mole. Someone fills out your website form at 9pm on Saturday, and it sits in your inbox until Monday morning. By then, they've already called two competitors. Your sales reps are manually copying form data into your CRM, missing crucial details about project type and marketing source. Half the time, you're creating duplicate contacts because nobody checked if that email already exists. Hot leads go cold while you're trying to figure out which marketing campaign actually worked.
+**BEFORE:** You're manually copying form submissions into your CRM, praying nothing falls through the cracks during evenings and weekends. Your team's juggling lead data across spreadsheets, sticky notes, and memory. Hot prospects slip away because someone forgot to check the website forms, and you're losing deals to competitors who respond faster.
 
-**AFTER:** Every single lead gets captured instantly, no matter when they submit. A prospect fills out your form at 2am Sunday? They're automatically enriched with project details, tagged with the right marketing source, and synced to your CRM as a clean, deduplicated contact with a properly formatted deal. Your Monday morning starts with organized, qualified leads ready for immediate follow-up instead of data entry chaos.
+**AFTER:** Every lead gets captured instantly from any marketing channel, enriched with complete project details and source attribution, then synced to HubSpot as a clean contact record with deal attached. Even at 2am on Sunday, your automation is working while you sleep.
 
-**Here's how Make handles this behind the scenes:**
+**Here's how Make handles the heavy lifting:**
 
-When a new lead hits your system, Make immediately receives that data and processes it through a sophisticated workflow. It loops through all the engagement touchpoints to understand the full customer journey, then generates a comprehensive payload with all the lead information.
+When form data hits your system, the automation immediately pulls project specifications from the original source. Residential remodel or commercial build — context matters for follow-up.
 
-The system performs intelligent lookups to match the inquiry with your project types and trace back to the original marketing source. Was it Google Ads? Facebook? A referral? Make figures it out and tags everything properly.
+Next, it traces marketing attribution. Which campaign drove this lead? Which vendor? The system captures and preserves that data so you know what's working.
 
-Next comes the smart contact management. Make searches your CRM both by contact ID and email address to prevent duplicates. If the person already exists, it merges the new information with their existing profile. If they're brand new, it creates a fresh contact with all their properties properly mapped.
+Then comes the smart part: HubSpot search runs by both email and contact ID. If it's an existing customer submitting a new project request, Make updates their record without creating duplicates. Brand new prospect? Fresh contact gets built with full project context from day one.
 
-The deal creation process runs in parallel, generating a properly formatted opportunity that connects to the right contact. Make handles complex branching logic based on project type and marketing source, ensuring each deal gets categorized correctly from day one.
+Every contact gets paired with a deal record containing project type, estimated value, and original lead source. No more hunting through forms to remember where leads came from.
 
-Throughout this entire process, Make is constantly checking that all the required properties exist and handling any errors gracefully. If something goes wrong with one part of the workflow, it doesn't crash the whole system.
+The final HubSpot record is complete: clean contact with attached deal and full marketing attribution, ready for sales follow-up within minutes of submission.
 
-The beautiful part? This all happens in minutes, not hours. While your competitors are still manually entering data on Monday morning, you're already following up with warm leads who remember submitting their information.
+Your team opens HubSpot Monday morning to find weekend leads already organized, enriched, and ready to work. No manual data entry, no lost opportunities, no more 9pm panic texts.
 
-Your CRM stays clean, your team stays focused on selling instead of data entry, and you never lose another lead to timing. The system works 24/7, whether you're on vacation or sleeping soundly.
-
-Sure, this workflow could be streamlined – it's running 15+ steps when it could probably be simplified. And some of those custom code pieces could be replaced with native Make actions for better reliability. But even in its current form, it's saving hours of manual work every single week.
-
-What's the biggest lead capture headache in your business right now? And how many deals do you think you've lost simply because someone submitted a form outside business hours?
+What's your biggest lead capture headache right now? And if you're tired of manually wrestling form data into your CRM, let's chat about setting this up for your business.
 
 #Automation #LeadGeneration #Make

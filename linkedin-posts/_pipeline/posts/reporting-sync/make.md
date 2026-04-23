@@ -1,34 +1,29 @@
-Monday morning CRM report pulls are killing your sales team's momentum — by the time you see last week's numbers, three more deals have already slipped through the cracks.
+Your sales manager pulls Monday morning reports from HubSpot. The numbers are already a week old. Pipeline health dropped Thursday, but nobody knows until next Monday.
 
-**BEFORE:**
-Your sales manager spends every Monday morning logged into the CRM, manually pulling reports that show where things stood last Friday. By the time those numbers hit your dashboard, deals have moved, prospects have gone cold, and pipeline health has shifted. You're always managing your business with week-old data, reacting to problems instead of preventing them.
+What if your dashboard refreshed every two minutes instead?
 
-**AFTER:**
-Your dashboard refreshes every two minutes with live CRM data. Deal information flows automatically, deletions sync in real-time, and pipeline numbers update without anyone touching a thing. You spot pipeline issues the moment they happen, not a week later when it's too late to fix them.
+Your CRM updates. Your dashboard refreshes. The numbers never lie. Every 120 seconds, fresh deal data flows from HubSpot to your reporting dashboard without anyone lifting a finger.
 
-**THE BRIDGE:**
-Here's how Make transforms your reporting from a weekly chore into a real-time advantage.
+Here's how Make handles the heavy lifting:
 
-The automation starts by receiving events from your CRM — every time a deal changes, gets deleted, or moves stages. Make immediately grabs the configuration variables it needs to know which data to process and where to send it.
+Clock strikes two — Every 120 seconds, the sync kicks off automatically. No waiting for Monday morning reports or manual data pulls.
 
-Then it loops through each item that's changed. For most updates, the system stops execution on the main branch and routes to a time adjustment module. This converts timestamps to show exactly when changes happened, going back two minutes to capture everything that's shifted since the last sync.
+Generate deal payload — Make pulls fresh deal records straight from HubSpot. Stage changes, close dates, deal amounts — everything that moved since the last sync gets captured.
 
-The real magic happens in the payload generation. Make creates properly formatted deal packages with all the information your dashboard needs — deal values, stage changes, close dates, the works. No manual formatting, no copy-paste errors.
+New or changed? — The system compares timestamps to find what actually needs updating. Skip the noise, sync only what matters. No wasted processing on stale data.
 
-When deals get deleted from your CRM, the delete sync process kicks in automatically. Your dashboard removes those records instantly instead of showing phantom deals that no longer exist. No more inflated pipeline numbers from deals that died weeks ago.
+Then it branches into two paths:
 
-The upsert function handles everything else — new deals get added, existing deals get updated with fresh information. Your dashboard always reflects exactly what's in your CRM, down to the minute.
+Process deletions — Deals that got removed from HubSpot disappear from your dashboard too. Clean slate, accurate counts. No ghost deals inflating your pipeline.
 
-The system uses conditional logic to route different types of changes appropriately. New deals follow one path, updates follow another, deletions get their own treatment. Everything ends up in the right place without manual sorting.
+Upsert records — New deals get added, existing ones get updated. One smart operation handles both cases seamlessly.
 
-The best part? This runs every two minutes, all day long. While your competition is still pulling Monday morning reports, you're seeing pipeline changes as they happen. When a big deal moves to "at risk," you know immediately. When a prospect goes cold, you can jump on it before they disappear completely.
+Dashboard refreshed — Live pipeline numbers replace last week's stale data. Your managers see reality, not history. When a big deal moves to "closed-lost" on Thursday, they know Thursday — not the following Monday.
 
-Your sales team stops managing with stale data and starts working with live intelligence. No more Monday morning report sessions, no more wondering if your numbers are current, no more missing opportunities because you didn't see the warning signs fast enough.
+The beauty? Your team gets early warning signals. Pipeline health drops? You see it within two minutes, not seven days later. Deal velocity slows? The dashboard shows it immediately.
 
-The whole thing runs in the background while your team focuses on what they do best — closing deals.
+No more Monday morning surprises. No more "I wish we'd known sooner" conversations. Just live data that updates itself while you focus on actually closing deals.
 
-What's the oldest data you're currently using to make business decisions? Drop a comment below.
-
-And if you're tired of chasing last week's numbers, let's talk about getting your reporting automated with Make.
+What's the biggest reporting blind spot in your business right now? And how much manual work are you doing that could run itself every two minutes?
 
 #Automation #Reporting #Make

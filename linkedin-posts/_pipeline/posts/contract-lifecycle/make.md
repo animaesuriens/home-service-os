@@ -1,29 +1,23 @@
-Your customer just signed the contract on their phone, but your crew won't know about it for 3 days because Karen from accounting is at her sister's wedding and she's the only one who checks the contract email.
+Your customer just signed the contract on their phone. Now you're refreshing email every 10 minutes waiting for the notification, then manually kicking off crew scheduling, material orders, and project setup. Meanwhile, the job sits in limbo for hours or even days while you chase down all the moving pieces.
 
-**BEFORE:** Your contracts live in email hell. You send PDFs, customers print them out (if they even have a printer), sign with actual ink, scan them back (if they know how), and email them to you. Meanwhile, you're playing detective trying to figure out which jobs are actually approved. Your crew sits around waiting for the green light while signed contracts collect digital dust in someone's inbox.
+Instead, picture this: The second that digital signature lands, your entire back office springs into action automatically. Crew gets scheduled, materials get ordered, customer gets their timeline — all without you lifting a finger.
 
-**AFTER:** You hit send on a contract and everything just flows. Customer signs on their phone while drinking their morning coffee. The second they finish signing, your entire operation kicks into gear automatically. Addendums get processed, expense tracking kicks in, and your accounting software already knows what's coming. Zero delays, zero detective work.
+Here's how Make turns contract signatures into instant job launches:
 
-**THE BRIDGE:** Here's how Make turns contract chaos into a smooth machine.
+The moment your customer signs digitally, Make receives the contract event and immediately pulls all the signed contract data from your system. It grabs every detail — job specs, customer info, the works.
 
-The moment a contract gets signed, Make receives that contract event and immediately pulls up all the customer records. But here's where it gets smart — not every contract is the same.
+Next, it loops through any contract addendums or change orders, formatting dates and pulling each addendum record so nothing gets missed in the transition.
 
-Make loops through any addendums attached to the main contract. Each addendum gets its date formatted properly, then Make grabs the full addendum record with all the details. Now it knows exactly what work was actually agreed to.
+Then comes the smart routing. Make branches based on your contract details — is this a residential repaint, commercial new construction, or specialty work? Each path triggers completely different workflows.
 
-Next, Make lists out all the expenses tied to this specific contract. This is where most companies lose money — they forget about the little add-ons and change orders. But Make loops through every single expense line item, making sure nothing falls through the cracks.
+For residential jobs, it automatically kicks off crew scheduling, material orders, and starts your homeowner communication sequence. Commercial projects get the full treatment — project management workflow, permit tracking, and contractor coordination all fire up simultaneously.
 
-Here's the really clever part: Make uses conditional logic to check if expense syncing is enabled for this particular contract type. Some contracts need full expense tracking, others don't. Make knows the difference and routes accordingly.
+Once all the setup processes complete, the job officially moves from signed contract to active project status. Your crew gets their schedule, materials get ordered, and the customer receives their timeline.
 
-When expense syncing is active, Make processes all that expense data and pushes it exactly where it needs to go — your accounting software, project management tool, whatever systems you use to actually run jobs.
+The beautiful part? Zero manual handoffs. No email checking. No wondering if something fell through the cracks. The contract signature becomes the single trigger that sets your entire operation in motion.
 
-The whole thing happens in seconds. Your customer signs, and before they even put their phone down, your back office is already spinning up their job.
+Your signed contracts now flow seamlessly into active jobs without any of the usual delays or forgotten steps.
 
-No more "Did they sign yet?" calls. No more crews showing up to jobs that aren't actually approved. No more scrambling to figure out what work was included in the contract.
-
-The best part? This works with whatever contract platform you're already using. Make connects to pretty much everything, so you don't have to rip out systems that are working for you.
-
-I set this up for a home service company that was losing an average of 2.3 days per job just waiting for contract confirmation. After automation, their average time from signature to job start dropped to same-day. Their crews went from sitting around to staying busy, and their cash flow improved because jobs started faster.
-
-What's the longest you've waited for a signed contract to make its way back to you? And if you're tired of playing contract detective, want to see how Make could automate your entire contract-to-cash process?
+What's the longest you've waited for a signed contract to actually become a live job? And if you could automate one part of your contract-to-kickoff process, what would it be?
 
 #Automation #ContractManagement #Make

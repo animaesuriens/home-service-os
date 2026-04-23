@@ -1,27 +1,21 @@
-Your home service company just lost a $3,000 job because the customer never got your follow-up email — it's sitting in your drafts folder from three weeks ago.
+Your appointment scheduler pings, your estimating tool has updates, but your CRM shows nothing. Sound familiar? Manual data syncing is where deals die.
 
-**BEFORE:**
-You're juggling five different systems and manually copying information between them. Important booking confirmations get buried in your inbox while you're on a job site. Text messages to customers sit in your drafts because you got distracted by an emergency call. Error notifications from your estimating tool flash on your screen for two seconds, then disappear forever. You have zero record of what was communicated to whom, and customers are slipping through the cracks because follow-ups depend entirely on your memory.
+**BEFORE:** Someone books an appointment. You get the notification in one system, but now you're playing detective — digging through your estimating tool to find their accepted quote, manually creating or updating their HubSpot contact, and hoping you didn't miss anything. By the time you sync everything, you've burned 20 minutes and probably forgot to update someone.
 
-**AFTER:**
-Every system event automatically triggers the perfect communication on the right channel. When a booking comes in, your customer gets an instant confirmation email, your calendar updates, and your CRM syncs their contact information — all without you touching anything. Error notifications get logged and routed to the right person. Follow-ups happen like clockwork, and you have a complete communication trail for every customer interaction.
+**AFTER:** A booking comes in and every system instantly knows about it. Your CRM updates automatically, contact records sync perfectly, and all your tools show the same information without you lifting a finger.
 
-**Here's how Make transforms your communication chaos into a well-oiled machine:**
+**THE BRIDGE:** Here's how Make handles this chaos for you.
 
-When a booking event hits your system, Make immediately springs into action. It finds the customer reference in your database and starts building the communication payload. The automation upserts the expense record (creating or updating as needed), then generates a crossflow payload that carries all the relevant data to your other systems.
+When someone schedules through your appointment scheduler, the automation immediately pulls all accepted quotes from your estimating tool. It loops through each quote, converting estimate dates and prepping everything for HubSpot.
 
-Here's where it gets smart — Make saves any attachments from the original booking, then uses calculated date formatting to ensure everything has proper timestamps. The automation runs through a controlled loop, checking each system connection and using conditional logic to route information to the right places.
+Next, it searches HubSpot for the latest open deal tied to this customer using deal stage and contact info to find the right match. Then comes the smart part — it checks if this person already exists as a HubSpot contact.
 
-The branch logic asks key questions: Does the customer reference exist? Is this a line item that needs special handling? Based on those answers, it routes the communication accordingly. Your CRM gets updated, your calendar gets the appointment, and your customer gets their confirmation — all happening in parallel.
+No existing record? The automation creates a fresh contact with all the booking details and quote information. Contact already exists? It updates their record with the new booking data and links everything to the open deal.
 
-Instead of you manually copying booking details into eight different places (and probably forgetting half of them), Make handles every touchpoint automatically. The customer gets their professional confirmation email while you're still talking to them on the phone.
+The result? Your appointment scheduler, estimating tool, and HubSpot all reflect identical information. No manual data entry, no missed updates, no wondering if your systems are talking to each other.
 
-The beauty is in the reliability. No more "I thought you were going to send that" conversations with your team. No more customers calling to ask if their appointment is confirmed. No more scrambling to remember what you promised whom.
+Your booking data flows seamlessly between systems while you focus on actually running jobs instead of managing spreadsheets.
 
-Your communication becomes consistent, professional, and traceable. Every interaction gets logged, every follow-up happens on schedule, and every system stays in sync. You go from reactive communication chaos to proactive customer service that runs itself.
-
-The result? Customers feel taken care of from the first interaction, your team always knows what's been communicated, and you never lose another job because someone forgot to hit send.
-
-What's the biggest communication gap in your business right now — the one that's costing you customers? And if you're ready to stop playing phone tag with your own systems, let's chat about setting up your automated communication hub.
+What's the biggest communication gap between your systems right now? And if you're tired of playing data entry clerk between your tools, let's chat about setting this up for your business.
 
 #Automation #CRM #Make

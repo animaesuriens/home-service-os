@@ -1,31 +1,19 @@
-Your estimates are trapped in one system while your CRM deals live in another — and your sales manager is losing their mind copying numbers between them all day long.
+Your estimates are trapped in one system while your sales pipeline lives in another — and someone's always stuck playing copy-paste between the two.
 
-I see this nightmare scenario constantly. You've got estimates sitting in your estimating tool, but your pipeline tracking happens in your CRM. So someone (usually your already-overwhelmed sales manager) has to manually create each CRM deal, copy over the estimate amount, and pray they didn't fat-finger the numbers or forget to update something.
+**BEFORE:** Every time your team creates an estimate, the real work begins. Sales managers grab calculators, open spreadsheets, and manually transfer numbers from your estimating tool into HubSpot. Deal names are inconsistent — "Johnson job" in one place, "Kitchen remodel - Johnson" in another. Pipeline reports become guesswork because half the estimates never make it over, and the ones that do have outdated values.
 
-Meanwhile, your pipeline reports look like chaos because deal names are inconsistent — one day it's "Smith Kitchen Remodel," the next it's "Kitchen - Smith Residence," and somehow there's always that one deal just labeled "Big Job Tuesday."
+**AFTER:** The moment an estimate hits your system, HubSpot automatically gets a perfectly formatted deal with the exact customer name, project scope, and dollar amount. Your sales team sees every opportunity instantly, pipeline reports show real numbers, and nobody touches a spreadsheet.
 
-Here's what it looks like when Make handles this entire workflow automatically:
+**THE BRIDGE:** Here's how Make handles this behind the scenes. When a new estimate appears in your estimating tool, Make immediately pulls all quotes from the last few minutes — catching everything, even if multiple estimates come in at once.
 
-The moment your team creates an estimate in your estimating tool, Make springs into action. It doesn't wait around — it immediately pulls the fresh estimate data and gets to work.
+Then it loops through each one individually. Johnson Kitchen Remodel, $12,500. Martinez Bathroom, $8,200. For every estimate, Make checks if this exact quote already exists as a HubSpot deal. This prevents duplicates when the automation runs multiple times.
 
-Make runs a time check to sync everything from the last few minutes, ensuring nothing slips through the cracks. It grabs all the recent quotes from your estimating tool and starts processing them one by one.
+If it's genuinely new, Make creates a HubSpot deal with consistent naming — customer name, project type, estimate value. The sales team sees it instantly in their pipeline.
 
-Here's where it gets smart: Make runs each estimate through conditional logic to determine exactly how to handle it. New estimate? Create a fresh CRM deal. Updated estimate? Sync the changes to the existing deal.
+The result? Every estimate becomes a trackable deal automatically. Sales managers get accurate pipeline reports without manual data entry. Your estimating tool talks, HubSpot listens, and the pipeline updates itself.
 
-The system processes all the estimate data — customer info, job details, dollar amounts — and formats everything consistently. No more random naming conventions or missing information.
+No more lost opportunities because someone forgot to transfer an estimate. No more pipeline meetings where half the numbers are wrong because they're three days old.
 
-Then Make pushes everything into your CRM as a properly formatted deal. Same naming structure every time. All the key details populated correctly. The estimate amount automatically becomes your deal value.
+What's the biggest gap between your estimating tool and your CRM right now? And if you're tired of playing data entry between systems, let's chat about getting this automated.
 
-Your sales team opens their CRM dashboard and sees real-time pipeline updates. No manual entry. No copying and pasting. No wondering if the numbers are current or if someone forgot to update a deal.
-
-The best part? Your pipeline reports finally make sense. Every deal follows the same naming convention. Every estimate amount is accurately reflected. Your sales manager can actually trust the numbers they're looking at.
-
-This whole process happens in minutes, not hours. While your team is moving on to the next estimate, Make is ensuring your CRM stays perfectly in sync behind the scenes.
-
-I set this up for a home service company that was spending 2 hours every morning just syncing their estimates with their pipeline. Now their sales manager starts each day with accurate, up-to-date reports instead of a pile of manual data entry.
-
-The workflow runs automatically every few minutes, catching new estimates and updates without any human intervention. Your estimating tool and CRM finally speak the same language, and your sales process becomes predictable instead of chaotic.
-
-What's the biggest disconnect between your estimating and sales systems right now? And if you're ready to stop playing data entry ping-pong between your tools, let's talk about setting up this exact automation for your business.
-
-#Automation #Estimating #Make
+#Automation #CRM #Make

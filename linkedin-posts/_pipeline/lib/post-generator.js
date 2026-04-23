@@ -151,16 +151,41 @@ ${bundle.inefficiencies.join(', ') || 'Manual processes, inconsistent timing, hu
 
 Write the post now. Remember: MAXIMUM 2,800 characters (target 300-400 words), hook in first 210 chars, BAB framework, casual expert tone, end with mixed CTA + 3 hashtags.`;
 
-  const message = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 2000,
-    temperature: 0.4,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: userPrompt }]
-  });
+  // Retry on forbidden-term leakage (mirrors storybeat-generator pattern).
+  // The SYSTEM_PROMPT forbids these terms, but the model still slips them
+  // occasionally — catch and re-generate with a stronger steer.
+  const FORBIDDEN_IN_POST = [
+    'real-time', 'lead scoring', 'audit trail', 'audit log',
+    'crew dispatch', 'drip campaign', 'nurture sequence',
+    // Forbidden tool names
+    'paintscout', 'companycam', 'youcanbook', 'ycbm',
+    'quickbooks', 'ringcentral',
+  ];
 
-  const postContent = message.content[0].text;
-  return postContent;
+  const maxAttempts = 3;
+  let extraSteer = '';
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const message = await client.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      temperature: 0.4,
+      system: SYSTEM_PROMPT + extraSteer,
+      messages: [{ role: 'user', content: userPrompt }]
+    });
+    const postContent = message.content[0].text;
+    const lower = postContent.toLowerCase();
+    const hits = FORBIDDEN_IN_POST.filter(t => lower.includes(t));
+    if (hits.length === 0) return postContent;
+
+    if (attempt < maxAttempts) {
+      // eslint-disable-next-line no-console
+      console.warn(`  forbidden terms in ${bundle.id}/${platform}: [${hits.join(', ')}] — retry ${attempt}/${maxAttempts - 1}`);
+      extraSteer = `\n\nCRITICAL RETRY DIRECTIVE: Your previous response contained forbidden terms: ${hits.join(', ')}. DO NOT use any of these terms. If you need to describe immediacy or speed, use "automatically", "within seconds", "as it happens", or "on each update" — never "real-time".`;
+    } else {
+      // Last attempt failed — return anyway, audit will catch it
+      return postContent;
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
