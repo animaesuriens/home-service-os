@@ -3,30 +3,47 @@ const path = require('path');
 const yaml = require('yaml');
 
 /**
- * Get the list of all known YAML files
+ * Directory (relative to projectRoot) where Prismatic YAMLs live once they've
+ * been registered in SYSTEM_TOKENS and added to the pipeline's source of truth.
+ * New Prismatic exports land in "To Process/" first — user moves them here
+ * after registering the system token.
+ */
+const PROCESSED_DIR = 'Processed';
+
+/**
+ * Get the list of all processed YAML files by scanning the Processed/ dir.
+ * Sorted for deterministic ordering across runs.
+ * @param {string} projectRoot - Absolute path to project root
  * @returns {Array<string>} Array of YAML filenames
  */
-function getYamlFileList() {
-  return [
-    'boolean-accounting-system-export.yml',
-    'boolean-marketing-integration-export.yml',
-    'boolean-sales-integration-export.yml',
-    'daily-production-data-export.yml',
-    'gmail-and-ring-central-communicator-export.yml',
-    'job-management-integration-export.yml',
-    'quick-books-time-tracking-system-export.yml',
-    'sales-and-marketing-reporting-export.yml'
-  ];
+function getYamlFileList(projectRoot) {
+  if (!projectRoot) {
+    // Backwards-compat: some callers don't pass projectRoot.
+    // Derive it from __dirname (linkedin-posts/_pipeline/lib/..) → project root is 3 levels up.
+    projectRoot = path.resolve(__dirname, '..', '..', '..');
+  }
+  const processedPath = path.join(projectRoot, PROCESSED_DIR);
+  if (!fs.existsSync(processedPath)) return [];
+  return fs.readdirSync(processedPath)
+    .filter(f => f.endsWith('.yml'))
+    .sort();
 }
 
 /**
- * Load and parse all 8 Prismatic YAML export files (or filter to one)
- * @param {string} projectRoot - Absolute path to project root containing YAML files
+ * Load and parse all processed Prismatic YAML export files (or filter to one).
+ * @param {string} projectRoot - Absolute path to project root
  * @param {string|null} yamlFilter - Optional filename to filter to a single YAML
  * @returns {Promise<Object>} Object keyed by filename with parsed YAML content
  */
 async function loadAllYamlFiles(projectRoot, yamlFilter = null) {
-  const yamlFiles = getYamlFileList();
+  const yamlFiles = getYamlFileList(projectRoot);
+
+  if (yamlFiles.length === 0) {
+    throw new Error(
+      `No YAML files found in ${path.join(projectRoot, PROCESSED_DIR)}. ` +
+      `Move Prismatic exports from "To Process/" to "${PROCESSED_DIR}/" after registering their SYSTEM_TOKENS entry in lib/process-grouper.js.`
+    );
+  }
 
   // Filter to single file if requested
   let filesToLoad = yamlFiles;
@@ -40,7 +57,7 @@ async function loadAllYamlFiles(projectRoot, yamlFilter = null) {
   const loaded = {};
 
   for (const fileName of filesToLoad) {
-    const filePath = path.join(projectRoot, fileName);
+    const filePath = path.join(projectRoot, PROCESSED_DIR, fileName);
 
     try {
       const content = await fs.readFile(filePath, 'utf8');

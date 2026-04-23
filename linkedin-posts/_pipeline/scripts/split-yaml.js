@@ -54,7 +54,7 @@ async function main() {
 
   console.log('Splitting monolithic YAML files into per-flow files...\n');
 
-  const yamlFiles = getYamlFileList();
+  const yamlFiles = getYamlFileList(PROJECT_ROOT);
   let totalFlows = 0;
 
   // Clean and recreate flows directory
@@ -62,7 +62,7 @@ async function main() {
   await fs.ensureDir(FLOWS_DIR);
 
   for (const fileName of yamlFiles) {
-    const filePath = path.join(PROJECT_ROOT, fileName);
+    const filePath = path.join(PROJECT_ROOT, 'Processed', fileName);
     const content = await fs.readFile(filePath, 'utf8');
     const parsed = yaml.parse(content);
 
