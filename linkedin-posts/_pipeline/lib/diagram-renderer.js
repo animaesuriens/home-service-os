@@ -9,7 +9,7 @@
  * Design: editorial product-marketing aesthetic (Fraunces serif display,
  * Inter sans body, cream background, accent-color italic in headline,
  * card-based beat layout with trigger as dark hero, decision as dashed accent).
- * See prototypes/path1 for the visual reference that was user-approved.
+ * Editorial product-marketing aesthetic finalized via the 15-05 prototype pass.
  */
 
 const path = require('path');

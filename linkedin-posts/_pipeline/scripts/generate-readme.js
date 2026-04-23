@@ -125,10 +125,10 @@ The posts are organized following the customer journey from lead to completed jo
 
 **Content Generation:** Posts and diagrams were generated programmatically via Claude API using Anthropic's templating system. Each post follows a consistent structure: business context, workflow steps, pain points solved, and technical implementation.
 
-**Diagram Generation:** Flowcharts are generated using Mermaid with platform-specific theming. The diagram generation pipeline lives in the \`_pipeline/\` subfolder and uses:
-- Mermaid syntax for flowchart definitions
-- Platform-specific config files for color theming (purple/orange/green)
-- mermaid-cli for PNG rendering at retina resolution
+**Diagram Generation:** Each diagram is rendered as bespoke HTML/CSS via Playwright to a 1080×1350 PNG. The diagram generation pipeline lives in the \`_pipeline/\` subfolder and uses:
+- A \`storyBeats\` JSON spine per bundle (the same narrative that drives the post, ensuring post and diagram tell one story)
+- Platform-specific theme tokens: Make (cream background, pink accent), Zapier (cream background, orange accent), n8n (dark background with dot grid, mint-green accent)
+- Playwright headless Chromium for deterministic PNG rendering at retina resolution
 
 **Tool Naming:** Only Make, Zapier, n8n, HubSpot, and Airtable are named explicitly. All other tools use generic labels (e.g., "estimating tool", "time tracking app", "accounting software") to keep posts broadly applicable.
 
