@@ -23,6 +23,9 @@ const PLATFORM_THEMES = {
     accent: '#E13FA3',
     accentShadow: 'rgba(225, 63, 163, 0.18)',
     accentTint: 'rgba(225, 63, 163, 0.06)',
+    accentTintDeep: 'rgba(110, 53, 179, 0.06)',  // Make's secondary purple
+    triggerGradientStart: '#18121e',
+    triggerGradientEnd: '#2a1338',                // Make deep purple
   },
   zapier: {
     name: 'Zapier',
@@ -30,6 +33,9 @@ const PLATFORM_THEMES = {
     accent: '#FF4A00',
     accentShadow: 'rgba(255, 74, 0, 0.18)',
     accentTint: 'rgba(255, 74, 0, 0.06)',
+    accentTintDeep: 'rgba(204, 60, 0, 0.05)',    // deeper orange
+    triggerGradientStart: '#1e1410',
+    triggerGradientEnd: '#331a0a',                // Zapier warm brown
   },
   n8n: {
     name: 'n8n',
@@ -37,6 +43,9 @@ const PLATFORM_THEMES = {
     accent: '#EA4B71',
     accentShadow: 'rgba(234, 75, 113, 0.18)',
     accentTint: 'rgba(234, 75, 113, 0.06)',
+    accentTintDeep: 'rgba(180, 40, 75, 0.05)',   // deeper n8n red
+    triggerGradientStart: '#1a1014',
+    triggerGradientEnd: '#2e1019',                // n8n dark maroon
   },
 };
 
@@ -129,7 +138,7 @@ function buildHtml(storyBeats, theme) {
     font-family: 'Inter', system-ui, sans-serif;
     background:
       radial-gradient(ellipse 80% 60% at 20% 10%, ${theme.accentTint}, transparent 60%),
-      radial-gradient(ellipse 60% 50% at 90% 90%, rgba(110, 53, 179, 0.05), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 90% 90%, ${theme.accentTintDeep}, transparent 60%),
       #faf6f1;
     color: #18121e;
     padding: 56px 78px 48px;
@@ -168,7 +177,7 @@ function buildHtml(storyBeats, theme) {
   .node .kind { font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(24, 18, 30, 0.45); margin-bottom: 2px; }
   .node .label { font-family: 'Fraunces', serif; font-weight: 600; font-size: 22px; line-height: 1.2; color: #18121e; letter-spacing: -0.01em; }
   .node .detail { font-size: 13px; color: rgba(24, 18, 30, 0.6); margin-top: 4px; line-height: 1.45; }
-  .node.trigger { background: linear-gradient(135deg, #18121e 0%, #2a1338 100%); border-color: #2a1338; color: #faf6f1; }
+  .node.trigger { background: linear-gradient(135deg, ${theme.triggerGradientStart} 0%, ${theme.triggerGradientEnd} 100%); border-color: ${theme.triggerGradientEnd}; color: #faf6f1; }
   .node.trigger .kind { color: rgba(250, 246, 241, 0.6); }
   .node.trigger .label { color: #faf6f1; }
   .node.trigger .detail { color: rgba(250, 246, 241, 0.7); }
