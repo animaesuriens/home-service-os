@@ -4,27 +4,44 @@
  */
 
 /**
- * Create deterministic process ID from fileName and flowNumber
+ * Map source YAML filenames to unique, readable system tokens.
+ * Must be unique across all source files — collisions here silently contaminate
+ * bundles downstream (see 15-04 root cause).
+ */
+const SYSTEM_TOKENS = {
+  'boolean-accounting-system-export.yml': 'acct',
+  'boolean-marketing-integration-export.yml': 'mktg',
+  'boolean-sales-integration-export.yml': 'sales',
+  'daily-production-data-export.yml': 'prod',
+  'gmail-and-ring-central-communicator-export.yml': 'comm',
+  'job-management-integration-export.yml': 'jobs',
+  'quick-books-time-tracking-system-export.yml': 'time',
+  'sales-and-marketing-reporting-export.yml': 'report',
+};
+
+/**
+ * Create deterministic process ID from fileName and flowNumber.
  *
- * @param {String} fileName - Source file name (e.g., "boolean-marketing-integration-export.yml")
+ * @param {String} fileName - Source file name (must be registered in SYSTEM_TOKENS)
  * @param {String|null} flowNumber - Flow number (e.g., "05" or "05.1" or null)
- * @returns {String} Process ID (e.g., "P-boo-05" or "P-boo-lead")
+ * @returns {String} Process ID (e.g., "P-mktg-10", "P-acct-05-1")
+ * @throws {Error} If fileName is not registered in SYSTEM_TOKENS (fail loud on unknown source)
  */
 function createProcessId(fileName, flowNumber) {
-  // Extract file abbreviation: first word before first dash, first 3 chars
-  const firstWord = fileName.split('-')[0] || fileName;
-  const fileAbbrev = firstWord.substring(0, 3).toLowerCase();
+  const token = SYSTEM_TOKENS[fileName];
+  if (!token) {
+    throw new Error(
+      `process-grouper: unknown source fileName "${fileName}". ` +
+      `Register a unique token in SYSTEM_TOKENS before processing this file. ` +
+      `Known files: ${Object.keys(SYSTEM_TOKENS).join(', ')}`
+    );
+  }
 
   if (flowNumber) {
-    // Format: P-{fileAbbrev}-{flowNumber}
-    // Replace dots with dashes for sub-flows (e.g., "05.1" becomes "05-1")
     const flowPart = flowNumber.replace('.', '-');
-    return `P-${fileAbbrev}-${flowPart}`;
-  } else {
-    // For flows without numbers, use first 4 chars of flow name (alphanumeric only)
-    // This will be handled by the caller passing a fallback identifier
-    return `P-${fileAbbrev}-xx`;
+    return `P-${token}-${flowPart}`;
   }
+  return `P-${token}-xx`;
 }
 
 /**

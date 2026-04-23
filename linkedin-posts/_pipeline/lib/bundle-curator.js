@@ -46,6 +46,27 @@ function loadBundleDefinitions() {
  * @returns {Array} Array of curated bundle objects
  */
 function curateBundles(processes) {
+  // Guard: refuse to run on a non-unique process set. Silent Map.set overwrites
+  // were the root cause of the 15-04 bundle contamination bug.
+  const seen = new Map();
+  const collisions = [];
+  processes.forEach(p => {
+    if (seen.has(p.id)) {
+      collisions.push({ id: p.id, first: seen.get(p.id), second: p.name });
+    } else {
+      seen.set(p.id, p.name);
+    }
+  });
+  if (collisions.length > 0) {
+    const detail = collisions
+      .map(c => `  ${c.id}: "${c.first}" vs "${c.second}"`)
+      .join('\n');
+    throw new Error(
+      `bundle-curator: duplicate process ids detected (${collisions.length}). ` +
+      `Fix process-grouper.createProcessId so every process has a unique id.\n${detail}`
+    );
+  }
+
   const processMap = new Map();
   processes.forEach(p => processMap.set(p.id, p));
 
@@ -53,9 +74,17 @@ function curateBundles(processes) {
   const BUNDLE_DEFINITIONS = loadBundleDefinitions();
 
   return BUNDLE_DEFINITIONS.map(def => {
-    // Gather constituent processes (filter to those that actually exist)
+    // Guard: every processId referenced by a bundle must resolve. Unresolved
+    // ids previously silently dropped, masking bad references in definitions.
+    const unresolved = def.processIds.filter(id => !processMap.has(id));
+    if (unresolved.length > 0) {
+      throw new Error(
+        `bundle-curator: bundle "${def.id}" references unknown processIds: ${unresolved.join(', ')}. ` +
+        `Update data/bundle-definitions.json.`
+      );
+    }
+
     const constituentProcesses = def.processIds
-      .filter(id => processMap.has(id))
       .map(id => processMap.get(id).name);
 
     // Collect inefficiencies from constituent processes

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-14T07:58:29.662Z",
+  "generatedAt": "2026-04-23T15:57:24.767Z",
   "totalProcesses": 76,
   "journeyStages": {
     "Lead Capture": 3,
@@ -28,7 +28,7 @@
   ],
   "processes": [
     {
-      "id": "P-boo-06",
+      "id": "P-mktg-06",
       "name": "Lead Follow Up flow",
       "journeyStage": "Lead Capture",
       "sourceFiles": [
@@ -78,7 +78,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-03",
+      "id": "P-mktg-03",
       "name": "Marketing Vendor / Channel Lead Data Mapping",
       "journeyStage": "Lead Capture",
       "sourceFiles": [
@@ -310,7 +310,7 @@
       ]
     },
     {
-      "id": "P-boo-05",
+      "id": "P-mktg-05",
       "name": "MQL HubSpot Webform Submission",
       "journeyStage": "Lead Capture",
       "sourceFiles": [
@@ -367,7 +367,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-04",
+      "id": "P-mktg-04",
       "name": "MQL to SQL Initiator Webhook",
       "journeyStage": "Lead Qualification",
       "sourceFiles": [
@@ -431,7 +431,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-10",
+      "id": "P-mktg-10",
       "name": "Appointment Reschedule",
       "journeyStage": "Appointment Booking",
       "sourceFiles": [
@@ -471,7 +471,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-12",
+      "id": "P-mktg-12",
       "name": "Contact Level Booking Link",
       "journeyStage": "Appointment Booking",
       "sourceFiles": [
@@ -536,7 +536,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-07",
+      "id": "P-mktg-07",
       "name": "New Appointment",
       "journeyStage": "Appointment Booking",
       "sourceFiles": [
@@ -693,7 +693,7 @@
       ]
     },
     {
-      "id": "P-boo-09",
+      "id": "P-acct-09",
       "name": "accounting software Bills - Subflow",
       "journeyStage": "Appointment Booking",
       "sourceFiles": [
@@ -1180,7 +1180,7 @@
       ]
     },
     {
-      "id": "P-boo-01",
+      "id": "P-sales-01",
       "name": "estimating tool > HubSpot | Process Quote - Estimate > Deal Sync",
       "journeyStage": "Estimating",
       "sourceFiles": [
@@ -1278,7 +1278,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-14",
+      "id": "P-sales-14",
       "name": "Cancelled Deal Sync",
       "journeyStage": "Sales/Proposal",
       "sourceFiles": [
@@ -1316,7 +1316,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-11",
+      "id": "P-sales-11",
       "name": "Change Order Label Processor",
       "journeyStage": "Sales/Proposal",
       "sourceFiles": [
@@ -1372,7 +1372,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-job-13",
+      "id": "P-jobs-13",
       "name": "Change Order Label Processor",
       "journeyStage": "Sales/Proposal",
       "sourceFiles": [
@@ -1428,7 +1428,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-03",
+      "id": "P-sales-03",
       "name": "Change Order Process",
       "journeyStage": "Sales/Proposal",
       "sourceFiles": [
@@ -1626,7 +1626,7 @@
       ]
     },
     {
-      "id": "P-boo-02",
+      "id": "P-sales-02",
       "name": "Create Any Missing estimating tool, HubSpot Deal & photo storage",
       "journeyStage": "Sales/Proposal",
       "sourceFiles": [
@@ -1664,7 +1664,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-10",
+      "id": "P-sales-10",
       "name": "Deal Naming System Trigger",
       "journeyStage": "Sales/Proposal",
       "sourceFiles": [
@@ -1729,7 +1729,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-13",
+      "id": "P-mktg-13",
       "name": "Get Latest Open Deal",
       "journeyStage": "Sales/Proposal",
       "sourceFiles": [
@@ -1767,7 +1767,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-job-04",
+      "id": "P-jobs-04",
       "name": "Process Change Order",
       "journeyStage": "Sales/Proposal",
       "sourceFiles": [
@@ -1845,7 +1845,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-job-03",
+      "id": "P-jobs-03",
       "name": "Process Deal",
       "journeyStage": "Sales/Proposal",
       "sourceFiles": [
@@ -1910,7 +1910,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-92",
+      "id": "P-sales-92",
       "name": "Register HS Deal Owner",
       "journeyStage": "Sales/Proposal",
       "sourceFiles": [
@@ -1969,7 +1969,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-90",
+      "id": "P-sales-90",
       "name": "Set/Update HS Deal Name & photo storage Project Name",
       "journeyStage": "Sales/Proposal",
       "sourceFiles": [
@@ -2009,7 +2009,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-job-05",
+      "id": "P-jobs-05",
       "name": "Contract Sent",
       "journeyStage": "Contract Management",
       "sourceFiles": [
@@ -2059,7 +2059,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-job-06",
+      "id": "P-jobs-06",
       "name": "Contract Signed",
       "journeyStage": "Contract Management",
       "sourceFiles": [
@@ -2118,7 +2118,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-10",
+      "id": "P-acct-10",
       "name": "Subcontractor Bill Payment",
       "journeyStage": "Contract Management",
       "sourceFiles": [
@@ -2175,7 +2175,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-job-07",
+      "id": "P-jobs-07",
       "name": "Create Addendums",
       "journeyStage": "Job Setup",
       "sourceFiles": [
@@ -2289,7 +2289,7 @@
       ]
     },
     {
-      "id": "P-dai-xx",
+      "id": "P-prod-xx",
       "name": "Process Timelog",
       "journeyStage": "Production Tracking",
       "sourceFiles": [
@@ -2327,7 +2327,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-dai-03",
+      "id": "P-prod-03",
       "name": "Sync QBT",
       "journeyStage": "Production Tracking",
       "sourceFiles": [
@@ -2379,7 +2379,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-dai-02",
+      "id": "P-prod-02",
       "name": "Update DPD",
       "journeyStage": "Production Tracking",
       "sourceFiles": [
@@ -2429,7 +2429,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-dai-01",
+      "id": "P-prod-01",
       "name": "Update DPD Schedule",
       "journeyStage": "Production Tracking",
       "sourceFiles": [
@@ -2480,7 +2480,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-qui-06",
+      "id": "P-time-06",
       "name": "Inactive Jobcode Sync",
       "journeyStage": "Time Tracking",
       "sourceFiles": [
@@ -2520,7 +2520,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-qui-05",
+      "id": "P-time-05",
       "name": "Initial Timelogs Sync",
       "journeyStage": "Time Tracking",
       "sourceFiles": [
@@ -2622,7 +2622,7 @@
       ]
     },
     {
-      "id": "P-qui-02",
+      "id": "P-time-02",
       "name": "Job Codes Sync",
       "journeyStage": "Time Tracking",
       "sourceFiles": [
@@ -2685,7 +2685,7 @@
       ]
     },
     {
-      "id": "P-qui-07",
+      "id": "P-time-07",
       "name": "Jobcodes Location Sync",
       "journeyStage": "Time Tracking",
       "sourceFiles": [
@@ -2748,7 +2748,7 @@
       ]
     },
     {
-      "id": "P-qui-08",
+      "id": "P-time-08",
       "name": "Sync Delete Timelogs",
       "journeyStage": "Time Tracking",
       "sourceFiles": [
@@ -2829,7 +2829,7 @@
       ]
     },
     {
-      "id": "P-qui-01",
+      "id": "P-time-01",
       "name": "Time Tracking System",
       "journeyStage": "Time Tracking",
       "sourceFiles": [
@@ -2924,7 +2924,7 @@
       ]
     },
     {
-      "id": "P-qui-04",
+      "id": "P-time-04",
       "name": "User Sync",
       "journeyStage": "Time Tracking",
       "sourceFiles": [
@@ -2980,7 +2980,7 @@
       ]
     },
     {
-      "id": "P-boo-21",
+      "id": "P-acct-21",
       "name": "[Manual Sync] Sync All Invoices and Transactions",
       "journeyStage": "Invoicing",
       "sourceFiles": [
@@ -3053,7 +3053,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-xx",
+      "id": "P-sales-xx",
       "name": "[Ongoing] 11 Invoice and Work Order URL",
       "journeyStage": "Invoicing",
       "sourceFiles": [
@@ -3159,7 +3159,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-05",
+      "id": "P-acct-05",
       "name": "Create Invoice in AT from Unbilled Line Items",
       "journeyStage": "Invoicing",
       "sourceFiles": [
@@ -3335,7 +3335,7 @@
       ]
     },
     {
-      "id": "P-boo-13",
+      "id": "P-acct-13",
       "name": "Import Invoices from accounting software",
       "journeyStage": "Invoicing",
       "sourceFiles": [
@@ -3424,7 +3424,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-06",
+      "id": "P-acct-06",
       "name": "Send or ReSend Invoice",
       "journeyStage": "Invoicing",
       "sourceFiles": [
@@ -3483,7 +3483,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-20",
+      "id": "P-acct-20",
       "name": "Sync Modified Invoices and Transactions",
       "journeyStage": "Invoicing",
       "sourceFiles": [
@@ -3680,7 +3680,7 @@
       ]
     },
     {
-      "id": "P-boo-22",
+      "id": "P-acct-22",
       "name": "Update Invoice in accounting software",
       "journeyStage": "Invoicing",
       "sourceFiles": [
@@ -3808,7 +3808,7 @@
       ]
     },
     {
-      "id": "P-boo-07",
+      "id": "P-acct-07",
       "name": "Void Invoice",
       "journeyStage": "Invoicing",
       "sourceFiles": [
@@ -3890,7 +3890,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-08",
+      "id": "P-acct-08",
       "name": "Initial Sync QB Bills",
       "journeyStage": "Expense Management",
       "sourceFiles": [
@@ -4069,7 +4069,7 @@
       ]
     },
     {
-      "id": "P-boo-30",
+      "id": "P-acct-30",
       "name": "Save Expense's Attachments in Airtable",
       "journeyStage": "Expense Management",
       "sourceFiles": [
@@ -4175,7 +4175,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-04",
+      "id": "P-acct-04",
       "name": "Sync accounting software Customer",
       "journeyStage": "Expense Management",
       "sourceFiles": [
@@ -4232,7 +4232,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-18",
+      "id": "P-acct-18",
       "name": "Sync Vendors accounting software -> AT",
       "journeyStage": "Expense Management",
       "sourceFiles": [
@@ -4283,7 +4283,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-02",
+      "id": "P-acct-02",
       "name": "Upsert accounting software Parent Customer Linked to Jobs",
       "journeyStage": "Expense Management",
       "sourceFiles": [
@@ -4356,7 +4356,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-03",
+      "id": "P-acct-03",
       "name": "Upsert accounting software Sub Customer Linked to Projects",
       "journeyStage": "Expense Management",
       "sourceFiles": [
@@ -4429,7 +4429,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-sal-01",
+      "id": "P-report-01",
       "name": "On deploy",
       "journeyStage": "Reporting",
       "sourceFiles": [
@@ -4510,7 +4510,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-sal-02",
+      "id": "P-report-02",
       "name": "Sync every 2 minutes",
       "journeyStage": "Reporting",
       "sourceFiles": [
@@ -4646,7 +4646,7 @@
       ]
     },
     {
-      "id": "P-boo-15",
+      "id": "P-mktg-15",
       "name": "- Message Transpiler",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -4710,7 +4710,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-08",
+      "id": "P-mktg-08",
       "name": "Appointment Cancelled",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -4767,7 +4767,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-14",
+      "id": "P-mktg-14",
       "name": "Auto Reply Business Hours",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -4805,7 +4805,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-job-09",
+      "id": "P-jobs-09",
       "name": "Company Sync",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -4847,7 +4847,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-job-08",
+      "id": "P-jobs-08",
       "name": "Contact Sync",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -4889,7 +4889,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-gma-02",
+      "id": "P-comm-02",
       "name": "Create Available Event Calendar",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -4932,7 +4932,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-12",
+      "id": "P-sales-12",
       "name": "Customer-Selected Project Type -> Project Type Conversion",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -4970,7 +4970,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-job-10",
+      "id": "P-jobs-10",
       "name": "Error Notification Sender",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5027,7 +5027,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-11",
+      "id": "P-mktg-11",
       "name": "Estimate Date Converter",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5065,7 +5065,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-15",
+      "id": "P-acct-15",
       "name": "Fetch customers from accounting software",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5123,7 +5123,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-16",
+      "id": "P-acct-16",
       "name": "Fetch Departments",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5175,7 +5175,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-19",
+      "id": "P-acct-19",
       "name": "Fetch Tax Codes",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5223,7 +5223,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-xx",
+      "id": "P-acct-xx",
       "name": "Get Other QB Objects",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5274,7 +5274,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-gma-01",
+      "id": "P-comm-01",
       "name": "your email Sender",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5340,7 +5340,7 @@
       ]
     },
     {
-      "id": "P-boo-14",
+      "id": "P-acct-14",
       "name": "Grab Items/Classes from QB",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5437,7 +5437,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-job-12",
+      "id": "P-jobs-12",
       "name": "Hubspot mapper to file field",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5501,7 +5501,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-91",
+      "id": "P-sales-91",
       "name": "Hubspot SMS Sent Logger",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5572,7 +5572,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-17",
+      "id": "P-acct-17",
       "name": "Manual Update accounting software Customer Status",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5622,7 +5622,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-15",
+      "id": "P-sales-15",
       "name": "estimating tool All Data Sync to HubSpot",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5801,7 +5801,7 @@
       ]
     },
     {
-      "id": "P-boo-09",
+      "id": "P-sales-09",
       "name": "estimating tool Default Identifier",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -5933,7 +5933,7 @@
       ]
     },
     {
-      "id": "P-boo-11",
+      "id": "P-acct-11",
       "name": "accounting software Transactions",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -6023,7 +6023,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-gma-03",
+      "id": "P-comm-03",
       "name": "RC Text Sender",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -6070,7 +6070,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-job-02",
+      "id": "P-jobs-02",
       "name": "Register HS Users",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -6152,7 +6152,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-boo-13",
+      "id": "P-sales-13",
       "name": "TNT Contact Flow",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
@@ -6192,7 +6192,7 @@
       "inefficiencies": []
     },
     {
-      "id": "P-gma-05",
+      "id": "P-comm-05",
       "name": "Update Estimate Calendar",
       "journeyStage": "Uncategorized",
       "sourceFiles": [
