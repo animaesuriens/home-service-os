@@ -13,6 +13,8 @@
     "generate-map": "node scripts/generate-map.js",
     "audit": "node scripts/audit-yaml.js",
     "derive-steps": "node scripts/derive-steps.js",
+    "ingest": "node scripts/ingest-yaml.js",
+    "ingest:dry": "node scripts/ingest-yaml.js --dry-run",
     "stage1:bundles": "node scripts/generate-bundles.js",
     "stage2:storybeats": "node scripts/generate-storybeats.js",
     "stage2:posts": "node scripts/generate-posts.js",
