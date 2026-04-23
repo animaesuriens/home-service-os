@@ -14,12 +14,14 @@
     "audit": "node scripts/audit-yaml.js",
     "derive-steps": "node scripts/derive-steps.js",
     "stage1:bundles": "node scripts/generate-bundles.js",
+    "stage2:storybeats": "node scripts/generate-storybeats.js",
     "stage2:posts": "node scripts/generate-posts.js",
-    "stage3:mmd": "node scripts/generate-mmd.js",
-    "stage3:render": "node scripts/render-diagrams.js",
-    "stage3:diagrams": "node scripts/generate-mmd.js && node scripts/render-diagrams.js",
-    "pipeline": "npm run stage1:bundles && npm run stage2:posts && npm run stage3:diagrams",
-    "pipeline:diagrams-only": "npm run stage3:diagrams"
+    "stage3:story-diagrams": "node scripts/render-story-diagrams.js",
+    "stage3:mmd-legacy": "node scripts/generate-mmd.js",
+    "stage3:render-legacy": "node scripts/render-diagrams.js",
+    "stage3:diagrams-legacy": "node scripts/generate-mmd.js && node scripts/render-diagrams.js",
+    "pipeline": "npm run stage1:bundles && npm run stage2:storybeats && npm run stage2:posts && npm run stage3:story-diagrams",
+    "pipeline:legacy-mermaid": "npm run stage1:bundles && npm run stage2:posts && npm run stage3:diagrams-legacy"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.88.0",
