@@ -1,50 +1,59 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Per-YAML Accuracy Pass
-status: executing
-last_updated: "2026-04-13T18:32:53.976Z"
-last_activity: 2026-04-14
+milestone: v2.0
+milestone_name: Pipeline Rebuild from Split Sources
+status: milestone-complete-candidate
+last_updated: "2026-04-24T00:00:00.000Z"
 progress:
-  total_phases: 10
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_phases: 2
+  completed_phases: 2
+  total_plans: 6
+  completed_plans: 5
+  superseded_plans: 1
   percent: 100
 ---
 
 # State: LinkedIn Automation Portfolio
 
-**Last updated:** 2026-04-14
-**Session:** Phase 04 complete - audit tooling shipped
+**Last updated:** 2026-04-24
+**Session:** 15-05 complete — storyBeats pipeline + HTML/CSS diagram renderer shipped. All 42 posts + 42 diagrams regenerated from clean data with voice consistency across platform variants.
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-13)
+See: .planning/PROJECT.md (updated 2026-04-14)
 
 **Core value:** Every post must be a standalone, compelling showcase of a real automation process that makes the reader think "I need something like this" or "this person really knows automation."
-**Current focus:** Phase 04 — pipeline-enhancement
+
+**Current focus:** Phase 15 complete — ready to assess milestone v2.0 completion or plan follow-up milestone.
 
 ## Current Position
 
-Phase: 04 (pipeline-enhancement) — COMPLETE
-Plan: 3 of 3
-**Milestone:** v1.1 Per-YAML Accuracy Pass
-**Phase:** 4 - Pipeline Enhancement
-**Plan:** 04-03 (completed)
-**Status:** Ready for Phase 05
-**Last activity:** 2026-04-14
+Phase: 15 (Full Content Rebuild & Verification) — COMPLETE
+  - 15-01 ✓ derive-steps.js
+  - 15-02 — superseded by 15-04 + 15-05 (see 15-02-SUMMARY.md)
+  - 15-03 — removed (never executed; verification intent satisfied by 15-04/15-05 guards + validators)
+  - 15-04 ✓ processId collision root-cause fix
+  - 15-05 ✓ storyBeats pipeline + HTML/CSS diagram renderer
+Plan: 1 of 3
+**Milestone:** v2.0 Pipeline Rebuild from Split Sources
+
+**Phase:** 15
+
+**Plan:** Not started
+
+**Status:** Executing Phase 15
 
 **Progress:**
 
-[██████████] 100%
-Phase 4/13 (Pipeline Enhancement) - 3 of 3 plans complete
+[███████░░░] 67%
+v2.0 Milestone: [░░░░░░░░░░░░░░░░░░░░] 0% (0/2 phases)
+Phase 14:       [░░░░░░░░░░░░░░░░░░░░] 0% (0/0 plans)
 
 ```
 
 ## Performance Metrics
 
-**v1.0 Milestone:**
+**v1.0 Milestone (shipped):**
 
 - Timeline: 2026-04-12 to 2026-04-13 (2 days)
 - Phases: 3
@@ -54,78 +63,97 @@ Phase 4/13 (Pipeline Enhancement) - 3 of 3 plans complete
 - Lines added: 25,558
 - Git range: 93ffe5c → 30044aa
 
-**v1.1 Milestone:**
+**v1.1 Milestone (abandoned):**
 
 - Started: 2026-04-13
-- Phases: 10 (4-13)
-- Plans: 3
-- Tasks: 6
-- Duration: 14 minutes
+- Phases attempted: 2 of 10 (4-5)
+- Plans completed: 4 of 5
+- Reason abandoned: Per-YAML accuracy pass was circular — AI-generated "verified" steps were as unreliable as the hallucinated steps they replaced
+
+**v2.0 Milestone (current):**
+
+- Phases: 2 (14-15)
+- Requirements: 10 (100% coverage)
+- Status: Roadmap created, ready to plan Phase 14
 
 ## Accumulated Context
 
 ### Key Decisions Made
 
-| Decision | When | Rationale |
-|----------|------|-----------|
-| 3-phase coarse roadmap | 2026-04-12 | YOLO mode + content generation = skip MVP/iteration cycles |
-| Combined content + diagram in Phase 2 | 2026-04-12 | Same process creates both artifacts |
-| Pivot to Mermaid from HTML templates | 2026-04-13 | Simpler DSL, easier to maintain |
-| 12 bundles (not 10) | 2026-04-12 | Communication Hub needed as cross-cutting catch-all |
-| Per-YAML deep read for v1.1 | 2026-04-13 | v1.0 bulk context caused hallucination in idealized steps |
-| New bundles for missed processes | 2026-04-13 | Deep reads surface showcase-worthy flows v1.0 missed |
-| One phase per YAML (8 phases) | 2026-04-13 | CONT-03 requires manual verification checkpoint per YAML |
-| Setup + per-YAML + finalize structure | 2026-04-13 | Phase 4 tools, Phases 5-12 YAML processing, Phase 13 portfolio update |
-| Phase 04 P01 | 5 | 2 tasks | 4 files | Add --yaml filter to pipeline scripts |
-| Phase 04 P02 | 5 | 2 tasks | 3 files | Externalize bundle definitions to JSON with type field |
-| Bundle definitions JSON | 2026-04-14 | Enables per-YAML editing without code changes |
-| Phase 04 P03 | 4 | 2 tasks | 5 files | Audit tooling with hallucination detection |
-| Substring matching for evidence | 2026-04-14 | Flexible hallucination detection via action word extraction |
-| Showcase potential scoring | 2026-04-14 | stepCount >= 5 AND componentKeys >= 2 = high potential |
-| JSON + Markdown audit output | 2026-04-14 | JSON for pipeline, Markdown for human CONT-03 verification |
+| Decision | When | Rationale | Impact |
+|----------|------|-----------|--------|
+| 3-phase coarse roadmap | 2026-04-12 | YOLO mode + content generation = skip MVP/iteration cycles | v1.0 shipped in 2 days |
+| Combined content + diagram in Phase 2 | 2026-04-12 | Same process creates both artifacts | Cleaner phase structure |
+| Pivot to Mermaid from HTML templates | 2026-04-13 | Simpler DSL, easier to maintain | Better diagram maintenance |
+| 12 bundles (not 10) | 2026-04-12 | Communication Hub needed as cross-cutting catch-all | Complete journey coverage |
+| Bundle definitions JSON | 2026-04-14 | Enables per-YAML editing without code changes | Phase 4 deliverable |
+| Abandon v1.1 per-YAML approach | 2026-04-14 | "Fix hallucinations with more AI" is circular | Pivot to v2.0 |
+| Split YAMLs into per-flow files | 2026-04-14 | Small files (~50-1000 lines) are mechanically verifiable | v2.0 foundation |
+| Strip all AI-generated step data | 2026-04-14 | Both idealizedSteps and verifiedSteps are unreliable | Forces derivation from actual data |
+| Externalize diagram config | 2026-04-14 | DECISION_CONFIG hardcoded in generate-mmd.js caused hallucination propagation | Makes config data-driven |
+| Phase 15 P01 | 7 | 2 tasks | 4 files |
 
-### YAML Deep Read Progress
+### Context Breadcrumbs
 
-| # | YAML File | Phase | Status | Bundles Affected |
-|---|-----------|-------|--------|------------------|
-| 1 | boolean-marketing-integration-export.yml | 5 | Ready | Automated audit complete (6% accuracy, 13 hallucinations) |
-| 2 | boolean-sales-integration-export.yml | 6 | Pending | TBD |
-| 3 | boolean-accounting-system-export.yml | 7 | Pending | TBD |
-| 4 | job-management-integration-export.yml | 8 | Pending | TBD |
-| 5 | daily-production-data-export.yml | 9 | Pending | TBD |
-| 6 | quick-books-time-tracking-system-export.yml | 10 | Pending | TBD |
-| 7 | gmail-and-ring-central-communicator-export.yml | 11 | Pending | TBD |
-| 8 | sales-and-marketing-reporting-export.yml | 12 | Pending | TBD |
+**v1.0 shipped** (2026-04-13):
 
-### Hallucination Audit (YAML 1)
+- 36 posts + 36 diagrams from 8 monolithic YAMLs
+- 12 bundles covering full customer journey
+- Known issue: hallucinated "lead scoring" in lead-capture bundle
 
-**boolean-marketing-integration-export.yml** -- 18 flows, 12 processes
+**v1.1 abandoned** (2026-04-14):
 
-**Automated audit results (yaml-2-audit.md):**
-- Invoice Lifecycle: 13% accuracy (6 hallucinated steps)
-- Expense Management Pipeline: 0% accuracy (7 hallucinated steps)
+- Phase 4 complete: Pipeline enhancement with audit tooling
+- Phase 5 partial: Deep-read YAML 1, extracted 45 verified steps, updated 4 bundles
+- Problem: AI that hallucinated "lead scoring" also generated "verified" steps
+- Lesson: Can't fix AI hallucinations with more AI
 
-**Note:** Different bundles flagged than manual audit because automated audit filtered to boolean-marketing only. Invoice/Expense bundles pull flows from other YAMLs (as designed in v1.0), so low accuracy is expected. Confirms need for per-YAML deep read in Phases 5-12.
+**v2.0 started** (2026-04-14):
 
-**High showcase potential missed processes:**
-- "03.3 Update/Create HubSpot Contact" (8 steps, 4 apps)
-- "15 - Message Transpiler" (5 steps, 4 apps)
+- New approach: Split YAMLs into ~117 small files (50-1000 lines each)
+- Strip all AI-generated data, derive everything from actual process data
+- Makes source small enough to mechanically verify
+- 2 phases: Split & Rebuild (14), Content Rebuild & Verification (15)
+- 10 requirements with 100% coverage
 
 ### Known Blockers
 
-**None**
+None at this time.
 
-### Pending Todos
+### Active TODOs
 
-- [x] Plan Phase 4: Pipeline Enhancement
-- [x] Execute Phase 4 to create per-YAML processing tooling
-- [ ] Begin Phase 5: YAML 1 accuracy pass (automated audit complete)
+- [ ] Plan Phase 14 (YAML Split & Pipeline Rebuild)
+- [ ] Execute Phase 14 plans
+- [ ] Verify split output matches monolithic parse
+- [ ] Plan Phase 15 (Full Content Rebuild & Verification)
+- [ ] Execute Phase 15 plans
+- [ ] Verify rebuilt output against split sources
+
+### Open Questions
+
+None at this time.
 
 ## Session Continuity
 
-**What just happened**: Completed Phase 04 (Pipeline Enhancement) with 04-03-PLAN.md (Audit Tooling). Created audit-engine.js with flow mapping, hallucination detection via evidence matching, and missed process identification with showcase potential scoring. Created audit-yaml.js CLI that produces JSON + Markdown reports. Tested against boolean-marketing YAML: 6% accuracy (13 hallucinated steps in 2 bundles), 2 high showcase potential missed processes. All v1.1 pipeline tooling complete.
+**What just happened:**
 
-**What's next**: Begin Phase 05 (YAML 1 Deep Read) to correct hallucinations in boolean-marketing bundles and create new bundles for high-potential missed processes
+- v2.0 milestone started after abandoning v1.1 approach
+- Roadmap created with 2 phases (14-15) covering 10 requirements
+- 100% requirement coverage validated
+- Files written: ROADMAP.md, STATE.md, REQUIREMENTS.md (traceability updated)
+
+**What's next:**
+
+- Run `/gsd-plan-phase 14` to create execution plan for YAML split and pipeline rebuild
+- Execute Phase 14 plans to split YAMLs and update pipeline
+- Verify split output before proceeding to Phase 15
+
+**If lost:**
+
+- Check ROADMAP.md for phase structure and success criteria
+- Review PROJECT.md for core value and v1.0/v1.1 context
+- See REQUIREMENTS.md for v2.0 requirement definitions
+- MILESTONES.md tracks completed milestones and archives
 
 ---
-*This file is the memory of the project. Update at phase boundaries and when context shifts.*
+*State updated: 2026-04-14 after v2.0 roadmap creation*
