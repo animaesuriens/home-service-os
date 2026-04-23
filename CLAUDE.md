@@ -12,136 +12,70 @@ A content generation project that transforms real Prismatic integration YAML exp
 - **Tool genericization**: Only Make/Zapier/n8n/HubSpot/Airtable named explicitly — everything else gets generic labels
 - **Self-contained posts**: Zero cross-references between posts
 - **Platform versions**: Same narrative structure, swap the automation tool — not unique angles per platform
-- **Diagram generation**: Must use an automated tool (Playwright + HTML/Mermaid rendering) for flowchart images
+- **Diagram generation**: Bespoke HTML/CSS rendered via Playwright to 1080×1350 PNG. Platform-themed (Make cream/pink, Zapier cream/orange, n8n dark/mint-green).
 - **Sub-project isolation**: All artifacts live in `linkedin-posts/` folder
 <!-- GSD:project-end -->
 
 <!-- GSD:stack-start source:research/STACK.md -->
 ## Technology Stack
 
-## Recommended Stack
-### Core Framework
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| Node.js | 20.x LTS | Runtime environment | Long-term support, stable for CLI tools, widespread ecosystem for diagram/template tooling |
-### Diagram Generation (PRIMARY DECISION)
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| @mermaid-js/mermaid-cli | ^11.12.0 | Flowchart PNG generation | **RECOMMENDED**: Native color theming via config files, battle-tested CLI, no external binary dependencies, 300+ plugins, fast iteration. Uses headless browser (Puppeteer) for rendering which ensures pixel-perfect output. |
-- Create 3 config files (make.config.json, zapier.config.json, n8n.config.json)
-- Use `theme: "base"` with `themeVariables` for custom colors
-- Set `primaryColor` (purple for Make, orange for Zapier, green for n8n)
-- Mermaid auto-adjusts `primaryBorderColor` and related colors
-- CLI command: `mmdc --configFile make.config.json -i flow.mmd -o flow.png`
-- PNG format: lossless, perfect for text-heavy diagrams
-- Use `-s 2` or `-s 3` scale flag for retina-quality output
-- Quality option NOT available for PNG (only JPEG/WebP)
-### YAML Parsing
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| yaml | ^2.8.3 | Parse Prismatic YAML exports | **RECOMMENDED**: Modern, standards-compliant YAML 1.2 parser. Better TypeScript support than js-yaml, preserves comments/formatting (useful for debugging), zero external dependencies. 16M+ weekly downloads, preferred for greenfield projects. |
-- js-yaml is legacy choice (100M+ downloads but older architecture)
-- yaml has better error messages, cleaner TypeScript types
-- Both are battle-tested; yaml is modernized successor
-### Markdown Templating
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| handlebars | ^4.7.9 | LinkedIn post template engine | **RECOMMENDED**: Logic-less templates perfect for non-developers maintaining templates, precompilation support (5-7x faster than Mustache), helper functions for date formatting/conditionals, widely adopted for email/CMS templating. 16K+ projects depend on it. |
-| gray-matter | ^4.0.3 | YAML front matter extraction | **RECOMMENDED**: Industry standard for front matter parsing (used by Gatsby, Astro, Eleventy, TinaCMS). Handles YAML/JSON/TOML front matter, simple API, battle-tested. |
-- EJS: 25M weekly downloads but mixes logic with markup (harder for template maintenance)
-- Mustache: Simple but too limited (no helpers, slower than compiled Handlebars)
-- Handlebars: Balance of power and safety, precompilation = production performance
-### File System Operations
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| fs-extra | ^11.x | Enhanced file operations | Drop-in replacement for native fs with promise support, recursive copy/remove/mkdir, better error messages, graceful-fs integration prevents EMFILE errors. Standard choice for CLI tools. |
-### Supporting Libraries
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| playwright | ^1.59.1 | Optional: Alternative to mermaid-cli for custom rendering | ONLY if mermaid-cli theming proves insufficient. Can render custom HTML/CSS diagrams to PNG with deviceScaleFactor for retina quality. Higher complexity but unlimited styling freedom. |
-| markdown-it | ^14.x | Optional: Markdown validation/preview | ONLY if we need to validate generated markdown before writing. Pluggable, CommonMark compliant. Likely unnecessary for simple templating. |
-## Alternatives Considered
-### Diagram Generation
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| Flowcharts | @mermaid-js/mermaid-cli | D2 (@terrastruct/d2) | D2 requires Go binary installation (not pure Node.js), WASM wrapper exists but adds complexity. Mermaid has better flowchart syntax for simple automation flows. D2 better for architecture diagrams. |
-| Flowcharts | @mermaid-js/mermaid-cli | Graphviz | DOT syntax is arcane compared to Mermaid, better for algorithmic graphs than human-readable automation flows. Requires external binary. |
-| Flowcharts | @mermaid-js/mermaid-cli | Excalidraw (@swiftlysingh/excalidraw-cli) | Hand-drawn aesthetic inappropriate for professional portfolio. CLI is nascent (Node >=20.19.0 requirement). Mermaid cleaner for automation diagrams. |
-| Flowcharts | @mermaid-js/mermaid-cli | Playwright custom rendering | Overkill for this use case. Only needed if Mermaid theming proves insufficient. Adds browser automation complexity. |
-- Mermaid: Best syntax for automation flowcharts, native color theming, pure Node.js (no binaries)
-- D2: Overkill for flowcharts, requires Go binary or WASM complexity
-- Graphviz: Too low-level, DOT syntax harder to maintain
-- Excalidraw: Wrong visual style, immature CLI tooling
-- Playwright: Last resort fallback if mermaid-cli theming fails
-### YAML Parsing
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| YAML | yaml | js-yaml | js-yaml is legacy standard (100M+ downloads) but yaml is modernized successor with better TypeScript support, better error messages, comment preservation. For greenfield project, yaml is preferred. |
-### Templating
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| Templates | handlebars | EJS | EJS mixes JavaScript logic with HTML (25M downloads, popular with Express). Harder for non-developers to edit templates. Handlebars precompilation is 5-7x faster. |
-| Templates | handlebars | Mustache | Mustache too limited (no helpers, no precompilation performance). Handlebars is Mustache-compatible superset. |
-| Templates | handlebars | Nunjucks | Nunjucks powerful but overkill for simple post templates. Handlebars simpler, more focused on content templating. |
-## LinkedIn Post Optimization
-- Manual hashtag strategy: 3-5 hashtags per post
-- Use broad industry tags (#Automation, #WorkflowAutomation, #BusinessAutomation)
-- 2026 LinkedIn algorithm (360Brew AI) treats hashtags as SEO signals, not feed discovery
-- Hashtag placement: Mix of broad (industry) + specific (tool names)
-- LinkedIn API doesn't provide hashtag suggestion endpoints for programmatic use
-- Hashtag optimization is content-dependent (better done manually/per-template)
-- No battle-tested npm packages for LinkedIn hashtag generation found in ecosystem
-## Installation
-# Core dependencies
-# Diagram generation
-# OR as dev dependency
-# Optional: only if mermaid-cli proves insufficient
-## Project Structure Recommendation
-## Configuration Examples
-### Mermaid Theme Config (make.config.json)
-### Handlebars Post Template (post.hbs)
-# {{title}}
-## The Workflow
-## Why This Matters
-## Tech Stack
-- {{platform_name}}
-- {{#each integrations}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
-## Validation Checklist
-- [ ] Mermaid color theming produces acceptable purple/orange/green outputs (create test diagrams)
-- [ ] Mermaid flowchart syntax can represent all Prismatic action types (HTTP, transformation, branching)
-- [ ] Handlebars helpers cover all template needs (date formatting, pluralization, conditionals)
-- [ ] YAML parser handles Prismatic export format (test with actual YAML files)
-- [ ] PNG export quality acceptable for LinkedIn (test with `-s 2` scale flag)
-## Sources
-- [Mermaid CLI npm package](https://www.npmjs.com/package/@mermaid-js/mermaid-cli)
-- [Mermaid Theme Configuration](https://mermaid.ai/open-source/config/theming.html)
-- [Mermaid vs D2 Comparison](https://aaronjbecker.com/posts/mermaid-vs-d2-comparing-text-to-diagram-tools/)
-- [Text to Diagram Tools Comparison 2025](https://text-to-diagram.com/?example=text)
-- [D2 Language Documentation](https://d2lang.com/)
-- [@terrastruct/d2 npm package](https://www.npmjs.com/package/@terrastruct/d2)
-- [Graphviz Color Documentation](https://graphviz.org/doc/info/colors.html)
-- [Excalidraw CLI GitHub](https://github.com/swiftlysingh/excalidraw-cli)
-- [yaml npm package](https://www.npmjs.com/package/yaml)
-- [js-yaml npm package](https://www.npmjs.com/package/js-yaml)
-- [npm-compare: js-yaml vs yaml](https://npm-compare.com/js-yaml,yaml,yamljs)
-- [yaml version 2.8.3 release](https://ithile.com/micro-tools/npm-version-checker/yaml/)
-- [handlebars npm package](https://www.npmjs.com/package/handlebars)
-- [gray-matter npm package](https://www.npmjs.com/package/gray-matter)
-- [Handlebars vs EJS vs Mustache Comparison](https://npm-compare.com/ejs,handlebars,mustache,pug)
-- [JavaScript Templating Engines 2026](https://colorlib.com/wp/top-templating-engines-for-javascript/)
-- [gray-matter GitHub](https://github.com/jonschlinkert/gray-matter)
-- [fs-extra npm package](https://www.npmjs.com/package/fs-extra)
-- [fs-extra vs native fs comparison](https://npm-compare.com/fs,fs-extra,fs-extra-promise)
-- [Playwright npm package](https://www.npmjs.com/package/playwright)
-- [Playwright Screenshots Documentation](https://playwright.dev/docs/screenshots)
-- [Playwright Screenshot Quality Guide](https://www.zenrows.com/blog/playwright-screenshot)
-- [LinkedIn Hashtags 2026 Guide](https://connectsafely.ai/articles/linkedin-hashtags)
-- [LinkedIn Post Optimization 2026](https://blog.linkboost.co/linkedin-post-optimization-guide-2026/)
-- [Do LinkedIn Hashtags Work in 2026](https://contentin.io/blog/do-hashtags-work-on-linkedin/)
-- [Best LinkedIn Hashtags 2026](https://blog.linkboost.co/best-linkedin-hashtags-engagement-2026/)
-- [Mermaid CLI with Playwright](https://github.com/remcohaszing/remark-mermaidjs)
-- [Mermaid PNG Export Guide 2026](https://conceptviz.app/blog/how-to-convert-mermaid-diagram-to-image-guide)
-- [Mermaid Custom Theme Colors](https://github.com/Gordonby/MermaidTheming)
+### Runtime & Core
+
+| Technology | Version | Purpose |
+|---|---|---|
+| Node.js | 20.x LTS | Runtime (CommonJS) |
+| yaml | ^2.8.3 | Parse Prismatic YAML flow exports |
+| fs-extra | ^11.x | File ops with promises + recursive helpers |
+
+### Content Generation (AI)
+
+| Technology | Version | Purpose |
+|---|---|---|
+| @anthropic-ai/sdk | ^0.88 | Claude API client; `tool_use` for structured JSON output |
+| dotenv | ^17.x | Load `ANTHROPIC_API_KEY` from `linkedin-posts/_pipeline/.env` |
+
+Two Claude-powered stages:
+- `lib/storybeat-generator.js` — one call per bundle → `data/storybeats.json` (14 entries)
+- `lib/post-generator.js` — one call per bundle returns all 3 platform posts (`generateBundlePosts`) via tool_use schema; voice stays consistent across Make/Zapier/n8n by construction. Per-platform `generatePost` is used for targeted single-post regens.
+
+Both generators share a hardened anti-hallucination prompt with explicit FORBIDDEN INVENTIONS list + retry-and-steer loops that reject outputs containing forbidden terms and re-prompt with targeted corrections.
+
+### Diagram Rendering
+
+| Technology | Version | Purpose |
+|---|---|---|
+| playwright | ^1.59 | Headless Chromium for HTML → PNG screenshot |
+
+`lib/diagram-renderer.js` generates HTML/CSS inline (Fraunces serif display + Inter body via Google Fonts), compiles it with platform-specific theme tokens, and screenshots to 1080×1350 @2× DPR. `PLATFORM_THEMES` carries full per-platform palettes:
+- **make** — cream mode, pink accent (#E13FA3), dark-purple trigger gradient
+- **zapier** — cream mode, orange accent (#FF4A00), warm-brown trigger gradient
+- **n8n** — dark mode, mint-green accent (#14E098), subtle dot grid, dark-green trigger gradient
+
+Mermaid was evaluated early and rejected for aesthetic reasons — the default Mermaid render is the visual signature of AI-generated LinkedIn flowcharts and doesn't sell. The bespoke HTML/CSS path is the only renderer in the production pipeline.
+
+### Data Pipeline
+
+The process-grouper (`lib/process-grouper.js`) assigns unique IDs via an explicit `SYSTEM_TOKENS` map (`acct`, `mktg`, `sales`, `prod`, `comm`, `jobs`, `time`, `report`) — throws on unknown source YAMLs. `bundle-curator.js` throws on duplicate process IDs or unresolved bundle references. These guards are load-bearing; they prevent the silent ID-collision bug that poisoned every downstream artifact in the pre-15-04 state.
+
+### Pipeline Orchestration
+
+```
+npm run pipeline
+  = stage1:bundles          # data/bundles.json  (clean, data-layer guards)
+  → stage2:storybeats       # 14 Claude calls → data/storybeats.json
+  → stage2:posts            # 14 Claude calls → posts/<slug>/*.md (42 files)
+  → stage3:diagrams         # 42 Playwright renders → posts/<slug>/*.png (42 files)
+```
+
+Single call per bundle for posts (returns all 3 platform variants together) means 28 total Claude calls per full pipeline run, not 56.
+
+### LinkedIn Post Constraints
+
+- Max 2,800 chars per post (3,000 LinkedIn limit, leave buffer)
+- First line under 215 chars (mobile preview cutoff)
+- No markdown syntax — LinkedIn doesn't render it, asterisks display literal
+- BAB framework implicit (never write `BEFORE:` / `AFTER:` / `BRIDGE:` labels)
+- 3 hashtags: `#Automation`, one journey-stage tag, `#Make` | `#Zapier` | `#n8n`
 <!-- GSD:stack-end -->
 
 <!-- GSD:conventions-start source:CONVENTIONS.md -->
