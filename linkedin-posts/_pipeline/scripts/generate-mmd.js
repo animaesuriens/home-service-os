@@ -59,7 +59,11 @@ function buildBranchingDiagram(bundle, platform) {
 
   const isMake = platform === 'make';
   const lines = ['---', `title: ${title} — ${isMake ? 'Make' : 'n8n'}`, '---', 'flowchart TD'];
-  const ids = 'ABCDEFGHIJKLMNOP'.split('');
+  // Support up to 676 nodes (A-Z, then AA-ZZ). Post-15-04 clean data has
+  // bundles up to 47 steps, well past the old 16-letter alphabet.
+  const ids = [];
+  for (let i = 0; i < 26; i++) ids.push(String.fromCharCode(65 + i));
+  for (let i = 0; i < 26; i++) for (let j = 0; j < 26; j++) ids.push(String.fromCharCode(65 + i) + String.fromCharCode(65 + j));
 
   // Trigger node
   if (isMake) {

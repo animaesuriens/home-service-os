@@ -3,19 +3,19 @@ title: Communication Hub — Zapier
 ---
 flowchart TD
     T["Receive Booking\nEvent"]:::trigger
-    A1["Find Customer Ref"]
-    A2["Expense Payload"]
-    A3["Upsert Expense\nRecord"]
-    A4["Crossflow Payload"]
-    A5["Save Attachments"]
-    A6["Stop Execution\n(Success)"]
-    A7["Calculated Date"]
-    A8["Format Date/Time"]
-    A9["Start Index"]
-    A10["Loop N Times"]
+    A1["Get Accepted Quotes"]
+    A2["Loop Over Items"]
+    A3["Stop Execution 2"]
+    A4["Estimate Date To\nSync"]
+    A5["Time 2 Minutes Ago"]
+    A6["Time 2 Minutes Ago\nto Epoch"]
+    A7["Code Block"]
+    A8["List Quotes"]
+    A9["Loop Over Quotes"]
+    A10["Get latest open deal"]
     A11["Branch on Expression"]
-    A12["Customer Ref exists?"]
-    A13["Is an Item?"]
+    A12["Get Contact"]
+    A13["Does contact exist"]
 
     T --> A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7 --> A8 --> A9 --> A10 --> A11 --> A12 --> A13
 

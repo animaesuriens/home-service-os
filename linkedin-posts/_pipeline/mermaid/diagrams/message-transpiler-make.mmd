@@ -6,25 +6,12 @@ flowchart TD
     B["Get latest open deal"]
     C["Get YCBM Link"]
     D{"Message\nType?"}
-    E["Build Query"]
-    F["Start Index"]
-    G["Loop N Times"]
-    H["Get All Owners"]
-    I["Get Project Types"]
-    J["Get All Companies"]
-    K["Get All PS Quotes"]
-    L["Get All PS Contacts"]
-    M["HS Payload Contact"]
-    N["Bulk upsert contact"]
-    O["Get All HS Contacts"]
-    P["Get all HS Deals"]
-    undefined["PS Quote x HS Deal\nSync"]
-    undefined["Stop Execution"]
-    undefined["Photo Management\nSync X HubSpot Deal"]
-    undefined["CRM: List Deals"]
-    undefined["CRM: List Contacts"]
-    undefined["Bulk Contact\nAssociation"]
-    undefined["Branch on Expression"]
+    E["Branch on Expression"]
+    F["Process Data (Step\n5)"]
+    G["Process Data (Step\n6)"]
+    H["Process Data (Step\n7)"]
+    I["Process Data (Step\n8)"]
+    J["Process Data (Step\n9)"]
 
     A --> B
     B --> C
@@ -36,18 +23,5 @@ flowchart TD
     G --> H
     H --> I
     I --> J
-    J --> K
-    K --> L
-    L --> M
-    M --> N
-    N --> O
-    O --> P
-    P --> undefined
-    undefined --> undefined
-    undefined --> undefined
-    undefined --> undefined
-    undefined --> undefined
-    undefined --> undefined
-    undefined --> undefined
 
     classDef trigger fill:#9b3dae,stroke:#fff,stroke-width:3px,color:#fff

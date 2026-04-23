@@ -18,14 +18,14 @@ flowchart TD
     N["Select Executed Step\nResult"]
     O["Merged Payload"]
     P["CRM: Get Contact\nProperties"]
-    undefined["List Contact\nProperties"]
-    undefined["Loop Over Deals"]
-    undefined["Deal Error Handler"]
-    undefined["Project Type Branch"]
-    undefined["Marketing Source\nBranch"]
-    undefined["Contact Branch"]
-    undefined["HS Contact Final\nOutput"]
-    undefined["Check properties\nexist"]
+    Q["List Contact\nProperties"]
+    R["Loop Over Deals"]
+    S["Deal Error Handler"]
+    T["Project Type Branch"]
+    U["Marketing Source\nBranch"]
+    V["Contact Branch"]
+    W["HS Contact Final\nOutput"]
+    X["Check properties\nexist"]
 
     A --> B
     B --> C
@@ -43,13 +43,13 @@ flowchart TD
     M --> N
     N --> O
     O --> P
-    P --> undefined
-    undefined --> undefined
-    undefined --> undefined
-    undefined --> undefined
-    undefined --> undefined
-    undefined --> undefined
-    undefined --> undefined
-    undefined --> undefined
+    P --> Q
+    Q --> R
+    R --> S
+    S --> T
+    T --> U
+    U --> V
+    V --> W
+    W --> X
 
     classDef trigger fill:#9b3dae,stroke:#fff,stroke-width:3px,color:#fff
