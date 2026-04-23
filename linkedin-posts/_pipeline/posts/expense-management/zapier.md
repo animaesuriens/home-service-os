@@ -1,27 +1,23 @@
-Your accountant asks "how much did we spend on the Henderson job?" and you're suddenly playing detective across three different systems.
+Your crew just bought materials for the Johnson project, but good luck figuring out which expense belongs to which job when you're staring at a pile of receipts in three different systems.
 
-BEFORE: Receipts buried in email. Bills scattered in your accounting software. Project costs hiding in spreadsheets. Nobody can answer basic job costing questions without an hour-long treasure hunt through disconnected systems.
+You've got bills flowing into your accounting software, project costs scattered across spreadsheets, and receipt photos buried in email threads. When a client asks about their job costs, you're playing detective for an hour just to piece together the numbers.
 
-AFTER: Every expense automatically finds its project home. Bills flow in, customer references get matched, receipt attachments download and link themselves. Always-current job costing without the detective work.
+Here's what happens instead: Every expense automatically finds its home. Bills arrive, jobs get matched, and costs track themselves without you lifting a finger.
 
-Here's how Zapier handles this expense matching magic:
+Here's how Zapier makes this work behind the scenes. When a new bill hits your accounting software, the system immediately grabs all the expense data — whether it's materials for the Henderson kitchen or fuel for the crew truck.
 
-New bills arrive from your accounting software — could be materials for that kitchen remodel or fuel for the crew truck. Zapier immediately starts hunting for the customer connection.
+Next, it searches your customer records to find the matching client account. The automation cross-references vendor information and customer data to link that expense to the right job in Airtable.
 
-The system searches your job records, cross-referencing customer data to link each vendor bill to the right client account. No more guessing which Henderson this receipt belongs to.
+Then it downloads any attached receipts or invoices from the expense record. Photos, PDFs, whatever documentation came with the bill gets pulled in automatically.
 
-Any attached receipts or invoices get downloaded automatically. Photos, PDFs, whatever documentation came with the expense — Zapier grabs it all and stores it properly.
+The system then makes a smart decision: does this expense belong to the main job or a specific project phase? It checks your job structure and routes accordingly.
 
-Then comes the smart routing. Zapier checks whether this expense belongs to a main job or a specific project phase within that job. Different paths handle each scenario.
+If it's a main job expense, it links directly to the primary job record with full customer context. If it's tied to a specific phase, it connects to that project while maintaining the parent job relationship.
 
-For main job expenses, everything links directly to the job record in Airtable with full customer context. For project-specific costs, Zapier connects to the exact project phase while maintaining the parent job relationship.
+Finally, everything gets saved to Airtable with all the connections locked in. The expense data, attachment links, customer details, and project associations are all there waiting for you.
 
-Finally, Zapier updates your Airtable records with the expense data and attachment links. Customer connections, job assignments, project relationships — all locked in automatically.
+Your job costing stays current without the treasure hunt. Every receipt knows exactly which project it belongs to, and you can answer "how much did we spend on that job?" in seconds instead of hours.
 
-The result? Your job costing stays current without the treasure hunt. Every receipt knows exactly which project it belongs to. When someone asks about Henderson job costs, you've got answers in seconds, not hours.
-
-Zapier's step-by-step Zap structure makes this expense routing straightforward — each action builds logically on the last to get expenses where they belong.
-
-What's your biggest headache with expense tracking right now? And if you're tired of playing expense detective, let's chat about automating your job costing.
+What's your biggest headache with tracking job costs right now? And if you're tired of playing expense detective, let's chat about getting this automated for your business.
 
 #Automation #ExpenseManagement #Zapier

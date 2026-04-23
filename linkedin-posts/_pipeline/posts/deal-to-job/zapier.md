@@ -1,29 +1,23 @@
-Your CRM shows a deal won. Your ops team scrambles to manually create job records, copy-pasting customer data between systems while change orders slip through the cracks.
+Your CRM shows a deal closed at 4:47 PM. By 4:48 PM, three separate job records exist in your system — one for the main project, two for the change orders that came in last week.
 
-BEFORE: Deal closes in HubSpot. Someone prints the contract details. Another person opens your job management system. They manually type customer info, project scope, contract terms. Then they hunt through linked records to find every change order and addendum. Each one needs its own job record. During busy season, addendums get missed. Jobs start without proper setup.
+Most home service companies are still doing this manually. Someone checks the CRM, opens the job management system, copy-pastes customer details, then hunts down every addendum and change order to create separate job records. During busy season, addendums slip through the cracks.
 
-AFTER: The moment HubSpot marks that deal won, your system automatically parses all job data, finds every linked change order, and creates complete job records. No manual data entry. No missed addendums. Every change order gets proper job assignment.
+Here's what happens instead: The moment HubSpot marks that deal as won, your entire job setup runs automatically. Every change order gets its own job record. Nothing falls through the cracks.
 
-HERE'S HOW ZAPIER HANDLES THE CONVERSION:
+Here's how it works behind the scenes in Zapier:
 
-HubSpot triggers when a deal status changes to "won" — sends the complete deal record with customer data and job specifications.
+HubSpot sends the won deal event with all customer data and project specs. Zapier parses this job data, extracting customer info, project scope, and contract details from the deal record.
 
-Zapier parses the incoming job data — extracts customer info, project scope, and contract details from the deal payload.
+The system then searches for every change order and addendum linked to this deal ID. For each one found, it checks a critical question: Does this change order already have a job assigned to it?
 
-The system searches for all addendums — queries your database for every change order and addendum linked to this specific deal ID.
+If yes, Zapier skips that change order and moves to the next one — no duplicate job records created. If no, it processes the new addendum by creating a complete job record with full project data.
 
-For each change order found, Zapier checks the assignment status — does this addendum already have a job record assigned to it?
+The loop continues until every change order has been evaluated. At the end, all change orders have proper job assignments in your system.
 
-If the change order already has a job, Zapier skips it and moves to the next one in the list.
+Zapier's step-by-step Zap structure keeps this process organized — each action flows logically to the next, with filters preventing duplicate processing.
 
-If the change order needs processing, Zapier creates a new job record with full project data and customer details.
+Your ops team goes from manual data entry to job oversight. Instead of creating records, they're managing active projects.
 
-The loop continues until every change order has proper job assignment.
-
-Your ops team opens their dashboard to find complete job records waiting — customer data populated, addendums processed, ready to schedule.
-
-No more manual copy-paste between systems. No more missed change orders during busy season.
-
-What's the biggest bottleneck in your job setup process right now? And if you're tired of manual data entry slowing down your team, let's chat about automating your deal-to-job workflow.
+What's the biggest bottleneck in your job setup process right now? And if you're curious how this same workflow could handle your specific CRM setup, shoot me a message.
 
 #Automation #JobSetup #Zapier

@@ -1,27 +1,23 @@
-Your sales reps are hunting through HubSpot before every call, finding three versions of the same contact, and you're drowning in duplicate records from different marketing channels.
+Your sales rep opens HubSpot before a call and sees three different records for the same lead. One from the webform, one from the channel partner, one from last month's campaign.
 
-Here's what happens instead: Every lead gets automatically searched by ID first, then email if needed, then merged with existing data or created fresh. Zero duplicates. Zero manual lookups. Always the latest info.
+Here's what happens instead: Every lead gets automatically searched by ID first, then email. If found, the records merge. If not, a clean new contact appears. One person, one record, always.
 
-New lead arrives. HubSpot searches twice. One contact emerges.
+Here's how it works behind the scenes in Make:
 
-Here's how this 24-step Make scenario handles it:
+Lead data hits your system from any marketing channel. Make immediately triggers a 24-step flow that starts with a HubSpot contact search by ID. This catches most duplicates right away since each contact has a unique identifier.
 
-Marketing vendor drops contact info into your system — could be a webform, channel partner, or lead gen tool. The automation kicks off immediately.
+No ID match? The flow branches to search by email instead. Different vendors use different tracking methods, so this double-search approach covers all bases.
 
-First, HubSpot hunts for an existing contact using the unique ID. This is your first line of defense against duplicates.
+When Make finds an existing contact, it pulls the current properties and merges them with the fresh lead data. The automation loops through all contact engagements and deals, checking project types and marketing sources to build one complete profile.
 
-Found a match? Great — we pull the current properties and merge them with the fresh lead data. No match? Time for plan B.
+If no contact exists anywhere, Make generates a clean payload and creates a fresh HubSpot record with all the standardized fields your sales team expects.
 
-Make branches to search by email address instead. Different vendors use different identifiers, so this catches contacts that might exist under a different ID system.
+The final step outputs one merged contact with properties from every source. Your rep sees complete lead history, not scattered fragments across multiple records.
 
-Whether the contact was found by ID, found by email, or needs to be created fresh, all the data gets standardized into one clean payload.
+Make's visual canvas makes this complex branching logic easy to follow. You can see exactly how each lead flows through the ID search, email fallback, and merge process.
 
-The final step updates your HubSpot contact with merged data from all sources. Your sales reps see one clean record instead of hunting through duplicates.
+No more manual contact hunting. No more duplicate cleanup. Just clean, complete contact records that update automatically every time new lead data arrives.
 
-The whole flow runs automatically every time lead data arrives. No more manual searching. No more wondering if you're calling someone who's already in your system under a different name.
-
-What's the biggest CRM cleanup challenge in your home service business? Drop a comment below.
-
-And if you're tired of duplicate hunting, let's chat about automating your lead management.
+What's your biggest headache with duplicate contacts in your CRM? And if you're running a home service company, how much time do your sales reps waste searching for the right contact record?
 
 #Automation #LeadGeneration #Make

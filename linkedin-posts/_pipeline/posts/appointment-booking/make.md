@@ -1,21 +1,21 @@
-Phone tag with customers trying to schedule estimates is killing your productivity. Double-booked calendars, booking data stuck in one system while your CRM shows something different.
+Your phone rings at 7 PM. Another customer trying to reschedule their estimate. You flip between your appointment scheduler and HubSpot, manually updating deal stages and contact records.
 
-**BEFORE:** You're playing calendar Tetris all day. Customer calls to book an estimate, you check three different systems to find an open slot, manually enter their info into HubSpot, then pray you didn't double-book someone. Meanwhile, your sales team has no clue where each deal stands because appointment data lives in your scheduler while deal stages live in your CRM.
+Here's what happens instead: Customer books online, and every system updates itself automatically. No phone tag, no double-booking, no manual data entry.
 
-**AFTER:** Customers book their own appointments and every booking event automatically syncs deal stages, contact records, and project tracking across systems. Your whole team stays in sync without touching a keyboard.
+Here's how it works behind the scenes in Make:
 
-**THE BRIDGE:** Here's how Make handles this entire flow automatically.
-
-When someone schedules through your appointment scheduler, Make receives the booking event with customer email, project type, and time slot. The system immediately checks who owns this customer relationship and pulls their project preferences from HubSpot.
+When someone schedules through your appointment scheduler, Make receives the booking event with customer email, project type, and time slot. The automation immediately looks up who owns this customer relationship and pulls their project preferences.
 
 Make then builds a complete deal payload by combining the booking details with existing contact data and project specifications. Before creating anything new, it checks whether there's already a HubSpot deal for this customer and project type.
 
-If it's a brand new customer, Make creates a fresh deal, sets the stage to 'Appointment Scheduled,' and links the contact record with all the project details. If this customer already exists, Make updates the existing deal instead — moving it to the appropriate pipeline stage and updating the appointment time without creating duplicates.
+If it's a new customer, Make creates a fresh deal, sets the stage to 'Appointment Scheduled', and links all the contact details with project information. If they're rescheduling an existing project, it updates the current deal stage and appointment time without creating duplicates.
 
-Throughout this process, Make syncs the contact record in HubSpot with the latest booking information and project preferences. Your sales team sees exactly where each customer stands, and deal stages automatically reflect current appointment status.
+The final step syncs everything back to the HubSpot contact record with the latest booking information and project preferences. Your sales team sees exactly where each customer stands in the pipeline.
 
-No more phone tag. No more double-booking. No more manual data entry between systems.
+Make's visual canvas makes this complex routing logic easy to follow — you can see exactly how booking events flow through contact lookups, deal creation, and record updates. Each module connects clearly to the next, so troubleshooting is straightforward.
 
-What's your biggest scheduling headache right now — double-bookings or keeping your team updated on appointment changes? And if you're tired of playing calendar Tetris with your estimates, let's chat about setting this up for your business.
+The whole process runs in under 30 seconds. Customer books at midnight? Deal stage updates automatically. Team member checks HubSpot the next morning? Everything's already synced and current.
+
+What's the biggest scheduling headache in your home service business? And are you tired of playing phone tag just to get estimates on the calendar?
 
 #Automation #Scheduling #Make

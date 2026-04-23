@@ -1,21 +1,23 @@
-Your home service company just finished a $3,200 job. The work's done, but the invoice is sitting in limbo between your project system and accounting software. Sound familiar?
+Your unbilled work is sitting in project management while your accounting software has no idea it exists. Invoices get created in one system, modified in another, and somehow your project dashboard still shows that voided invoice from last month.
 
-BEFORE: Unbilled work slips through the cracks because it lives in one system while invoices get created in another. You're manually checking what needs billing, copying customer details, and hoping nothing gets missed. When invoices get modified or voided, the changes don't sync back to your project dashboards.
+Here's what happens instead: unbilled line items become invoices automatically, every modification syncs both ways, and voided invoices disappear from all dashboards instantly.
 
-AFTER: Unbilled line items become invoices automatically. Every modification flows between systems instantly. Nothing falls through the cracks.
+Here's how it works behind the scenes in n8n:
 
-Here's how n8n handles your entire invoice lifecycle:
+The automation scans your project management system for completed work that hasn't been invoiced yet. Could be finished project phases or time entries just sitting there.
 
-Your automation scans for unbilled work — completed project phases or time entries sitting in your project management system. When it finds something, it pulls the full customer record from your accounting software, grabbing billing address, payment terms, and project details.
+When it finds unbilled items, it pulls the full customer record from your accounting software — billing address, payment terms, project type, everything needed to build the invoice correctly.
 
-n8n then builds the invoice automatically in your accounting software with all line items and proper formatting. No manual data entry required. Once the invoice is created successfully, it syncs to your project management system and links to the right job.
+Then it creates the invoice automatically in your accounting software with all line items and proper formatting. No manual data entry required.
 
-But here's where it gets powerful — the automation catches modifications too. Invoice edits, voids, or payment updates trigger the sync in both directions. n8n's node-based approach lets you visualize these complex branching workflows, making it easy to handle different invoice scenarios.
+n8n's node-based workflow handles the decision logic elegantly — if the invoice builds successfully, it pushes the new invoice into your project management system and links it to the right job.
 
-The system generates and stores PDF versions for your records, then ensures both platforms show identical data. When invoices get voided, they disappear from project dashboards automatically. Payment status updates everywhere.
+But here's the clever part: the automation also catches modifications to existing invoices. Edit an invoice amount in accounting? It syncs to project management. Mark one as paid? Both systems update. Void an invoice? It disappears from your project dashboard immediately.
 
-Your accounting software and project management system stay perfectly in sync. Unbilled items get caught before they become write-offs. Invoice modifications flow both ways instantly.
+The system generates and stores PDF versions for your records, and everything stays perfectly synchronized. Your accounting software and project management system always show identical invoice data.
 
-What's the biggest invoicing headache in your business — missed billing or keeping systems synced? And if you're tired of playing invoice detective between platforms, let's chat about automating your entire billing workflow.
+No more hunting through systems to figure out what's been billed. No more customers getting outdated invoice versions. No more voided invoices cluttering your project views.
+
+What's the biggest invoicing headache in your business right now? And have you tried connecting your accounting software to your project management system?
 
 #Automation #InvoiceAutomation #n8n

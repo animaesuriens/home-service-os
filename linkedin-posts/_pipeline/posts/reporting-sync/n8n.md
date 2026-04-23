@@ -1,29 +1,23 @@
-Your sales manager is pulling CRM reports every Monday morning, staring at numbers that are already a week old, wondering why pipeline health tanked without warning.
+Your sales manager is still pulling Monday morning reports from HubSpot, staring at numbers that are already a week old, wondering why pipeline health always feels like a guessing game.
 
-**BEFORE:** You're flying blind between weekly reports. Deal stages change, amounts shift, prospects drop out — but your dashboard still shows last Monday's reality. By the time you spot the pipeline problem, you've lost a week of response time.
+Here's what happens instead: Your dashboard refreshes every two minutes with live CRM data. Deal stages, close dates, amounts — everything updates automatically without anyone touching a spreadsheet.
 
-**AFTER:** Your reporting dashboard refreshes every two minutes with live CRM data. Deal movements sync instantly, deletions clean themselves up, and your pipeline numbers reflect what's actually happening right now.
+Here's how it works behind the scenes with n8n:
 
-**Here's how n8n makes this happen:**
+Every 120 seconds, the sync kicks off through n8n's node-based workflow. No waiting for Monday morning reports or manual data pulls.
 
-Every 120 seconds, the automation kicks off automatically. No waiting for Monday morning reports or manual data pulls.
+First, it generates a fresh deal payload from HubSpot. Stage changes, new opportunities, updated amounts — everything that moved since the last sync gets captured.
 
-First, it generates a fresh deal payload from HubSpot — pulling stage changes, close dates, deal amounts, everything that moved since the last sync.
+Then comes the smart part: it compares timestamps to find what actually needs updating. Skip the noise, sync only what matters.
 
-Then it gets smart about what actually needs updating. The system compares timestamps to find deals that changed, skipping the noise and syncing only what matters.
+The workflow branches into two paths. One handles deletions — deals that got removed from HubSpot disappear from your dashboard too. Clean slate, accurate counts.
 
-Here's where it branches into two paths:
+The other path handles upserts. New deals get added, existing ones get updated. One operation covers both cases, keeping your data consistent.
 
-Path one handles deletions — deals that got removed from HubSpot disappear from your dashboard too. Clean slate, accurate counts every time.
+Finally, your dashboard refreshes with live pipeline numbers. Managers see reality, not history. No more "let me pull the latest numbers" delays during team meetings.
 
-Path two processes the upserts — new deals get added while existing ones get updated. One operation handles both cases seamlessly.
+The whole process runs in the background while you focus on closing deals instead of chasing data. Your CRM updates, your dashboard refreshes, and the numbers never lie.
 
-The paths merge back together and boom — your dashboard refreshes with live pipeline numbers. Your managers see reality, not last week's history.
-
-The whole cycle repeats every two minutes, so your reporting stays current without anyone lifting a finger.
-
-No more stale data. No more Monday morning scrambles. Just live pipeline health that updates itself while you focus on closing deals.
-
-What's the longest you've gone making decisions off outdated CRM data? And if you're tired of manual reporting pulls eating up your team's time, let's chat about getting your dashboards synced automatically.
+What's your biggest frustration with stale reporting data? And if you're ready to automate your dashboard sync, let's chat about setting this up for your team.
 
 #Automation #Reporting #n8n

@@ -1,27 +1,23 @@
-Your office staff shouldn't have to call crews every hour asking "How's the job going?" Yet most home service companies still chase production updates like it's 1995.
+Your office staff is calling crews every hour asking "How's the Johnson job going?" Production data lives in text messages and phone calls. You have no clue which projects are on track until someone drives to the site.
 
-BEFORE: You're playing phone tag with field crews, trying to piece together project status from scattered text messages and voicemails. By the time you get real numbers, they're already outdated. Weekly reports? More like weekly guesswork.
+Here's what happens instead: Time logs pull automatically from the field, match against your active projects, and sync to the office. Your dashboard shows real production data without chasing anyone for updates.
 
-AFTER: Time logs flow automatically from the field to your office systems. You see current production data, project progress, and crew hours without making a single phone call. Real visibility, zero chasing.
+Here's how it works behind the scenes in Zapier:
 
-Here's how Zapier pulls this together:
+When your time tracking app sends hourly data, your Zap triggers automatically. The first step grabs every time entry from the last sync - clock-in times, job sites, crew member names, project codes.
 
-Your time tracking app sends hourly updates to Zapier's trigger. Crew hours, project codes, current job status — all the field data you need.
+Next, Zapier pulls your active project database and starts matching. Each time log gets cross-referenced against live projects to find the right job numbers. Zapier's linear flow makes this process clean and predictable.
 
-Zapier grabs every time log entry from the last sync. Clock-in times, job sites, crew member names. Everything gets pulled into the workflow automatically.
+Then comes the decision point: Does this time entry match a real project in your system? Zapier branches the workflow into two paths.
 
-Next, it cross-references those time entries against your live project database. Zapier looks up each job number to find the matching active project.
+Valid data flows through one branch - Zapier updates project hours, calculates current progress, and pushes everything to your office dashboard. Your accounting software gets the hours, your project management tool gets the status updates.
 
-Then comes the smart part: Zapier checks if this time log matches a real project in your system. Valid match? It updates project hours, calculates progress, and syncs everything to your office dashboard.
+Orphaned logs (time entries that don't match any active project) flow through the other branch - Zapier logs the error and moves on. No system crashes, no manual cleanup needed.
 
-No match? Zapier logs the error and moves on. No crashes, no confusion.
+The final sync pushes all updated production data to your office systems. Your team sees current project status, crew locations, and actual hours worked. All without picking up the phone.
 
-Finally, all that updated production data gets pushed to your accounting software and project management tools. Your office systems stay current without anyone lifting a finger.
+Your crews keep working. The data flows automatically. Your office finally knows what's happening in the field.
 
-The result? Crews work in the field. Data flows automatically. Your office knows exactly where every job stands.
-
-Zapier's step-by-step Zap structure makes it simple to follow the logic: trigger from time tracking, lookup projects, filter valid entries, then update your office systems in sequence.
-
-What's your biggest challenge with tracking field production right now? And if you're tired of chasing crews for updates, let's talk about automating your production tracking.
+What's your biggest challenge with tracking production data right now? And if you're ready to stop playing phone tag with your crews, let's talk about setting this up for your business.
 
 #Automation #ProductionTracking #Zapier

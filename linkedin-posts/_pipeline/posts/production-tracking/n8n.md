@@ -1,27 +1,23 @@
-Your office staff shouldn't have to call crews every hour asking "How's the job going?" Yet most home service companies still chase production updates like it's 1995.
+Your office staff is calling crews every hour asking "How's the Johnson job going?" Production data lives in text messages and phone calls. You have no clue which projects are on track until someone drives to the site.
 
-BEFORE: You're playing phone tag with field crews, trying to piece together project status from scattered text messages and voicemails. By the time you get real numbers, they're already outdated. Weekly reports? More like weekly guesswork.
+Here's what happens instead: Time logs pull automatically from the field, match against your active projects, and sync to the office. Your dashboard shows real production data without chasing anyone for updates.
 
-AFTER: Time logs flow automatically from the field to your office systems. You see current production data, project progress, and crew hours without making a single phone call. Real visibility, zero chasing.
+Here's how it works behind the scenes in n8n:
 
-Here's how n8n pulls this together:
+When your time tracking app sends hourly data, your n8n workflow triggers automatically. The first node grabs every time entry from the last sync - clock-in times, job sites, crew member names, project codes.
 
-Your time tracking app sends hourly updates to n8n's webhook node. Crew hours, project codes, current job status — all the field data you need.
+Next, n8n pulls your active project database and starts matching. Each time log gets cross-referenced against live projects to find the right job numbers. n8n's node-based graph lets you visualize exactly how the data flows.
 
-n8n grabs every time log entry from the last sync. Clock-in times, job sites, crew member names. Everything gets pulled into the workflow automatically.
+Then comes the decision point: Does this time entry match a real project in your system? n8n branches the workflow into two paths.
 
-Next, it cross-references those time entries against your live project database. n8n looks up each job number to find the matching active project.
+Valid data flows through one branch - n8n updates project hours, calculates current progress, and pushes everything to your office dashboard. Your accounting software gets the hours, your project management tool gets the status updates.
 
-Then comes the smart part: n8n checks if this time log matches a real project in your system. Valid match? It updates project hours, calculates progress, and syncs everything to your office dashboard.
+Orphaned logs (time entries that don't match any active project) flow through the other branch - n8n logs the error and moves on. No system crashes, no manual cleanup needed.
 
-No match? n8n logs the error and moves on. No crashes, no confusion.
+The final sync pushes all updated production data to your office systems. Your team sees current project status, crew locations, and actual hours worked. All without picking up the phone.
 
-Finally, all that updated production data gets pushed to your accounting software and project management tools. Your office systems stay current without anyone lifting a finger.
+Your crews keep working. The data flows automatically. Your office finally knows what's happening in the field.
 
-The result? Crews work in the field. Data flows automatically. Your office knows exactly where every job stands.
-
-n8n's node-based workflow lets you visualize exactly how time data flows through lookups, conditionals, and updates. Each connection shows the data path clearly.
-
-What's your biggest challenge with tracking field production right now? And if you're tired of chasing crews for updates, let's talk about automating your production tracking.
+What's your biggest challenge with tracking production data right now? And if you're ready to stop playing phone tag with your crews, let's talk about setting this up for your business.
 
 #Automation #ProductionTracking #n8n

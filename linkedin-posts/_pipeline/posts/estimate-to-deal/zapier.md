@@ -1,23 +1,27 @@
-Your estimates are trapped in one system while your deals live in another. Sales managers spend hours copying numbers between tools, and inconsistent naming makes pipeline reports worthless.
+Your estimating tool creates a quote. Your sales manager manually copies the numbers to HubSpot. The deal gets named "Project ABC" and your pipeline reports become useless guesswork.
 
-What if every estimate automatically became a perfectly named HubSpot deal the moment you created it? No manual copying, no pipeline gaps, no spreadsheet gymnastics.
+Sound familiar? You're running two separate systems that should be talking to each other.
 
-Here's how Zapier connects your estimating tool to HubSpot:
+Here's what happens instead: The moment you create an estimate, HubSpot gets a perfectly named deal with the right value. No copying numbers between systems, no manual pipeline updates.
 
-When you create a new estimate, Zapier immediately pulls all quotes from the last few minutes. This catches everything, even if multiple estimates come in at once.
+Here's how it works behind the scenes with Zapier:
 
-The system loops through each quote individually. Johnson Kitchen Remodel, $12,500. Martinez Bathroom, $8,200. Every estimate gets processed.
+A new quote appears in your estimating tool. Customer name, project scope, dollar amount — all sitting there waiting to become a deal.
 
-Before creating anything, Zapier checks if this exact estimate already exists as a HubSpot deal. This prevents duplicates when the automation runs multiple times.
+Zapier pulls all quotes from the last few minutes on a schedule. Catches everything, even if multiple estimates come in at once.
 
-For new estimates, Zapier creates a HubSpot deal with consistent naming: customer name, project type, estimate value. Your sales team sees it instantly in their pipeline.
+Every estimate gets processed individually through Zapier's step-by-step workflow. Johnson Kitchen Remodel, $12,500. Martinez Bathroom, $8,200.
 
-The result? Every estimate becomes a trackable deal automatically. Sales managers get accurate pipeline reports without touching a spreadsheet.
+The system checks if this exact estimate already exists as a deal in HubSpot. Prevents duplicates when Zapier runs multiple times.
+
+If it's new, a HubSpot deal appears with consistent naming: customer name, project type, estimate value. Your sales team sees it instantly in their pipeline.
+
+Every estimate becomes a trackable deal automatically. Sales managers get accurate pipeline reports without touching a spreadsheet.
+
+No more "Did we create a deal for the Thompson estimate?" No more deals named "Misc Project" that tell you nothing. No more wondering if your pipeline numbers are actually current.
 
 Your estimating tool talks. HubSpot listens. The pipeline updates itself.
 
-Zapier's straightforward Zap structure makes this automation reliable and easy to troubleshoot. Each step follows logically to the next, keeping your estimate-to-deal process running smoothly.
+What's the biggest gap between your estimating system and your CRM right now? And if you're already automating this process, what other manual handoffs are eating up your team's time?
 
-What's the biggest gap between your estimating and sales systems right now? And if you're ready to automate your estimate-to-deal pipeline, let's chat about setting this up for your business.
-
-#Automation #Estimating #Zapier
+#Automation #CRM #Zapier

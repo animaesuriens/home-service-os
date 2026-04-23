@@ -1,27 +1,21 @@
-Change orders used to be chaos — scribbled notes, forgotten price adjustments eating margins, crews showing up clueless about scope changes, deals stuck showing wrong values for weeks.
+Change orders scribbled on napkins. Forgotten price adjustments that eat your margins. Crew showing up without knowing scope changed. Your CRM showing the wrong deal value for weeks.
 
-Now? Every change order flows through automatically. Deal amounts, hours, labor, materials, and discounts aggregate across all related deals. Your CRM reflects real total value as each update lands.
+Here's what happens instead: Every change order flows through automatically. Deal amounts, hours, labor, materials, and discounts get aggregated across all related deals. Your CRM reflects the real total value as each update lands.
 
-Here's how Zapier handles it:
+Here's how it works behind the scenes with Zapier's step-by-step flow:
 
-When a change order hits, it updates the HubSpot deal with new scope — extra materials, added labor hours, discount adjustments, whatever changed.
+When a change order hits, HubSpot gets updated with new scope — could be extra materials, added labor hours, or discount adjustments. Zapier immediately searches HubSpot for all deals tied to the same job record. Original estimate plus every change order so far.
 
-Zapier immediately searches HubSpot for the deal family — every deal tied to the same job record. Original estimate plus all change orders so far.
+The automation loops through each related deal, pulling amounts for labor, materials, discounts, and hours. Adds them all up across 44 sequential steps.
 
-Then it loops through each related deal, pulling amounts for labor, materials, discounts, and hours. Adds them all up across the entire project.
+Next comes the decision point: does a master project record exist in your estimating tool? If not, Zapier creates a new record with aggregated totals from all change orders. If the project already exists, it updates the estimating tool record with the new combined totals from HubSpot.
 
-Next comes the decision point — does a master project record exist in your estimating tool?
+The final sync ensures the right sales rep is assigned to both the HubSpot deal and estimating tool project. No manual handoffs.
 
-If no project exists, Zapier creates a new record with the aggregated totals from all change orders. If the project's already there, it updates the existing record with the new combined totals from HubSpot.
+Result? HubSpot shows actual project value. Your estimating tool reflects all changes. No more guessing what the job is really worth.
 
-Zapier's linear Zap structure keeps this multi-step process organized — each action flows logically into the next, even with complex branching.
+Your deals stay accurate as scope evolves. Your crew gets the right numbers. Your margins stay protected because nothing falls through the cracks.
 
-Finally, it syncs deal owners to ensure the right sales rep is assigned to both the HubSpot deal and estimating tool project.
-
-Result? HubSpot shows actual project value. Your estimating tool reflects all changes. No more guessing what jobs are really worth.
-
-The whole thing runs in 44 steps, handling multiple deals, complex aggregations, and conditional logic without you touching a thing.
-
-What's your biggest headache with change order tracking right now? And if you're ready to automate this mess, let's chat about setting up your Zapier workflow.
+What's the biggest change order surprise you've dealt with this year? And if you're tired of manual deal updates eating your time, let's chat about automating your change order flow.
 
 #Automation #ProjectManagement #Zapier

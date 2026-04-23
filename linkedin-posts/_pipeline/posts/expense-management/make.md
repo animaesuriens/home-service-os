@@ -1,27 +1,19 @@
-Your accountant asks "how much did we spend on the Henderson job?" and you're suddenly playing detective across three different systems.
+Your receipts live in email, bills hide in your accounting software, and project costs are buried in some spreadsheet. When a client asks "how much did we spend on their job?" you're looking at an hour-long treasure hunt across three different systems.
 
-BEFORE: Receipts buried in email. Bills scattered in your accounting software. Project costs hiding in spreadsheets. Nobody can answer basic job costing questions without an hour-long treasure hunt through disconnected systems.
+Here's what happens instead: Every bill automatically finds its matching job, attachments get downloaded and linked, and your job costing stays current without you lifting a finger.
 
-AFTER: Every expense automatically finds its project home. Bills flow in, customer references get matched, receipt attachments download and link themselves. Always-current job costing without the detective work.
+Here's how it works behind the scenes in Make. When a new bill hits your accounting software, the system immediately grabs all the expense data — whether it's materials for the Henderson kitchen or fuel for the crew truck.
 
-Here's how Make handles this expense matching magic:
+Next comes the customer lookup. Make searches through your Airtable job records to find matching customer references, connecting that vendor bill to the right client account. No more guessing which job that Home Depot receipt belongs to.
 
-New bills arrive from your accounting software — could be materials for that kitchen remodel or fuel for the crew truck. Make immediately starts hunting for the customer connection.
+The automation then downloads any attached receipts or invoices from the expense record. Photos, PDFs, whatever the vendor sent — it all gets pulled in automatically.
 
-The system searches your job records, cross-referencing customer data to link each vendor bill to the right client account. No more guessing which Henderson this receipt belongs to.
+Now comes the smart routing. The system checks whether this expense belongs to a main job or a specific project phase within that job. If it's a general job expense, it links directly to the main job record in Airtable with full customer context. If it's project-specific, it connects to that exact project phase while maintaining the parent job relationship.
 
-Any attached receipts or invoices get downloaded automatically. Photos, PDFs, whatever documentation came with the expense — Make grabs it all and stores it properly.
+Finally, Make saves all the expense data and attachment links to Airtable. Customer connections, job links, and project relationships — everything gets locked in place.
 
-Then comes the smart routing. Make checks whether this expense belongs to a main job or a specific project phase within that job. Different branches handle each scenario.
+The result? Your job costing is always current. Every receipt knows exactly which project it belongs to. No more digging through systems when clients want to see where their money went.
 
-For main job expenses, everything links directly to the job record in Airtable with full customer context. For project-specific costs, Make connects to the exact project phase while maintaining the parent job relationship.
-
-Finally, Make updates your Airtable records with the expense data and attachment links. Customer connections, job assignments, project relationships — all locked in automatically.
-
-The result? Your job costing stays current without the treasure hunt. Every receipt knows exactly which project it belongs to. When someone asks about Henderson job costs, you've got answers in seconds, not hours.
-
-Make's visual canvas makes this complex routing feel manageable — you can see exactly how expenses flow from accounting software to their project homes.
-
-What's your biggest headache with expense tracking right now? And if you're tired of playing expense detective, let's chat about automating your job costing.
+What's your biggest headache with tracking project expenses right now? And if you're tired of playing expense detective, let's chat about getting this running for your business.
 
 #Automation #ExpenseManagement #Make
