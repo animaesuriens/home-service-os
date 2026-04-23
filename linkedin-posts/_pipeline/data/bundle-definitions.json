@@ -8,9 +8,9 @@
       "journeyStage": "Lead Capture",
       "journeySlug": "lead-capture",
       "processIds": [
-        "P-boo-06",
-        "P-boo-03",
-        "P-boo-05"
+        "P-mktg-06",
+        "P-mktg-03",
+        "P-mktg-05"
       ],
       "idealizedSteps": [
         {
@@ -103,10 +103,9 @@
       "journeyStage": "Appointment Booking",
       "journeySlug": "appointment-booking",
       "processIds": [
-        "P-boo-10",
-        "P-boo-12",
-        "P-boo-07",
-        "P-boo-09"
+        "P-mktg-10",
+        "P-mktg-12",
+        "P-mktg-07"
       ],
       "idealizedSteps": [
         {
@@ -140,42 +139,6 @@
           "label": "Check Deal Stage"
         },
         {
-          "label": "Find Customer Ref"
-        },
-        {
-          "label": "Expense Payload"
-        },
-        {
-          "label": "Upsert Expense Record"
-        },
-        {
-          "label": "Crossflow Payload"
-        },
-        {
-          "label": "Save Attachments"
-        },
-        {
-          "label": "Stop Execution (Success)"
-        },
-        {
-          "label": "Calculated Date"
-        },
-        {
-          "label": "Format Date/Time"
-        },
-        {
-          "label": "Start Index"
-        },
-        {
-          "label": "Loop N Times"
-        },
-        {
-          "label": "Get Expense Record"
-        },
-        {
-          "label": "Set Start Position"
-        },
-        {
           "label": "Is YCBM ID exist?"
         },
         {
@@ -195,15 +158,6 @@
         },
         {
           "label": "dealStage marketing pipeline?"
-        },
-        {
-          "label": "Customer Ref exists?"
-        },
-        {
-          "label": "Is an Item?"
-        },
-        {
-          "label": "Flow is enabled in Wizard?"
         }
       ],
       "pain": "Phone tag with customers trying to schedule estimates, double-booked calendars, booking data stuck in one system while the CRM shows something different, and hours lost to manual data entry",
@@ -223,7 +177,7 @@
       "journeyStage": "Estimating",
       "journeySlug": "estimate-to-deal",
       "processIds": [
-        "P-boo-01"
+        "P-sales-01"
       ],
       "idealizedSteps": [
         {
@@ -274,17 +228,17 @@
       "journeyStage": "Sales/Proposal",
       "journeySlug": "change-orders",
       "processIds": [
-        "P-boo-14",
-        "P-boo-11",
-        "P-job-13",
-        "P-boo-03",
-        "P-boo-02",
-        "P-boo-10",
-        "P-boo-13",
-        "P-job-04",
-        "P-job-03",
-        "P-boo-92",
-        "P-boo-90"
+        "P-sales-14",
+        "P-sales-11",
+        "P-jobs-13",
+        "P-sales-03",
+        "P-sales-02",
+        "P-sales-10",
+        "P-sales-13",
+        "P-jobs-04",
+        "P-jobs-03",
+        "P-sales-92",
+        "P-sales-90"
       ],
       "idealizedSteps": [
         {
@@ -437,9 +391,9 @@
       "journeyStage": "Contract Management",
       "journeySlug": "contract-lifecycle",
       "processIds": [
-        "P-job-05",
-        "P-job-06",
-        "P-boo-10"
+        "P-jobs-05",
+        "P-jobs-06",
+        "P-sales-10"
       ],
       "idealizedSteps": [
         {
@@ -458,16 +412,16 @@
           "label": "Get Addendum Record"
         },
         {
-          "label": "List Expenses"
-        },
-        {
-          "label": "Loop Over Expenses"
-        },
-        {
           "label": "Branch on Expression"
         },
         {
-          "label": "Expenses sync enabled?"
+          "label": "Process Data (Step 6)"
+        },
+        {
+          "label": "Process Data (Step 7)"
+        },
+        {
+          "label": "Process Data (Step 8)"
         },
         {
           "label": "Process Data (Step 9)"
@@ -490,7 +444,7 @@
       "journeyStage": "Job Setup",
       "journeySlug": "deal-to-job",
       "processIds": [
-        "P-job-07"
+        "P-jobs-07"
       ],
       "idealizedSteps": [
         {
@@ -541,10 +495,10 @@
       "journeyStage": "Production Tracking",
       "journeySlug": "production-tracking",
       "processIds": [
-        "P-dai-xx",
-        "P-dai-03",
-        "P-dai-02",
-        "P-dai-01"
+        "P-prod-xx",
+        "P-prod-03",
+        "P-prod-02",
+        "P-prod-01"
       ],
       "idealizedSteps": [
         {
@@ -595,13 +549,13 @@
       "journeyStage": "Time Tracking",
       "journeySlug": "time-tracking",
       "processIds": [
-        "P-qui-06",
-        "P-qui-05",
-        "P-qui-02",
-        "P-qui-07",
-        "P-qui-08",
-        "P-qui-01",
-        "P-qui-04"
+        "P-time-06",
+        "P-time-05",
+        "P-time-02",
+        "P-time-07",
+        "P-time-08",
+        "P-time-01",
+        "P-time-04"
       ],
       "idealizedSteps": [
         {
@@ -691,14 +645,14 @@
       "journeyStage": "Invoicing",
       "journeySlug": "invoice-lifecycle",
       "processIds": [
-        "P-boo-21",
-        "P-boo-xx",
-        "P-boo-05",
-        "P-boo-13",
-        "P-boo-06",
-        "P-boo-20",
-        "P-boo-22",
-        "P-boo-07"
+        "P-acct-21",
+        "P-acct-xx",
+        "P-acct-05",
+        "P-acct-13",
+        "P-acct-06",
+        "P-acct-20",
+        "P-acct-22",
+        "P-acct-07"
       ],
       "idealizedSteps": [
         {
@@ -715,33 +669,6 @@
         },
         {
           "label": "Fetch QBO Invoices"
-        },
-        {
-          "label": "Get Accepted Quotes"
-        },
-        {
-          "label": "Loop Over Items"
-        },
-        {
-          "label": "Stop Execution 2"
-        },
-        {
-          "label": "Estimate Date To Sync"
-        },
-        {
-          "label": "Time 2 Minutes Ago"
-        },
-        {
-          "label": "Time 2 Minutes Ago to Epoch"
-        },
-        {
-          "label": "Code Block"
-        },
-        {
-          "label": "List Quotes"
-        },
-        {
-          "label": "Loop Over Quotes"
         },
         {
           "label": "Get Job"
@@ -887,12 +814,12 @@
       "journeyStage": "Expense Management",
       "journeySlug": "expense-management",
       "processIds": [
-        "P-boo-08",
-        "P-boo-30",
-        "P-boo-04",
-        "P-boo-18",
-        "P-boo-02",
-        "P-boo-03"
+        "P-acct-08",
+        "P-acct-30",
+        "P-acct-04",
+        "P-acct-18",
+        "P-acct-02",
+        "P-acct-03"
       ],
       "idealizedSteps": [
         {
@@ -1018,8 +945,8 @@
       "journeyStage": "Reporting",
       "journeySlug": "reporting-sync",
       "processIds": [
-        "P-sal-01",
-        "P-sal-02"
+        "P-report-01",
+        "P-report-02"
       ],
       "idealizedSteps": [
         {
@@ -1073,74 +1000,74 @@
       "journeyStage": "Uncategorized",
       "journeySlug": "communication-hub",
       "processIds": [
-        "P-boo-15",
-        "P-boo-08",
-        "P-boo-14",
-        "P-job-09",
-        "P-job-08",
-        "P-gma-02",
-        "P-boo-12",
-        "P-job-10",
-        "P-boo-11",
-        "P-boo-15",
-        "P-boo-16",
-        "P-boo-19",
-        "P-boo-xx",
-        "P-gma-01",
-        "P-boo-14",
-        "P-job-12",
-        "P-boo-91",
-        "P-boo-17",
-        "P-boo-15",
-        "P-boo-09",
-        "P-boo-11",
-        "P-gma-03",
-        "P-job-02",
-        "P-boo-13",
-        "P-gma-05"
+        "P-mktg-15",
+        "P-mktg-08",
+        "P-mktg-14",
+        "P-jobs-09",
+        "P-jobs-08",
+        "P-comm-02",
+        "P-mktg-12",
+        "P-jobs-10",
+        "P-mktg-11",
+        "P-mktg-15",
+        "P-acct-16",
+        "P-acct-19",
+        "P-sales-xx",
+        "P-comm-01",
+        "P-mktg-14",
+        "P-jobs-12",
+        "P-sales-91",
+        "P-acct-17",
+        "P-mktg-15",
+        "P-sales-09",
+        "P-mktg-11",
+        "P-comm-03",
+        "P-jobs-02",
+        "P-mktg-13",
+        "P-comm-05"
       ],
       "idealizedSteps": [
         {
           "label": "Receive Booking Event"
         },
         {
-          "label": "Find Customer Ref"
+          "label": "Get Accepted Quotes"
         },
         {
-          "label": "Expense Payload"
+          "label": "Loop Over Items"
         },
         {
-          "label": "Upsert Expense Record"
+          "label": "Stop Execution 2"
         },
         {
-          "label": "Crossflow Payload"
+          "label": "Estimate Date To Sync"
         },
         {
-          "label": "Save Attachments"
+          "label": "Time 2 Minutes Ago"
         },
         {
-          "label": "Stop Execution (Success)"
+          "label": "Time 2 Minutes Ago to Epoch"
         },
         {
-          "label": "Calculated Date"
+          "label": "Code Block"
         },
         {
-          "label": "Format Date/Time"
+          "label": "List Quotes"
         },
         {
-          "label": "Start Index"
+          "label": "Loop Over Quotes"
         },
         {
-          "label": "Loop N Times"
+          "label": "Get latest open deal"
         },
         {
           "label": "Branch on Expression"
         },
         {
-          "label": "Customer Ref exists?"
+          "label": "Get Contact"
         },
         {
-          "label": "Is an Item?"
+          "label": "Does contact exist"
         }
       ],
       "pain": "Important updates buried in someone's inbox, text messages sent manually that get forgotten during busy days, error notifications that nobody sees, and no record of what was communicated to whom",
@@ -1160,9 +1087,9 @@
       "journeyStage": "Lead Capture",
       "journeySlug": "hubspot-contact-sync",
       "processIds": [
-        "P-boo-06",
-        "P-boo-03",
-        "P-boo-05"
+        "P-mktg-06",
+        "P-mktg-03",
+        "P-mktg-05"
       ],
       "idealizedSteps": [
         {
@@ -1255,7 +1182,7 @@
       "journeyStage": "Uncategorized",
       "journeySlug": "message-transpiler",
       "processIds": [
-        "P-boo-15"
+        "P-mktg-15"
       ],
       "idealizedSteps": [
         {
@@ -1271,61 +1198,22 @@
           "label": "Get Short Link"
         },
         {
-          "label": "Build Query"
-        },
-        {
-          "label": "Start Index"
-        },
-        {
-          "label": "Loop N Times"
-        },
-        {
-          "label": "Get All Owners"
-        },
-        {
-          "label": "Get Project Types"
-        },
-        {
-          "label": "Get All Companies"
-        },
-        {
-          "label": "Get All PS Quotes"
-        },
-        {
-          "label": "Get All PS Contacts"
-        },
-        {
-          "label": "HS Payload Contact"
-        },
-        {
-          "label": "Bulk upsert contact"
-        },
-        {
-          "label": "Get All HS Contacts"
-        },
-        {
-          "label": "Get all HS Deals"
-        },
-        {
-          "label": "PS Quote x HS Deal Sync"
-        },
-        {
-          "label": "Stop Execution"
-        },
-        {
-          "label": "Photo Management Sync X HubSpot Deal"
-        },
-        {
-          "label": "CRM: List Deals"
-        },
-        {
-          "label": "CRM: List Contacts"
-        },
-        {
-          "label": "Bulk Contact Association"
-        },
-        {
           "label": "Branch on Expression"
+        },
+        {
+          "label": "Process Data (Step 5)"
+        },
+        {
+          "label": "Process Data (Step 6)"
+        },
+        {
+          "label": "Process Data (Step 7)"
+        },
+        {
+          "label": "Process Data (Step 8)"
+        },
+        {
+          "label": "Process Data (Step 9)"
         }
       ],
       "pain": "Staff manually looking up deals, copying booking links, and shortening URLs before every customer message — slow, error-prone, and impossible to scale during peak season",
@@ -1340,5 +1228,5 @@
       }
     }
   ],
-  "lastDerived": "2026-04-14T12:37:27.069Z"
+  "lastDerived": "2026-04-23T16:01:06.245Z"
 }
