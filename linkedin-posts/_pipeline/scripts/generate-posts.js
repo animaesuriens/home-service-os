@@ -4,7 +4,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') }
 
 const fs = require('fs-extra');
 const path = require('path');
-const { generateAllPosts, generatePost, validatePost } = require('../lib/post-generator');
+const { generateAllPosts, generatePost, generateBundlePosts, validatePost } = require('../lib/post-generator');
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -79,77 +79,78 @@ async function main() {
     process.exit(1);
   }
 
-  // Determine execution mode and targets
-  if (!bundleArg && !platformArg) {
-    // No filters: run all posts via existing function
-    console.log(`Generating posts for ${bundlesData.totalBundles} bundles x 3 platforms = ${bundlesData.totalBundles * 3} posts`);
-    const result = await generateAllPosts(bundlesData.bundles, postsDir, storyBeatsByBundle);
+  // Execution modes:
+  //   --platform X (with/without --bundle): per-platform path (single-post generatePost per platform)
+  //   --bundle X (no platform) or no filters at all: bundle-level path (one generateBundlePosts
+  //     call returns all 3 platform posts at once, keeps voice consistent)
+  const targetBundles = bundleArg ? [targetBundle] : bundlesData.bundles;
+  const usePerPlatform = !!platformArg;
 
-    console.log('\n--- Summary ---');
-    console.log(`Total: ${result.total}`);
-    console.log(`Passed validation: ${result.passed}`);
-    console.log(`Warnings: ${result.warnings}`);
-    if (result.errors > 0) {
-      console.log(`Errors: ${result.errors}`);
-    }
-  } else {
-    // Filtered execution
-    const targetBundles = bundleArg ? [targetBundle] : bundlesData.bundles;
-    const targetPlatforms = platformArg ? [platformArg] : validPlatforms;
+  let total = 0;
+  let passed = 0;
+  let warnings = 0;
+  let errorCount = 0;
+
+  if (usePerPlatform) {
+    const targetPlatforms = [platformArg];
     const totalPosts = targetBundles.length * targetPlatforms.length;
-
-    const bundleDesc = bundleArg || 'all bundles';
-    const platformDesc = platformArg || 'all platforms';
-    console.log(`Generating posts for ${bundleDesc} x ${platformDesc} = ${totalPosts} post(s)`);
-
-    let total = 0;
-    let passed = 0;
-    let warnings = 0;
-    let errorCount = 0;
+    console.log(`Generating ${totalPosts} post(s) — per-platform path (${bundleArg || 'all bundles'} x ${platformArg})`);
 
     for (const bundle of targetBundles) {
       for (const platform of targetPlatforms) {
         total++;
-
         try {
           const sb = storyBeatsByBundle ? storyBeatsByBundle[bundle.id] : null;
           const content = await generatePost(bundle, platform, sb);
           const validation = validatePost(content, platform, bundle.journeyStage);
           const wordCount = content.split(/\s+/).filter(w => w.length > 0).length;
-
-          // Write the file regardless of validation
           const outputPath = path.join(postsDir, bundle.journeySlug, `${platform}.md`);
           await fs.ensureDir(path.dirname(outputPath));
           await fs.writeFile(outputPath, content, 'utf-8');
-
-          if (validation.valid) {
-            passed++;
-            console.log(`Generated: posts/${bundle.journeySlug}/${platform}.md (${wordCount} words, PASS)`);
-          } else {
-            warnings++;
-            console.log(`Generated: posts/${bundle.journeySlug}/${platform}.md (${wordCount} words, WARN: ${validation.errors.join(', ')})`);
-          }
-
-          // 2-second delay between API calls to avoid rate limits
+          if (validation.valid) { passed++; console.log(`Generated: posts/${bundle.journeySlug}/${platform}.md (${wordCount} words, PASS)`); }
+          else { warnings++; console.log(`Generated: posts/${bundle.journeySlug}/${platform}.md (${wordCount} words, WARN: ${validation.errors.join(', ')})`); }
           await new Promise(r => setTimeout(r, 2000));
         } catch (err) {
           errorCount++;
           console.error(`ERROR generating ${bundle.journeySlug}/${platform}.md: ${err.message}`);
-
-          // Still delay to avoid hammering on error
           await new Promise(r => setTimeout(r, 2000));
         }
       }
     }
+  } else {
+    // Bundle-level path: one Claude call per bundle returns all 3 platform posts.
+    // Voice stays consistent because the model sees its own Make post while writing Zapier and n8n.
+    console.log(`Generating ${targetBundles.length * 3} post(s) — bundle-level path (${targetBundles.length} bundles x 3 platforms, 1 API call each)`);
 
-    console.log('\n--- Summary ---');
-    console.log(`Total: ${total}`);
-    console.log(`Passed validation: ${passed}`);
-    console.log(`Warnings: ${warnings}`);
-    if (errorCount > 0) {
-      console.log(`Errors: ${errorCount}`);
+    for (const bundle of targetBundles) {
+      try {
+        const sb = storyBeatsByBundle ? storyBeatsByBundle[bundle.id] : null;
+        const posts = await generateBundlePosts(bundle, sb);
+        for (const platform of ['make', 'zapier', 'n8n']) {
+          total++;
+          const content = posts[platform];
+          const validation = validatePost(content, platform, bundle.journeyStage);
+          const wordCount = content.split(/\s+/).filter(w => w.length > 0).length;
+          const outputPath = path.join(postsDir, bundle.journeySlug, `${platform}.md`);
+          await fs.ensureDir(path.dirname(outputPath));
+          await fs.writeFile(outputPath, content, 'utf-8');
+          if (validation.valid) { passed++; console.log(`Generated: posts/${bundle.journeySlug}/${platform}.md (${wordCount} words, PASS)`); }
+          else { warnings++; console.log(`Generated: posts/${bundle.journeySlug}/${platform}.md (${wordCount} words, WARN: ${validation.errors.join(', ')})`); }
+        }
+        await new Promise(r => setTimeout(r, 2000));
+      } catch (err) {
+        errorCount += 3;
+        console.error(`ERROR generating bundle ${bundle.journeySlug}: ${err.message}`);
+        await new Promise(r => setTimeout(r, 2000));
+      }
     }
   }
+
+  console.log('\n--- Summary ---');
+  console.log(`Total: ${total}`);
+  console.log(`Passed validation: ${passed}`);
+  console.log(`Warnings: ${warnings}`);
+  if (errorCount > 0) console.log(`Errors: ${errorCount}`);
 }
 
 main().catch(err => { console.error(err); process.exit(1); });

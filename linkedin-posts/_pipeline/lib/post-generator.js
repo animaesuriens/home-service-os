@@ -189,6 +189,149 @@ Write the post now. Remember: MAXIMUM 2,800 characters (target 300-400 words), h
 }
 
 // ---------------------------------------------------------------------------
+// Forbidden terms — module-level so generateBundlePosts + retry can share
+// ---------------------------------------------------------------------------
+const FORBIDDEN_IN_POST = [
+  'real-time', 'lead scoring', 'audit trail', 'audit log',
+  'crew dispatch', 'drip campaign', 'nurture sequence',
+  'paintscout', 'companycam', 'youcanbook', 'ycbm',
+  'quickbooks', 'ringcentral',
+];
+
+function findForbiddenTerms(text) {
+  const lower = (text || '').toLowerCase();
+  return FORBIDDEN_IN_POST.filter(t => lower.includes(t));
+}
+
+// ---------------------------------------------------------------------------
+// generateBundlePosts(bundle, storyBeats)
+//
+// Generates all three platform posts (Make, Zapier, n8n) for a bundle in a
+// single Claude API call via tool_use. The model sees its own voice across
+// all three as it writes — eliminates the style drift that happened when
+// each platform was generated independently.
+//
+// Forbidden-term validation runs on each post; failed posts are re-generated
+// individually via generatePost() which has its own retry loop.
+//
+// @param {object} bundle      - Bundle object from bundles.json
+// @param {object} [storyBeats] - Optional storyBeats spine for this bundle
+// @returns {Promise<{make:string, zapier:string, n8n:string}>}
+// ---------------------------------------------------------------------------
+async function generateBundlePosts(bundle, storyBeats = null) {
+  const AnthropicModule = require('@anthropic-ai/sdk');
+  const Anthropic = AnthropicModule.default || AnthropicModule;
+  if (!process.env.ANTHROPIC_API_KEY) {
+    throw new Error('ANTHROPIC_API_KEY environment variable is not set.');
+  }
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+  const realProcessNames = (bundle.constituentProcesses || []).join(', ') || 'N/A';
+  const realStepsList = (bundle.realSteps || []).map((s, i) => `${i + 1}. ${s}`).join('\n') || 'N/A';
+  const appsList = (bundle.apps || []).join(', ') || 'N/A';
+
+  const storySpineSection = storyBeats
+    ? `NARRATIVE SPINE (all three posts share this spine — every beat below should be visible in each post's Bridge section, in this order):
+Headline to echo (paraphrase, don't copy verbatim): "${storyBeats.headline}"
+Dek: "${storyBeats.dek}"
+Beats:
+${storyBeats.beats.map((b, i) => `${i + 1}. [${b.kind}] ${b.label} — ${b.detail}`).join('\n')}
+
+The companion diagram shows these exact beats as labeled cards. Reader sees post + diagram together; they must reinforce each other.
+`
+    : '';
+
+  const userPrompt = `Write THREE LinkedIn posts for this automation workflow — one for Make, one for Zapier, one for n8n. Return them via the emit_bundle_posts tool call.
+
+Business Capability: ${bundle.title}
+Journey Stage: ${bundle.journeyStage}
+
+BEFORE (the pain):
+${bundle.pain}
+
+AFTER (the automated outcome):
+${bundle.solution}
+
+REAL SYSTEM DATA (every claim must trace to something here):
+Real Process Names: ${realProcessNames}
+Real Steps:
+${realStepsList}
+Integrations Used: ${appsList}
+
+${storySpineSection}Simplified Narrative Structure:
+${bundle.idealizedSteps.map((s, i) => `${i + 1}. ${s.label}`).join('\n')}
+
+Known inefficiencies this automation fixes:
+${bundle.inefficiencies.join(', ') || 'Manual processes, inconsistent timing, human error'}
+
+VOICE CONSISTENCY REQUIREMENT (critical):
+All three posts must feel written by the SAME author. Same sentence rhythm. Same vocabulary choices. Same opening hook structure. Same CTA style. The ONLY things that differ between posts:
+  (a) the platform name (Make vs Zapier vs n8n — substitute throughout)
+  (b) the #Make/#Zapier/#n8n hashtag
+  (c) optionally one or two lines acknowledging each platform's unique character (e.g. Make's modular canvas, Zapier's linear Zap structure, n8n's node graph) — keep these very brief
+Every other sentence should read identically in voice. Do NOT restart from scratch for each post. Do NOT vary the hook, the CTA, or the beat-by-beat narrative. The same reader reading all three should think "same writer, same story, different tool."
+
+Each post: 300-400 words, max 2,800 chars, hook in first 210 chars, BAB framework, end with mixed CTA + 3 hashtags (#Automation, one journey-stage tag, #Make|#Zapier|#n8n).`;
+
+  const tool = {
+    name: 'emit_bundle_posts',
+    description: 'Emit all three platform posts for this bundle.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        make: { type: 'string', description: 'The Make version of the post (plain text, LinkedIn-ready).' },
+        zapier: { type: 'string', description: 'The Zapier version, same voice as Make, only swap platform-specific references.' },
+        n8n: { type: 'string', description: 'The n8n version, same voice as Make, only swap platform-specific references.' },
+      },
+      required: ['make', 'zapier', 'n8n'],
+    },
+  };
+
+  const maxAttempts = 2;
+  let extraSteer = '';
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const response = await client.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 8000,
+      temperature: 0.4,
+      system: SYSTEM_PROMPT + extraSteer,
+      tools: [tool],
+      tool_choice: { type: 'tool', name: 'emit_bundle_posts' },
+      messages: [{ role: 'user', content: userPrompt }],
+    });
+
+    const toolUse = response.content.find(c => c.type === 'tool_use');
+    if (!toolUse) {
+      if (attempt === maxAttempts) throw new Error(`Model did not emit tool_use for ${bundle.id}`);
+      extraSteer = '\n\nYou MUST call emit_bundle_posts. Do not emit plain text.';
+      continue;
+    }
+
+    const posts = toolUse.input;
+    // Validate all three. If any has forbidden terms, regenerate just those
+    // via the single-platform generatePost so we don't re-burn 8k tokens.
+    const allHits = {
+      make: findForbiddenTerms(posts.make),
+      zapier: findForbiddenTerms(posts.zapier),
+      n8n: findForbiddenTerms(posts.n8n),
+    };
+    const failed = Object.entries(allHits).filter(([, hits]) => hits.length > 0).map(([p]) => p);
+
+    if (failed.length === 0) {
+      return posts;
+    }
+
+    // eslint-disable-next-line no-console
+    console.warn(`  ${bundle.id}: forbidden terms in [${failed.join(', ')}] — regenerating those individually`);
+    for (const p of failed) {
+      // generatePost has its own forbidden-term retry; use it for targeted fix
+      posts[p] = await generatePost(bundle, p, storyBeats);
+    }
+    return posts;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // validatePost(content, platform, journeyStage)
 //
 // Validates a generated post against requirements.
@@ -326,6 +469,7 @@ async function generateAllPosts(bundles, outputDir, storyBeatsByBundle = null) {
 // ---------------------------------------------------------------------------
 module.exports = {
   generatePost,
+  generateBundlePosts,
   generateAllPosts,
   validatePost,
   SYSTEM_PROMPT
