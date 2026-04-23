@@ -1,0 +1,698 @@
+{
+  "generatedAt": "2026-04-23T17:17:41.593Z",
+  "byBundle": {
+    "appointment-booking-scheduling": {
+      "bundleId": "appointment-booking-scheduling",
+      "headline": "Customer books. CRM updates. Deal stages sync themselves.",
+      "headlineAccent": "sync",
+      "dek": "When someone schedules through your appointment scheduler, HubSpot automatically updates contact records, deal stages, and project types. No phone tag, no double-booking, no manual entry.",
+      "beats": [
+        {
+          "kind": "trigger",
+          "label": "Customer books appointment",
+          "detail": "Appointment scheduler sends booking event with customer email, project type, and time slot."
+        },
+        {
+          "kind": "lookup",
+          "label": "Find the contact owner",
+          "detail": "System checks who owns this customer relationship and pulls their project type preferences."
+        },
+        {
+          "kind": "step",
+          "label": "Build the deal payload",
+          "detail": "Combines booking details with contact data and project specifications into a structured record."
+        },
+        {
+          "kind": "decision",
+          "label": "Does this deal exist?",
+          "detail": "Checks if there's already a HubSpot deal for this customer and project type."
+        },
+        {
+          "kind": "branch-new",
+          "label": "Create new deal",
+          "detail": "Sets deal stage to 'Appointment Scheduled' and links the contact record with project details."
+        },
+        {
+          "kind": "branch-reschedule",
+          "label": "Update existing deal",
+          "detail": "Moves deal to appropriate pipeline stage and updates appointment time without creating duplicates."
+        },
+        {
+          "kind": "merge",
+          "label": "Sync contact record",
+          "detail": "Updates HubSpot contact with latest booking information and project preferences."
+        },
+        {
+          "kind": "output",
+          "label": "Deal stage updated",
+          "detail": "HubSpot shows current appointment status and the sales team sees exactly where each customer stands."
+        }
+      ],
+      "metrics": {
+        "stepCount": 17,
+        "processCount": 3
+      }
+    },
+    "lead-capture-qualification": {
+      "bundleId": "lead-capture-qualification",
+      "headline": "Lead comes in. Data gets enriched. HubSpot gets updated.",
+      "headlineAccent": "enriched",
+      "dek": "Every form submission flows through 24 steps of lookup, enrichment, and deduplication before landing in your CRM as a complete contact record with deal and source data attached.",
+      "beats": [
+        {
+          "kind": "trigger",
+          "label": "Lead data arrives",
+          "detail": "Form submission hits the system from any marketing channel. Could be 2pm or 2am — the automation doesn't sleep."
+        },
+        {
+          "kind": "lookup",
+          "label": "Project details surface",
+          "detail": "System pulls project type and specifications from the original lead source. Residential remodel or commercial build — the context matters."
+        },
+        {
+          "kind": "lookup",
+          "label": "Marketing source traced",
+          "detail": "Which campaign, which vendor, which channel drove this lead? The attribution data gets captured and preserved."
+        },
+        {
+          "kind": "decision",
+          "label": "Contact exists already?",
+          "detail": "HubSpot search runs by email and contact ID. Existing customer or brand new prospect — the system knows the difference."
+        },
+        {
+          "kind": "branch-left",
+          "label": "Update existing contact",
+          "detail": "Merge new project details with existing contact properties. No duplicate records, no lost history."
+        },
+        {
+          "kind": "branch-right",
+          "label": "Create fresh contact",
+          "detail": "New contact record gets built with full project context and marketing attribution from day one."
+        },
+        {
+          "kind": "merge",
+          "label": "Deal record attached",
+          "detail": "Contact gets paired with a deal record containing project type, estimated value, and original lead source data."
+        },
+        {
+          "kind": "output",
+          "label": "HubSpot updated completely",
+          "detail": "Clean contact record with attached deal and full marketing attribution. Ready for sales follow-up within minutes of form submission."
+        }
+      ],
+      "metrics": {
+        "stepCount": 24,
+        "processCount": 3
+      }
+    },
+    "estimate-to-deal-pipeline": {
+      "bundleId": "estimate-to-deal-pipeline",
+      "headline": "Your estimating tool talks. HubSpot listens. The pipeline updates itself.",
+      "headlineAccent": "listens",
+      "dek": "The moment you create an estimate, HubSpot gets a perfectly named deal with the right value. No copying numbers between systems, no manual pipeline updates.",
+      "beats": [
+        {
+          "kind": "trigger",
+          "label": "Estimate gets created",
+          "detail": "New quote appears in your estimating tool. Customer name, project scope, dollar amount — all sitting there waiting to become a deal."
+        },
+        {
+          "kind": "lookup",
+          "label": "Check recent estimates",
+          "detail": "System pulls all quotes from the last few minutes. Catches everything, even if multiple estimates come in at once."
+        },
+        {
+          "kind": "step",
+          "label": "Loop through each quote",
+          "detail": "Every estimate gets processed individually. Johnson Kitchen Remodel, $12,500. Martinez Bathroom, $8,200."
+        },
+        {
+          "kind": "decision",
+          "label": "Already in HubSpot?",
+          "detail": "Checks if this exact estimate already exists as a deal. Prevents duplicates when the system runs multiple times."
+        },
+        {
+          "kind": "branch-new",
+          "label": "Create HubSpot deal",
+          "detail": "New deal appears with consistent naming: customer name, project type, estimate value. Sales team sees it instantly in their pipeline."
+        },
+        {
+          "kind": "output",
+          "label": "Pipeline stays current",
+          "detail": "Every estimate becomes a trackable deal automatically. Sales managers get accurate pipeline reports without touching a spreadsheet."
+        }
+      ],
+      "metrics": {
+        "stepCount": 10,
+        "processCount": 1
+      }
+    },
+    "change-order-management": {
+      "bundleId": "change-order-management",
+      "headline": "Change order hits. Numbers aggregate. Deal value updates itself.",
+      "headlineAccent": "aggregate",
+      "dek": "When scope changes mid-project, this 44-step automation pulls all related HubSpot deals, sums amounts across labor/materials/discounts, and updates the master deal with real totals.",
+      "beats": [
+        {
+          "kind": "trigger",
+          "label": "Change order arrives",
+          "detail": "HubSpot deal gets updated with new scope. Could be extra materials, added labor hours, or discount adjustments."
+        },
+        {
+          "kind": "lookup",
+          "label": "Find the deal family",
+          "detail": "Searches HubSpot for all deals tied to the same job record. Original estimate plus every change order so far."
+        },
+        {
+          "kind": "step",
+          "label": "Sum across categories",
+          "detail": "Loops through each related deal, pulling amounts for labor, materials, discounts, and hours. Adds them all up."
+        },
+        {
+          "kind": "decision",
+          "label": "Project exists?",
+          "detail": "Checks if there's already a master project record in the estimating tool to sync the new totals to."
+        },
+        {
+          "kind": "branch-left",
+          "label": "Create missing project",
+          "detail": "No project found. Creates new record in estimating tool with aggregated totals from all change orders."
+        },
+        {
+          "kind": "branch-right",
+          "label": "Update existing project",
+          "detail": "Project already exists. Updates the estimating tool record with the new combined totals from HubSpot."
+        },
+        {
+          "kind": "merge",
+          "label": "Sync deal owners",
+          "detail": "Makes sure the right sales rep is assigned to both the HubSpot deal and estimating tool project."
+        },
+        {
+          "kind": "output",
+          "label": "Real totals everywhere",
+          "detail": "HubSpot deal shows actual project value. Estimating tool reflects all changes. No more guessing what the job is really worth."
+        }
+      ],
+      "metrics": {
+        "stepCount": 44,
+        "processCount": 11
+      }
+    },
+    "contract-lifecycle": {
+      "bundleId": "contract-lifecycle",
+      "headline": "Contract signed. Back office spinning. Job starts itself.",
+      "headlineAccent": "spinning",
+      "dek": "The moment your customer signs digitally, the entire job setup process kicks off automatically. No email checking, no manual handoffs — just seamless contract-to-kickoff flow.",
+      "beats": [
+        {
+          "kind": "trigger",
+          "label": "Contract gets signed",
+          "detail": "Customer signs on their phone. Digital signature hits your system instantly."
+        },
+        {
+          "kind": "lookup",
+          "label": "Pull contract records",
+          "detail": "System grabs the signed contract data and all related job details from your database."
+        },
+        {
+          "kind": "step",
+          "label": "Check for addendums",
+          "detail": "Loops through any contract addendums or change orders. Formats dates and pulls each addendum record."
+        },
+        {
+          "kind": "decision",
+          "label": "What type of job?",
+          "detail": "Branches based on contract details — residential repaint, commercial new construction, or specialty work."
+        },
+        {
+          "kind": "branch-left",
+          "label": "Residential setup",
+          "detail": "Triggers crew scheduling, material orders, and homeowner communication sequence."
+        },
+        {
+          "kind": "branch-right",
+          "label": "Commercial setup",
+          "detail": "Initiates project management workflow, permit tracking, and contractor coordination."
+        },
+        {
+          "kind": "merge",
+          "label": "Job officially live",
+          "detail": "All setup processes complete. Job moves from signed contract to active project status."
+        },
+        {
+          "kind": "output",
+          "label": "Back office running",
+          "detail": "Crew gets scheduled, materials get ordered, customer gets timeline. Zero manual handoff needed."
+        }
+      ],
+      "metrics": {
+        "stepCount": 10,
+        "processCount": 3
+      }
+    },
+    "deal-to-job-processing": {
+      "bundleId": "deal-to-job-processing",
+      "headline": "Deal closes. Job opens. Addendums follow.",
+      "headlineAccent": "follow",
+      "dek": "The moment your CRM marks a deal won, the system parses job details, pulls every linked change order, and processes the full conversion in 10 automated steps.",
+      "beats": [
+        {
+          "kind": "trigger",
+          "label": "Deal closes in CRM",
+          "detail": "HubSpot sends the won deal event with customer data and job specifications."
+        },
+        {
+          "kind": "step",
+          "label": "Parse the job data",
+          "detail": "System extracts customer info, project scope, and contract details from the deal record."
+        },
+        {
+          "kind": "lookup",
+          "label": "Find all addendums",
+          "detail": "Searches for every change order and addendum linked to this deal ID."
+        },
+        {
+          "kind": "decision",
+          "label": "Check addendum status",
+          "detail": "Does this change order already have a job assigned to it?"
+        },
+        {
+          "kind": "branch-left",
+          "label": "Skip assigned orders",
+          "detail": "Change order already has a job record. Move to the next one."
+        },
+        {
+          "kind": "branch-right",
+          "label": "Process new addendum",
+          "detail": "Creates job record for unassigned change orders with full project data."
+        },
+        {
+          "kind": "output",
+          "label": "Job records created",
+          "detail": "All change orders now have proper job assignments in the system."
+        }
+      ],
+      "metrics": {
+        "stepCount": 10,
+        "processCount": 1
+      }
+    },
+    "production-crew-tracking": {
+      "bundleId": "production-crew-tracking",
+      "headline": "Crews work. Data flows. Office knows.",
+      "headlineAccent": "flows",
+      "dek": "Time logs and project updates pull automatically from the field, match against active jobs, and sync to the office. No more calling crews for status reports.",
+      "beats": [
+        {
+          "kind": "trigger",
+          "label": "Production update arrives",
+          "detail": "Time tracking app sends hourly data. Crew hours, project codes, current status."
+        },
+        {
+          "kind": "lookup",
+          "label": "Pull all time logs",
+          "detail": "Grab every entry from the last sync. Clock-in times, job sites, crew member names."
+        },
+        {
+          "kind": "lookup",
+          "label": "Match active projects",
+          "detail": "Cross-reference time entries against live project database. Find the right job numbers."
+        },
+        {
+          "kind": "decision",
+          "label": "Project exists?",
+          "detail": "Does this time log match a real project in the system?"
+        },
+        {
+          "kind": "branch-left",
+          "label": "Process valid data",
+          "detail": "Update project hours, calculate progress, sync to office dashboard."
+        },
+        {
+          "kind": "branch-right",
+          "label": "Skip orphaned logs",
+          "detail": "Time entry doesn't match any active project. Log the error and move on."
+        },
+        {
+          "kind": "merge",
+          "label": "Sync to office systems",
+          "detail": "Push updated production data to accounting software and project management tools."
+        }
+      ],
+      "metrics": {
+        "stepCount": 10,
+        "processCount": 4
+      }
+    },
+    "time-tracking-sync-engine": {
+      "bundleId": "time-tracking-sync-engine",
+      "headline": "Someone clocks in. Job codes update. Payroll gets clean data.",
+      "headlineAccent": "clocks",
+      "dek": "Every time entry, correction, and deletion flows between your time tracking app and project management system automatically. No more manual reconciliation or phantom hours in payroll.",
+      "beats": [
+        {
+          "kind": "trigger",
+          "label": "Employee clocks in",
+          "detail": "Time entry hits your time tracking app. Could be a regular shift start, overtime correction, or project switch mid-day."
+        },
+        {
+          "kind": "lookup",
+          "label": "Pull fresh job codes",
+          "detail": "System grabs all active job codes and project data. Makes sure new sites and departments are available for assignment."
+        },
+        {
+          "kind": "step",
+          "label": "Sync employee profiles",
+          "detail": "New hires get added automatically. Existing employees get updated roles, locations, and permissions across both systems."
+        },
+        {
+          "kind": "decision",
+          "label": "Entry deleted or updated?",
+          "detail": "System checks if this is a correction, deletion, or brand new time entry that needs processing."
+        },
+        {
+          "kind": "branch-left",
+          "label": "Clean up deleted entries",
+          "detail": "Removes phantom time logs from both systems. Prevents deleted entries from showing up in payroll reports."
+        },
+        {
+          "kind": "branch-right",
+          "label": "Update active time logs",
+          "detail": "Pushes new entries and corrections to project management. Job codes, locations, and hours all stay in sync."
+        },
+        {
+          "kind": "merge",
+          "label": "Reconcile all systems",
+          "detail": "Both paths converge to ensure time tracking app and project system show identical data."
+        },
+        {
+          "kind": "output",
+          "label": "Payroll gets clean data",
+          "detail": "Hours, job codes, and employee assignments flow to payroll automatically. No manual reconciliation needed."
+        }
+      ],
+      "metrics": {
+        "stepCount": 23,
+        "processCount": 7
+      }
+    },
+    "invoice-lifecycle": {
+      "bundleId": "invoice-lifecycle",
+      "headline": "Unbilled work gets caught. Invoices sync everywhere. Nothing slips through.",
+      "headlineAccent": "caught",
+      "dek": "Your accounting software and project management system stay perfectly in sync — unbilled line items become invoices automatically, modifications flow both ways, and voided invoices disappear from all dashboards.",
+      "beats": [
+        {
+          "kind": "trigger",
+          "label": "Unbilled work detected",
+          "detail": "System scans for line items that haven't been invoiced yet. Could be completed project phases or time entries sitting in your project management system."
+        },
+        {
+          "kind": "lookup",
+          "label": "Pull customer details",
+          "detail": "Grabs the full customer record from your accounting software. Gets billing address, payment terms, and project type to build the invoice correctly."
+        },
+        {
+          "kind": "step",
+          "label": "Build invoice automatically",
+          "detail": "Creates the invoice in your accounting software with all line items, custom fields, and proper formatting. No manual data entry required."
+        },
+        {
+          "kind": "decision",
+          "label": "Invoice created successfully?",
+          "detail": "Checks if the invoice was built without errors in your accounting software before proceeding to sync it elsewhere."
+        },
+        {
+          "kind": "branch-left",
+          "label": "Sync to project system",
+          "detail": "Pushes the new invoice into your project management system. Links it to the right job and updates billing status."
+        },
+        {
+          "kind": "branch-right",
+          "label": "Handle modifications",
+          "detail": "Catches changes made to existing invoices — edits, voids, or payment updates. Syncs the changes in both directions."
+        },
+        {
+          "kind": "merge",
+          "label": "Save invoice PDF",
+          "detail": "Generates and stores the PDF version of the invoice for your records and customer delivery."
+        },
+        {
+          "kind": "output",
+          "label": "Everything stays synced",
+          "detail": "Both systems show the same invoice data. Voided invoices disappear from project dashboards. Payment status updates everywhere."
+        }
+      ],
+      "metrics": {
+        "stepCount": 47,
+        "processCount": 8
+      }
+    },
+    "reporting-dashboard-sync": {
+      "bundleId": "reporting-dashboard-sync",
+      "headline": "Your CRM updates. Your dashboard refreshes. The numbers never lie.",
+      "headlineAccent": "refreshes",
+      "dek": "Every two minutes, deal data flows from HubSpot to your reporting dashboard. No manual pulls. No stale numbers. Just live pipeline health that updates itself.",
+      "beats": [
+        {
+          "kind": "trigger",
+          "label": "Clock strikes two",
+          "detail": "Every 120 seconds, the sync kicks off. No waiting for Monday morning reports."
+        },
+        {
+          "kind": "step",
+          "label": "Generate deal payload",
+          "detail": "Pulls fresh deal records from HubSpot. Stage changes, close dates, amounts — everything that moved."
+        },
+        {
+          "kind": "decision",
+          "label": "New or changed?",
+          "detail": "Compares timestamps to find what actually needs updating. Skip the noise, sync what matters."
+        },
+        {
+          "kind": "branch-left",
+          "label": "Process deletions",
+          "detail": "Deals that got removed from HubSpot disappear from the dashboard too. Clean slate, accurate counts."
+        },
+        {
+          "kind": "branch-right",
+          "label": "Upsert records",
+          "detail": "New deals get added, existing ones get updated. One operation handles both cases."
+        },
+        {
+          "kind": "merge",
+          "label": "Dashboard refreshed",
+          "detail": "Live pipeline numbers replace last week's stale data. Managers see reality, not history."
+        }
+      ],
+      "metrics": {
+        "stepCount": 11,
+        "processCount": 2
+      }
+    },
+    "communication-hub": {
+      "bundleId": "communication-hub",
+      "headline": "Someone books. Systems sync. Everyone knows.",
+      "headlineAccent": "sync",
+      "dek": "When a booking comes in, this automation finds the right deal in HubSpot, checks if the contact exists, and fires off the exact communication each system needs — no manual forwarding, no missed updates.",
+      "beats": [
+        {
+          "kind": "trigger",
+          "label": "Booking arrives",
+          "detail": "Someone schedules through your appointment scheduler. The event data hits the automation instantly."
+        },
+        {
+          "kind": "lookup",
+          "label": "Find accepted quotes",
+          "detail": "Pulls all quotes marked as accepted from your estimating tool. Matches them against the booking details."
+        },
+        {
+          "kind": "step",
+          "label": "Loop through quotes",
+          "detail": "Each quote gets processed individually. Converts estimate dates and preps the data for HubSpot sync."
+        },
+        {
+          "kind": "lookup",
+          "label": "Get latest open deal",
+          "detail": "Searches HubSpot for the most recent open deal tied to this customer. Uses deal stage and contact info to match."
+        },
+        {
+          "kind": "decision",
+          "label": "Does contact exist?",
+          "detail": "Checks if this person already has a HubSpot contact record. Branches based on what it finds."
+        },
+        {
+          "kind": "branch-new",
+          "label": "Create new contact",
+          "detail": "No existing record found. Creates a fresh HubSpot contact with booking details and quote information."
+        },
+        {
+          "kind": "branch-left",
+          "label": "Update existing contact",
+          "detail": "Contact exists. Updates their record with new booking data and links it to the open deal."
+        },
+        {
+          "kind": "output",
+          "label": "Systems stay synced",
+          "detail": "HubSpot, your estimating tool, and appointment scheduler all reflect the same information. No manual data entry required."
+        }
+      ],
+      "metrics": {
+        "stepCount": 14,
+        "processCount": 25
+      }
+    },
+    "hubspot-contact-sync": {
+      "bundleId": "hubspot-contact-sync",
+      "headline": "New lead arrives. HubSpot searches twice. One contact emerges.",
+      "headlineAccent": "emerges",
+      "dek": "Every marketing channel dumps leads into HubSpot differently. This 24-step flow searches by ID first, email second, then merges or creates — zero duplicates, zero manual hunting.",
+      "beats": [
+        {
+          "kind": "trigger",
+          "label": "Lead data arrives",
+          "detail": "Marketing vendor drops contact info into the system. Could be a webform, channel partner, or lead gen tool."
+        },
+        {
+          "kind": "lookup",
+          "label": "Search by contact ID",
+          "detail": "HubSpot hunts for an existing contact using the unique ID. First line of defense against duplicates."
+        },
+        {
+          "kind": "decision",
+          "label": "Found or ghost?",
+          "detail": "If the ID search hits, we have a match. If not, time for plan B."
+        },
+        {
+          "kind": "branch-left",
+          "label": "Search by email instead",
+          "detail": "No ID match? HubSpot tries the email address. Different vendors use different identifiers."
+        },
+        {
+          "kind": "branch-right",
+          "label": "Merge existing contact",
+          "detail": "Contact found by ID. Pull current properties and merge with the fresh lead data."
+        },
+        {
+          "kind": "merge",
+          "label": "Final contact payload",
+          "detail": "Whether found by ID, email, or created fresh, all contact data gets standardized into one clean record."
+        },
+        {
+          "kind": "output",
+          "label": "HubSpot contact updated",
+          "detail": "Contact exists in HubSpot with merged data from all sources. Sales reps see one clean record, not duplicates."
+        }
+      ],
+      "metrics": {
+        "stepCount": 24,
+        "processCount": 3
+      }
+    },
+    "message-transpiler": {
+      "bundleId": "message-transpiler",
+      "headline": "Customer message triggers. Deal data flows. Perfect link delivers.",
+      "headlineAccent": "flows",
+      "dek": "Every outbound message automatically pulls the latest deal context, generates a personalized booking link, and shortens it. Customers get the right link in seconds, not minutes.",
+      "beats": [
+        {
+          "kind": "trigger",
+          "label": "Message goes out",
+          "detail": "Staff hits send on a customer message. The system catches this event and starts pulling context."
+        },
+        {
+          "kind": "lookup",
+          "label": "Find the deal",
+          "detail": "System searches for the customer's latest open deal in HubSpot. Grabs current stage, value, and project details."
+        },
+        {
+          "kind": "step",
+          "label": "Generate booking link",
+          "detail": "Creates a personalized appointment scheduler link based on the deal context. Different deal stages get different booking flows."
+        },
+        {
+          "kind": "step",
+          "label": "Shorten the URL",
+          "detail": "Converts the long booking link into a clean, trackable short URL. Makes messages cleaner and tracks clicks."
+        },
+        {
+          "kind": "decision",
+          "label": "Which message format?",
+          "detail": "Checks deal stage and customer type to determine the right message template and tone."
+        },
+        {
+          "kind": "branch-left",
+          "label": "New prospect path",
+          "detail": "Formats message for first-time customers with introduction copy and basic booking instructions."
+        },
+        {
+          "kind": "branch-right",
+          "label": "Existing customer path",
+          "detail": "Uses familiar tone with deal-specific details and streamlined booking flow for repeat customers."
+        },
+        {
+          "kind": "output",
+          "label": "Perfect message ready",
+          "detail": "Final message includes deal context, personalized booking link, and proper formatting. Ready to send in seconds."
+        }
+      ],
+      "metrics": {
+        "stepCount": 10,
+        "processCount": 1
+      }
+    },
+    "expense-management-pipeline": {
+      "bundleId": "expense-management-pipeline",
+      "headline": "Bills arrive. Jobs get matched. Costs track themselves.",
+      "headlineAccent": "matched",
+      "dek": "Every expense from your accounting software automatically finds its project in Airtable by cross-referencing customer records and job data — with receipt attachments downloaded and linked.",
+      "beats": [
+        {
+          "kind": "trigger",
+          "label": "New Bill Arrives",
+          "detail": "Expense data flows in from your accounting software. Could be materials for the Henderson kitchen or fuel for the crew truck."
+        },
+        {
+          "kind": "lookup",
+          "label": "Find the Customer",
+          "detail": "System searches for matching customer references across your job records. Links the vendor bill to the right client account."
+        },
+        {
+          "kind": "step",
+          "label": "Download Receipt Files",
+          "detail": "Grabs any attached receipts or invoices from the expense record. Photos, PDFs, whatever the vendor sent."
+        },
+        {
+          "kind": "decision",
+          "label": "Job or Project?",
+          "detail": "Checks whether this expense belongs to a main job or a specific project phase within that job."
+        },
+        {
+          "kind": "branch-left",
+          "label": "Match to Job",
+          "detail": "Links the expense directly to the main job record in Airtable with full customer context."
+        },
+        {
+          "kind": "branch-right",
+          "label": "Match to Project",
+          "detail": "Connects the expense to the specific project phase, maintaining the parent job relationship."
+        },
+        {
+          "kind": "merge",
+          "label": "Update Records",
+          "detail": "Saves the expense data and attachment links to Airtable. Customer, job, and project connections all locked in."
+        },
+        {
+          "kind": "output",
+          "label": "Cost Tracking Complete",
+          "detail": "Job costing is current without the treasure hunt. Every receipt knows exactly which project it belongs to."
+        }
+      ],
+      "metrics": {
+        "stepCount": 35,
+        "processCount": 6
+      }
+    }
+  }
+}

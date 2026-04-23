@@ -212,7 +212,7 @@
         }
       ],
       "pain": "Estimates sitting in one tool while deals live in another, sales managers manually copying numbers between systems, inconsistent deal naming making pipeline reports useless",
-      "solution": "The moment an estimate is created, every system updates automatically — the CRM deal is created, named consistently, and the sales team sees real-time pipeline value without touching a spreadsheet",
+      "solution": "The moment an estimate is created, every system updates automatically — the CRM deal is created, named consistently, and the sales team sees always-current pipeline value without touching a spreadsheet",
       "layout": "swimlane",
       "type": "process",
       "diagramConfig": {
@@ -375,7 +375,7 @@
         }
       ],
       "pain": "Change orders scribbled on paper, forgotten price adjustments that eat into margins, crew showing up without knowing the scope changed, and deals stuck showing the wrong value for weeks",
-      "solution": "Every change order flows through automatically — deal amounts, hours, labor, materials, and discounts are aggregated across all related deals, and the CRM reflects the real total value in real-time",
+      "solution": "Every change order flows through automatically — deal amounts, hours, labor, materials, and discounts are aggregated across all related deals, and the CRM reflects the real total value as each update lands",
       "layout": "vertical",
       "type": "process",
       "diagramConfig": {
@@ -629,7 +629,7 @@
         }
       ],
       "pain": "Time entries in one app, job codes in another, payroll staff spending hours reconciling who worked where, deleted entries causing phantom hours, and new employees waiting days to be set up in the time system",
-      "solution": "Every clock-in, correction, and deletion flows between systems in real-time — job codes stay current, employee profiles sync automatically, and payroll gets clean data without manual reconciliation",
+      "solution": "Every clock-in, correction, and deletion flows between systems as it happens — job codes stay current, employee profiles sync automatically, and payroll gets clean data without manual reconciliation",
       "layout": "vertical",
       "type": "process",
       "diagramConfig": {
@@ -798,7 +798,7 @@
         }
       ],
       "pain": "Unbilled work slipping through the cracks, invoices created in one system but invisible in another, customers getting outdated versions, and voided invoices still showing up in project dashboards",
-      "solution": "Unbilled items are detected automatically, invoices flow between accounting and project management in real-time, and every modification syncs everywhere — nothing falls through the cracks",
+      "solution": "Unbilled items are detected automatically, invoices flow between accounting and project management as they change, and every modification syncs everywhere — nothing falls through the cracks",
       "layout": "swimlane",
       "type": "process",
       "diagramConfig": {
@@ -929,7 +929,7 @@
         }
       ],
       "pain": "Receipts in email, bills in accounting software, project costs in a spreadsheet — nobody can answer \"how much did we spend on that job?\" without an hour of digging through three different systems",
-      "solution": "Every bill and receipt is automatically matched to its job by looking up customer references and project records, with attachments downloaded and linked — real-time job costing without the treasure hunt",
+      "solution": "Every bill and receipt is automatically matched to its job by looking up customer references and project records, with attachments downloaded and linked — always-current job costing without the treasure hunt",
       "layout": "vertical",
       "type": "process",
       "diagramConfig": {
