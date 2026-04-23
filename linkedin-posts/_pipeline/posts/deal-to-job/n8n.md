@@ -1,21 +1,29 @@
-Won deals sitting in your CRM while your ops team manually creates job records? Change orders falling through cracks during busy season? There's a better way.
+Your CRM shows a deal won. Your ops team scrambles to manually create job records, copy-pasting customer data between systems while change orders slip through the cracks.
 
-**BEFORE:** Your sales team closes a big deal, marks it won in the CRM, then... nothing happens automatically. Your ops manager has to manually create job records, copy-paste customer info between systems, and hunt down every change order addendum linked to that deal. During busy season, stuff gets missed. Change orders sit unprocessed. Your team scrambles to catch up.
+BEFORE: Deal closes in HubSpot. Someone prints the contract details. Another person opens your job management system. They manually type customer info, project scope, contract terms. Then they hunt through linked records to find every change order and addendum. Each one needs its own job record. During busy season, addendums get missed. Jobs start without proper setup.
 
-**AFTER:** The moment a deal hits "won" status, your system springs into action. It parses all the job data, finds every linked addendum and change order, validates which ones need job assignments, and processes the full conversion automatically. No manual copy-paste. No missed change orders. Clean job records ready to go.
+AFTER: The moment HubSpot marks that deal won, your system automatically parses all job data, finds every linked change order, and creates complete job records. No manual data entry. No missed addendums. Every change order gets proper job assignment.
 
-**THE BRIDGE:** Here's how n8n makes this happen:
+HERE'S HOW N8N HANDLES THE CONVERSION:
 
-Your CRM sends a won deal event with all the customer data and job specifications. The system immediately parses that job data — extracting customer info, project scope, and contract details from the deal record.
+HubSpot triggers when a deal status changes to "won" — sends the complete deal record with customer data and job specifications.
 
-Then it searches for every change order and addendum linked to this specific deal ID. This is where the magic happens: it loops through each change order and checks a critical question — does this change order already have a job assigned to it?
+n8n parses the incoming job data — extracts customer info, project scope, and contract details from the deal payload.
 
-If yes, it skips that one and moves to the next. If no, it creates a proper job record for that unassigned change order, pulling in all the project data it needs.
+The system searches for all addendums — queries your database for every change order and addendum linked to this specific deal ID.
 
-The result? Every change order gets its proper job assignment in your system. No manual hunting. No copy-paste errors. Your ops team opens their dashboard and sees clean, complete job records ready to schedule and execute.
+For each change order found, n8n checks the assignment status — does this addendum already have a job record assigned to it?
 
-The whole process runs in the background while your sales team celebrates the win and your ops team focuses on actual project management instead of data entry.
+If the change order already has a job, n8n skips it and moves to the next one in the list.
 
-What's the biggest manual step your team still does after closing deals? And if you're tired of playing data entry catch-up, let's chat about getting your deal-to-job process automated.
+If the change order needs processing, n8n creates a new job record with full project data and customer details.
+
+The loop continues until every change order has proper job assignment.
+
+Your ops team opens their dashboard to find complete job records waiting — customer data populated, addendums processed, ready to schedule.
+
+No more manual copy-paste between systems. No more missed change orders during busy season.
+
+What's the biggest bottleneck in your job setup process right now? And if you're tired of manual data entry slowing down your team, let's chat about automating your deal-to-job workflow.
 
 #Automation #JobSetup #n8n

@@ -1,21 +1,29 @@
-Your payroll team just spent 6 hours reconciling time entries because someone deleted a shift in the time tracking app but it still showed up in project management. Sound familiar?
+Your crew clocks in at 7 AM. By 7:01, your time tracking app and project management system are arguing about job codes. By Friday, payroll is drowning in phantom hours.
 
-**BEFORE:** Time entries live in one system, job codes in another. Your payroll staff burns hours every week cross-referencing who worked where and when. Deleted entries become phantom hours that mess up reports. New employees wait days to get set up across all your time systems, missing billable hours from day one.
+BEFORE: Time entries live in one app, job codes in another. Payroll staff spend hours reconciling who worked where. Deleted entries create phantom hours. New employees wait days to get set up in the time system.
 
-**AFTER:** Every clock-in, correction, and deletion flows between your systems automatically. Job codes stay current across platforms. Employee profiles sync the moment someone's hired. Payroll gets clean, reconciled data without anyone touching a spreadsheet.
+AFTER: Every clock-in, correction, and deletion flows between systems automatically. Job codes stay current, employee profiles sync seamlessly, and payroll gets clean data without manual reconciliation.
 
-**THE BRIDGE:** Here's how Make handles this behind the scenes.
+Here's how Make handles this sync:
 
-When an employee clocks in, the automation immediately pulls fresh job codes and project data from your project management system. This ensures new sites and departments are available for assignment right away.
+Employee clocks in — time entry hits your time tracking app. Could be regular shift start, overtime correction, or project switch mid-day.
 
-Next, it syncs employee profiles automatically. New hires get added to both systems with the right roles, locations, and permissions. No more waiting days for IT to set up access.
+Make pulls fresh job codes and project data. New sites and departments become available for assignment immediately.
 
-Then comes the smart part — the system checks whether this is a new entry, correction, or deletion. If someone deleted a time entry, it removes those phantom logs from both systems so they don't appear in payroll reports. If it's a new entry or correction, it pushes the data to project management with matching job codes, locations, and hours.
+Employee profiles sync automatically. New hires get added to both systems. Existing employees get updated roles, locations, and permissions across platforms.
 
-Everything converges to ensure your time tracking app and project system show identical data. Hours, job codes, and employee assignments flow to payroll automatically.
+System checks if this is a correction, deletion, or brand new entry. Make's visual canvas makes this branching logic crystal clear.
 
-The result? Your payroll team gets clean data every time. No more manual reconciliation. No more phantom hours. No more new employees stuck in setup limbo.
+For deletions — removes phantom time logs from both systems. Prevents deleted entries from contaminating payroll reports.
 
-What's your biggest time tracking headache right now — phantom entries or new employee delays? And if you're tired of manual payroll reconciliation eating up your team's time, let's chat about setting this up for your business.
+For new entries — pushes time logs and corrections to project management. Job codes, locations, and hours stay perfectly aligned.
+
+Both paths converge to reconcile all systems. Your time tracking app and project system show identical data.
+
+Final step: hours, job codes, and employee assignments flow to payroll automatically. Zero manual reconciliation.
+
+The result? Your 7 AM clock-in becomes clean payroll data by 7:02. No more Friday reconciliation marathons.
+
+What's your biggest time tracking headache right now? And if you're tired of manual payroll reconciliation, let's chat about automating your time sync.
 
 #Automation #TimeTracking #Make

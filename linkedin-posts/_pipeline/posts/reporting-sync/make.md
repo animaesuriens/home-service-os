@@ -1,29 +1,27 @@
-Your sales manager pulls Monday morning reports from HubSpot. The numbers are already a week old. Pipeline health dropped Thursday, but nobody knows until next Monday.
+Your sales manager just spent 3 hours pulling last week's pipeline report from HubSpot. The numbers were already stale before the meeting even started.
 
-What if your dashboard refreshed every two minutes instead?
+**BEFORE:** Every Monday morning, someone's manually exporting deal data, building reports in spreadsheets, and presenting numbers that are already outdated. By the time you spot a pipeline problem, you've lost a week of reaction time. Your team is making decisions on old information while deals slip through the cracks.
 
-Your CRM updates. Your dashboard refreshes. The numbers never lie. Every 120 seconds, fresh deal data flows from HubSpot to your reporting dashboard without anyone lifting a finger.
+**AFTER:** Your dashboard refreshes every two minutes with live HubSpot data. Deal stages update automatically, close dates sync instantly, and pipeline health reflects reality — not last week's snapshot. No more manual exports, no more stale numbers.
 
-Here's how Make handles the heavy lifting:
+**THE BRIDGE:** Here's how Make handles this sync automatically:
 
-Clock strikes two — Every 120 seconds, the sync kicks off automatically. No waiting for Monday morning reports or manual data pulls.
+Every 120 seconds, the automation kicks off. No waiting for Monday morning reports or manual triggers.
 
-Generate deal payload — Make pulls fresh deal records straight from HubSpot. Stage changes, close dates, deal amounts — everything that moved since the last sync gets captured.
+First, it generates a fresh deal payload from HubSpot — pulling stage changes, close dates, deal amounts, everything that moved since the last sync.
 
-New or changed? — The system compares timestamps to find what actually needs updating. Skip the noise, sync only what matters. No wasted processing on stale data.
+Then comes the smart part: it compares timestamps to find what actually needs updating. Why process 1,000 unchanged deals when only 12 moved?
 
-Then it branches into two paths:
+The workflow branches into two paths. One handles deletions — if deals got removed from HubSpot, they disappear from your dashboard too. Clean data, accurate counts.
 
-Process deletions — Deals that got removed from HubSpot disappear from your dashboard too. Clean slate, accurate counts. No ghost deals inflating your pipeline.
+The other path runs upserts — new deals get added, existing ones get updated. One operation handles both cases seamlessly.
 
-Upsert records — New deals get added, existing ones get updated. One smart operation handles both cases seamlessly.
+Finally, everything merges back together and your dashboard refreshes with live pipeline numbers. Your managers see current reality, not last week's history.
 
-Dashboard refreshed — Live pipeline numbers replace last week's stale data. Your managers see reality, not history. When a big deal moves to "closed-lost" on Thursday, they know Thursday — not the following Monday.
+The whole cycle runs every two minutes, so when a deal moves from "proposal sent" to "negotiation," your dashboard knows within 120 seconds. No manual pulls, no stale data, no surprises in Monday's meeting.
 
-The beauty? Your team gets early warning signals. Pipeline health drops? You see it within two minutes, not seven days later. Deal velocity slows? The dashboard shows it immediately.
+Your pipeline health updates itself while you focus on closing deals instead of building reports.
 
-No more Monday morning surprises. No more "I wish we'd known sooner" conversations. Just live data that updates itself while you focus on actually closing deals.
-
-What's the biggest reporting blind spot in your business right now? And how much manual work are you doing that could run itself every two minutes?
+What's the longest you've gone making decisions on outdated pipeline data? And if you're tired of manual reporting workflows, let's chat about automating your dashboard syncs.
 
 #Automation #Reporting #Make

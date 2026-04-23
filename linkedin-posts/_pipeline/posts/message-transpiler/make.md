@@ -1,25 +1,19 @@
-Your team sends 50+ customer messages daily, but each one requires 5 minutes of manual lookup work — finding deals, copying booking links, shortening URLs. Peak season = chaos.
+Staff manually looking up deals and copying booking links before every customer message? That's 5 minutes per message during peak season.
 
-**BEFORE:** Staff manually hunting through your CRM for each customer's latest deal info. Copy-pasting booking links. Running them through URL shorteners. Formatting messages by hand. What should take 30 seconds stretches into 5+ minutes per message. During busy periods, customers wait while your team scrambles to piece together the right context and links.
+Your team hits send on a customer message, and Make catches that event instantly. The automation searches HubSpot for the customer's latest open deal, pulling current stage, value, and project details.
 
-**AFTER:** Every outbound message automatically pulls fresh deal data, generates the perfect booking link, and delivers a polished message in seconds. Your team hits send, and customers instantly get exactly what they need to move forward.
+Next, Make generates a personalized appointment scheduler link based on that deal context. Different deal stages trigger different booking flows — new prospects get the full introduction flow, while existing customers get streamlined scheduling.
 
-**THE BRIDGE:** Here's how Make handles this behind the scenes:
+The system converts that long booking URL into a clean, trackable short link. Makes your messages cleaner and lets you track click-through rates.
 
-When your team sends a customer message, Make immediately searches your CRM for that customer's latest open deal. It pulls the current stage, project value, and key details.
+Here's where it gets smart: Make checks the deal stage and customer type to determine the right message template. New prospects get introduction copy with basic booking instructions. Existing customers get familiar tone with deal-specific details and streamlined booking flow.
 
-Next, it generates a personalized booking link based on exactly where that deal stands. Early-stage prospects get one booking flow, while existing customers get a streamlined version that skips the intro steps.
+The final message includes all the deal context, personalized booking link, and proper formatting. What used to take 5 minutes of manual lookup and copying now happens in seconds.
 
-The system then shortens that booking URL into a clean, trackable link that won't break your message formatting.
+Your customers get the right link immediately. Your staff stays focused on higher-value work. And you can scale customer communication without adding headcount.
 
-Here's where it gets smart — Make checks the deal stage and customer history to determine the right message template. New prospects get the full introduction treatment with detailed booking instructions. Existing customers get a familiar tone with deal-specific context and a direct path to scheduling.
+Make's visual canvas makes this workflow easy to build and modify. You can see exactly how each deal stage routes to different message templates.
 
-Finally, it assembles everything into a perfectly formatted message: relevant deal context, personalized booking link, and the right tone for that customer relationship.
-
-Your team sends the message, customers click through to book, and you're tracking engagement automatically. What used to eat up hours of manual work now happens instantly in the background.
-
-The best part? Every message is consistent, contextual, and contains zero copy-paste errors. Your customers get exactly what they need to take the next step.
-
-What's the biggest time-waster in your customer communication process? And if you're ready to automate your message workflows, let's chat about what Make can do for your business.
+What's your biggest bottleneck in customer communication right now? And if you're ready to automate your message workflows, let's chat about what's possible with your current tech stack.
 
 #Automation #CRM #Make

@@ -1,23 +1,29 @@
-Your payroll team just spent 6 hours reconciling time entries because someone deleted a shift last week and it's still showing up in three different systems.
+Your crew clocks in at 7 AM. By 7:01, your time tracking app and project management system are arguing about job codes. By Friday, payroll is drowning in phantom hours.
 
-**BEFORE:** Time entries live in your time tracking app, job codes live in project management, and your payroll staff becomes the human bridge between them. New employees wait days to get set up across systems. Deleted entries become phantom hours that haunt your reports. Every pay period turns into a reconciliation nightmare.
+BEFORE: Time entries live in one app, job codes in another. Payroll staff spend hours reconciling who worked where. Deleted entries create phantom hours. New employees wait days to get set up in the time system.
 
-**AFTER:** Every clock-in, correction, and deletion flows between systems automatically. Job codes stay current across platforms. Employee profiles sync the moment someone's hired. Payroll gets clean, reconciled data without touching a spreadsheet.
+AFTER: Every clock-in, correction, and deletion flows between systems automatically. Job codes stay current, employee profiles sync seamlessly, and payroll gets clean data without manual reconciliation.
 
-**THE BRIDGE:** Here's how Zapier makes this seamless:
+Here's how Zapier handles this sync:
 
-When an employee clocks in, the automation immediately pulls fresh job codes and project data from your project management system. This ensures new sites and departments are available for assignment right away.
+Employee clocks in — time entry hits your time tracking app. Could be regular shift start, overtime correction, or project switch mid-day.
 
-Next, it syncs employee profiles automatically. New hires get added to both systems without manual setup. Existing employees get updated roles, locations, and permissions pushed everywhere they need to be.
+Zapier pulls fresh job codes and project data. New sites and departments become available for assignment immediately.
 
-The system then checks whether this is a new entry, correction, or deletion. If someone deleted a time entry, it removes those phantom logs from both systems so they don't appear in payroll reports. If it's a new entry or correction, it pushes the hours, job codes, and location data to your project management system.
+Employee profiles sync automatically. New hires get added to both systems. Existing employees get updated roles, locations, and permissions across platforms.
 
-Everything converges to ensure your time tracking app and project system show identical data. The final step pushes clean, reconciled hours and job assignments directly to payroll.
+System checks if this is a correction, deletion, or brand new entry. Zapier's step-by-step flow makes this logic easy to follow.
 
-No more manual reconciliation. No more phantom hours. No more waiting days to set up new employees in multiple systems.
+For deletions — removes phantom time logs from both systems. Prevents deleted entries from contaminating payroll reports.
 
-Your payroll team goes from spending hours hunting down discrepancies to getting accurate data automatically.
+For new entries — pushes time logs and corrections to project management. Job codes, locations, and hours stay perfectly aligned.
 
-What's the biggest time tracking headache your payroll team deals with? And if you're tired of manual reconciliation eating up your admin time, let's chat about setting this up for your company.
+Both paths converge to reconcile all systems. Your time tracking app and project system show identical data.
+
+Final step: hours, job codes, and employee assignments flow to payroll automatically. Zero manual reconciliation.
+
+The result? Your 7 AM clock-in becomes clean payroll data by 7:02. No more Friday reconciliation marathons.
+
+What's your biggest time tracking headache right now? And if you're tired of manual payroll reconciliation, let's chat about automating your time sync.
 
 #Automation #TimeTracking #Zapier

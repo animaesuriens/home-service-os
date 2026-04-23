@@ -1,21 +1,27 @@
-Your office staff is calling crews every few hours asking "How's the Johnson job going?" while production data sits trapped in text messages and phone calls.
+Your office staff shouldn't have to call crews every hour asking "How's the job going?" Yet most home service companies still chase production updates like it's 1995.
 
-**BEFORE:** You're playing phone tag with field crews just to get basic updates. Time logs are scattered across different apps, project status lives in someone's head, and by the time you compile a weekly report, half the data is already outdated. You have no clue which jobs are on track until someone physically drives to the site.
+BEFORE: You're playing phone tag with field crews, trying to piece together project status from scattered text messages and voicemails. By the time you get real numbers, they're already outdated. Weekly reports? More like weekly guesswork.
 
-**AFTER:** Time logs and project records flow automatically from the field to your office systems. Your dashboard shows current production data without anyone lifting a phone. Crews work, data flows, office knows.
+AFTER: Time logs flow automatically from the field to your office systems. You see current production data, project progress, and crew hours without making a single phone call. Real visibility, zero chasing.
 
-**THE BRIDGE:** Here's how Zapier makes this happen automatically.
+Here's how Zapier pulls this together:
 
-Your time tracking app sends hourly data to trigger the workflow — crew hours, project codes, current status from the field. Zapier immediately pulls all time logs from the last sync, grabbing clock-in times, job sites, and crew member names.
+Your time tracking app sends hourly updates to Zapier's trigger. Crew hours, project codes, current job status — all the field data you need.
 
-Next, it cross-references every time entry against your live project database to find the right job numbers. This is where the magic happens — Zapier asks "Does this time log match a real project in the system?"
+Zapier grabs every time log entry from the last sync. Clock-in times, job sites, crew member names. Everything gets pulled into the workflow automatically.
 
-If yes, it processes the valid data by updating project hours and syncing everything to your office dashboard. If the time entry doesn't match any active project, Zapier logs the error and moves on — no crashes, no confusion.
+Next, it cross-references those time entries against your live project database. Zapier looks up each job number to find the matching active project.
 
-Finally, all updated production data gets pushed to your accounting software and project management tools automatically. Your office sees real production status without chasing anyone for updates.
+Then comes the smart part: Zapier checks if this time log matches a real project in your system. Valid match? It updates project hours, calculates progress, and syncs everything to your office dashboard.
 
-The whole thing runs on a schedule, so fresh data flows from field to office every hour. No more phone calls asking for status. No more outdated reports. Just current production data when you need it.
+No match? Zapier logs the error and moves on. No crashes, no confusion.
 
-What's your biggest headache with tracking crew productivity right now? And if you're tired of playing phone tag with field teams, let's chat about setting this up for your business.
+Finally, all that updated production data gets pushed to your accounting software and project management tools. Your office systems stay current without anyone lifting a finger.
+
+The result? Crews work in the field. Data flows automatically. Your office knows exactly where every job stands.
+
+Zapier's step-by-step Zap structure makes it simple to follow the logic: trigger from time tracking, lookup projects, filter valid entries, then update your office systems in sequence.
+
+What's your biggest challenge with tracking field production right now? And if you're tired of chasing crews for updates, let's talk about automating your production tracking.
 
 #Automation #ProductionTracking #Zapier

@@ -1,21 +1,27 @@
-Your sales rep opens HubSpot before a call and sees three different records for the same prospect. One from the webform, one from your channel partner, another from that trade show lead scanner.
+Your sales reps are hunting through HubSpot before every call, finding three versions of the same contact, and you're drowning in duplicate records from different marketing channels.
 
-Sound familiar? You're spending 10 minutes per call just figuring out which contact is real. Meanwhile, your CRM is bloated with duplicates, and half your lead data is scattered across phantom records that nobody can find.
+Here's what happens instead: Every lead gets automatically searched by ID first, then email if needed, then merged with existing data or created fresh. Zero duplicates. Zero manual lookups. Always the latest info.
 
-Here's what happens instead: Every lead gets automatically searched, merged, and cleaned before it ever hits your sales team's radar. One contact, complete data, zero hunting.
+New lead arrives. HubSpot searches twice. One contact emerges.
 
-When lead data arrives from any marketing channel, n8n immediately kicks into action. First, it searches HubSpot by contact ID — that unique identifier most vendors include. If there's a match, perfect. The system pulls the existing contact properties and merges them with the fresh lead data.
+Here's how this 24-step n8n workflow handles it:
 
-No ID match? No problem. The automation switches tactics and searches by email address instead. Different vendors use different identifiers, so this two-step search catches contacts that might slip through with just one method.
+Marketing vendor drops contact info into your system — could be a webform, channel partner, or lead gen tool. The automation kicks off immediately.
 
-If neither search finds an existing contact, the system creates a fresh record with all the lead data properly formatted. But here's the key part — whether the contact was found by ID, found by email, or created new, everything gets standardized into one final contact payload.
+First, HubSpot hunts for an existing contact using the unique ID. This is your first line of defense against duplicates.
 
-The automation doesn't stop there. It loops through any associated deals, checks project types, and maps marketing sources so your sales team sees the complete picture. All contact properties get verified and updated in HubSpot.
+Found a match? Great — we pull the current properties and merge them with the fresh lead data. No match? Time for plan B.
 
-Your sales rep opens that same contact record now? One clean profile with complete lead history, properly merged data from every touchpoint, and zero duplicates cluttering the view.
+n8n branches to search by email address instead. Different vendors use different identifiers, so this catches contacts that might exist under a different ID system.
 
-The 24-step flow handles the complexity behind the scenes — multiple searches, conditional branching, data merging, and property validation. Your team just sees the clean result.
+Whether the contact was found by ID, found by email, or needs to be created fresh, all the data gets standardized into one clean payload.
 
-What's your biggest CRM data headache right now? And if you're tired of playing detective with duplicate contacts, let's chat about setting up this exact flow for your business.
+The final step updates your HubSpot contact with merged data from all sources. Your sales reps see one clean record instead of hunting through duplicates.
+
+The whole flow runs automatically every time lead data arrives. No more manual searching. No more wondering if you're calling someone who's already in your system under a different name.
+
+What's the biggest CRM cleanup challenge in your home service business? Drop a comment below.
+
+And if you're tired of duplicate hunting, let's chat about automating your lead management.
 
 #Automation #LeadGeneration #n8n

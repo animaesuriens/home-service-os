@@ -1,21 +1,21 @@
-Your accounting software shows $12K in unbilled work, but your project dashboard says everything's invoiced. Meanwhile, you just voided an invoice that's still showing as "pending" everywhere else.
+Your home service company just finished a $3,200 job. The work's done, but the invoice is sitting in limbo between your project system and accounting software. Sound familiar?
 
-**BEFORE:** You're constantly playing detective between systems. Completed project phases sit unbilled for weeks. When you finally create invoices in your accounting software, they don't show up in project management. Customers get confused by outdated invoice versions. And when you void something? Good luck making it disappear from every dashboard.
+BEFORE: Unbilled work slips through the cracks because it lives in one system while invoices get created in another. You're manually checking what needs billing, copying customer details, and hoping nothing gets missed. When invoices get modified or voided, the changes don't sync back to your project dashboards.
 
-**AFTER:** Unbilled work gets caught automatically. Every invoice modification syncs instantly between accounting and project management. Voided invoices vanish from all systems. Your team always sees the real billing status.
+AFTER: Unbilled line items become invoices automatically. Every modification flows between systems instantly. Nothing falls through the cracks.
 
-**Here's how Zapier makes this happen:**
+Here's how Zapier handles your entire invoice lifecycle:
 
-The automation constantly scans your project management system for unbilled line items — completed phases, approved time entries, anything ready to invoice. When it finds unbilled work, it pulls the full customer record from your accounting software to grab billing details and payment terms.
+Your automation scans for unbilled work — completed project phases or time entries sitting in your project management system. When it finds something, it pulls the full customer record from your accounting software, grabbing billing address, payment terms, and project details.
 
-Then it builds the invoice automatically in your accounting software with proper formatting and custom fields. No manual data entry. Once the invoice is created successfully, Zapier pushes it into your project management system and links it to the right job.
+Zapier then builds the invoice automatically in your accounting software with all line items and proper formatting. No manual data entry required. Once the invoice is created successfully, it syncs to your project management system and links to the right job.
 
-But here's the magic — it works both ways. When you modify an existing invoice (edit amounts, change terms, or void it), Zapier catches those changes and syncs them everywhere. Voided invoices disappear from project dashboards. Payment updates flow to both systems.
+But here's where it gets powerful — the automation catches modifications too. Invoice edits, voids, or payment updates trigger the sync in both directions. Zapier's linear workflow structure makes it easy to chain these steps together, with filters and paths handling different scenarios.
 
-The automation even generates and saves PDF versions for your records and customer delivery. Everything stays perfectly in sync — your accounting software, project management system, and team dashboards all show identical invoice data.
+The system generates and stores PDF versions for your records, then ensures both platforms show identical data. When invoices get voided, they disappear from project dashboards automatically. Payment status updates everywhere.
 
-No more unbilled work slipping through cracks. No more confusion about invoice status. Just seamless billing that works across your entire tech stack.
+Your accounting software and project management system stay perfectly in sync. Unbilled items get caught before they become write-offs. Invoice modifications flow both ways instantly.
 
-What's your biggest headache with invoice management right now? And if you're tired of playing system detective, let's chat about automating your invoice workflow.
+What's the biggest invoicing headache in your business — missed billing or keeping systems synced? And if you're tired of playing invoice detective between platforms, let's chat about automating your entire billing workflow.
 
 #Automation #InvoiceAutomation #Zapier

@@ -1,23 +1,29 @@
-Your customer just signed the contract on their phone. Now you're refreshing email every 10 minutes waiting for the notification, then manually kicking off crew scheduling, material orders, and project setup. Meanwhile, the job sits in limbo for hours or even days while you chase down all the moving pieces.
+Your customer just signed the contract on their phone. Two minutes later, your crew scheduler pings with next week's job lineup. Zero emails checked. Zero manual handoffs.
 
-Instead, picture this: The second that digital signature lands, your entire back office springs into action automatically. Crew gets scheduled, materials get ordered, customer gets their timeline — all without you lifting a finger.
+BEFORE: Contracts bouncing between email and printers. Customers scanning signed PDFs back to you. Nobody knowing when paperwork actually cleared until someone digs through their inbox. Jobs sitting in limbo waiting for the green light.
 
-Here's how Make turns contract signatures into instant job launches:
+AFTER: Digital signature hits your system, and the entire back office machinery starts humming. Crew gets scheduled, materials get ordered, customer gets their timeline. The job launches itself.
 
-The moment your customer signs digitally, Make receives the contract event and immediately pulls all the signed contract data from your system. It grabs every detail — job specs, customer info, the works.
+Here's how Make turns signed contracts into spinning projects:
 
-Next, it loops through any contract addendums or change orders, formatting dates and pulling each addendum record so nothing gets missed in the transition.
+The moment your customer signs digitally, Make catches that contract event instantly. No waiting for email notifications or manual checks.
 
-Then comes the smart routing. Make branches based on your contract details — is this a residential repaint, commercial new construction, or specialty work? Each path triggers completely different workflows.
+Make pulls the signed contract data and grabs all related job details from your database. Every specification, every timeline, every custom requirement — all queued up and ready.
 
-For residential jobs, it automatically kicks off crew scheduling, material orders, and starts your homeowner communication sequence. Commercial projects get the full treatment — project management workflow, permit tracking, and contractor coordination all fire up simultaneously.
+The system loops through any contract addendums or change orders. Formats dates and pulls each addendum record so nothing gets missed in the handoff.
 
-Once all the setup processes complete, the job officially moves from signed contract to active project status. Your crew gets their schedule, materials get ordered, and the customer receives their timeline.
+Now comes the smart routing. Make branches based on contract details — is this residential repaint, commercial new construction, or specialty work? Each path triggers its own setup sequence.
 
-The beautiful part? Zero manual handoffs. No email checking. No wondering if something fell through the cracks. The contract signature becomes the single trigger that sets your entire operation in motion.
+For residential jobs: crew scheduling kicks off, material orders get generated, and the homeowner communication sequence starts rolling.
 
-Your signed contracts now flow seamlessly into active jobs without any of the usual delays or forgotten steps.
+For commercial projects: project management workflow initiates, permit tracking begins, and contractor coordination gets underway.
 
-What's the longest you've waited for a signed contract to actually become a live job? And if you could automate one part of your contract-to-kickoff process, what would it be?
+All setup processes complete automatically. The job moves from signed contract to active project status without a single manual touch.
+
+Your crew gets scheduled, materials get ordered, customer gets their timeline. The signed contract becomes a running job in minutes, not days.
+
+Make's visual canvas lets you see exactly how each contract type flows through your system. Every branch, every decision point, every handoff mapped out clearly.
+
+What's the longest you've waited for a signed contract to actually become a live job? And what automation would save you the most time right now?
 
 #Automation #ContractManagement #Make

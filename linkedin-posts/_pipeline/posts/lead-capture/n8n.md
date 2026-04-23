@@ -1,25 +1,29 @@
-Your sales rep just found 3 hot leads from the weekend buried in their Monday morning email. Two are already cold, one competitor got there first.
+Your sales rep is copying form submissions into HubSpot at 11pm because "hot leads can't wait until morning." Sound familiar?
 
-**BEFORE:** Every form submission lands in your inbox as raw data. Someone has to manually copy names, emails, and project details into your CRM. Miss a few hours? Miss deals. Weekend leads sit until Monday. No context about which marketing campaign worked or what type of project they want.
+BEFORE: Sales reps manually copying form submissions into the CRM, missing hot leads during evenings and weekends, inconsistent follow-up timing costing deals.
 
-**AFTER:** Every lead flows automatically into HubSpot as a complete contact record with deal attached and marketing source tracked. Whether it's 2pm or 2am on Sunday, your CRM stays current and your follow-up stays fast.
+AFTER: Every lead is captured instantly from any marketing channel, enriched with project details and marketing source data, and synced to the CRM with deduplicated contacts and deals — even at 2am on a Sunday.
 
-**THE BRIDGE:** Here's how n8n makes this happen behind the scenes.
+Here's how n8n handles the heavy lifting:
 
-Form submission hits the system from any marketing channel. The automation wakes up and starts a 24-step enrichment process.
+Lead data arrives from any marketing channel — your website form, Facebook ads, Google campaigns. The automation triggers instantly, whether it's 2pm or 2am.
 
-First, it pulls project details from the original lead source. Residential remodel or commercial build — the context gets captured. Then it traces the marketing attribution. Which campaign, which vendor, which channel drove this lead? That data gets preserved.
+n8n pulls project details from the original lead source. Residential remodel or commercial build, the system captures those specifications that matter for your estimates.
 
-Next comes the smart part. n8n searches HubSpot by email and contact ID to check if this person exists already. Existing customer or brand new prospect — the system knows the difference.
+Marketing attribution gets traced and preserved. Which campaign drove this lead? Which vendor? The source data flows through so you know what's actually working.
 
-If they exist, it updates their contact record with new project details. No duplicate records, no lost history. If they're new, it creates a fresh contact with full project context and marketing attribution from day one.
+Now the smart part: n8n searches HubSpot by email and contact ID. Existing customer or brand new prospect — it knows the difference.
 
-Either way, the contact gets paired with a deal record containing project type, estimated value, and original lead source data.
+If the contact exists, n8n merges new project details with their existing record. No duplicate contacts, no lost history.
 
-Final result? Clean contact record in HubSpot with attached deal and complete marketing attribution. Ready for sales follow-up within minutes of form submission, even if it came in at midnight.
+If they're new, n8n creates a fresh contact record with full project context and marketing attribution from day one.
 
-Your sales team opens HubSpot Monday morning and sees weekend leads already organized, enriched, and ready to call. No manual data entry, no missed opportunities, no guessing which campaign worked.
+Every contact gets paired with a deal record containing project type, estimated value, and original lead source data.
 
-What's the longest you've waited to follow up on a weekend lead? And what's one manual task in your lead process you'd love to eliminate?
+The result? Clean contact record in HubSpot with attached deal and complete marketing attribution. Ready for sales follow-up within minutes of form submission.
+
+n8n's node-based workflow makes this 24-step process transparent and customizable for your specific lead routing needs.
+
+What's your biggest challenge with lead follow-up timing? And are you tracking which marketing channels actually convert to closed deals?
 
 #Automation #LeadGeneration #n8n

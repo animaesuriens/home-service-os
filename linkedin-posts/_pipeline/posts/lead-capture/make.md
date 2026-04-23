@@ -1,23 +1,29 @@
-Your sales rep just texted you at 9pm: "Did we lose that lead from this afternoon? I can't find it anywhere in HubSpot and the customer called asking why no one followed up."
+Your sales rep is copying form submissions into HubSpot at 11pm because "hot leads can't wait until morning." Sound familiar?
 
-**BEFORE:** You're manually copying form submissions into your CRM, praying nothing falls through the cracks during evenings and weekends. Your team's juggling lead data across spreadsheets, sticky notes, and memory. Hot prospects slip away because someone forgot to check the website forms, and you're losing deals to competitors who respond faster.
+BEFORE: Sales reps manually copying form submissions into the CRM, missing hot leads during evenings and weekends, inconsistent follow-up timing costing deals.
 
-**AFTER:** Every lead gets captured instantly from any marketing channel, enriched with complete project details and source attribution, then synced to HubSpot as a clean contact record with deal attached. Even at 2am on Sunday, your automation is working while you sleep.
+AFTER: Every lead is captured instantly from any marketing channel, enriched with project details and marketing source data, and synced to the CRM with deduplicated contacts and deals — even at 2am on a Sunday.
 
-**Here's how Make handles the heavy lifting:**
+Here's how Make handles the heavy lifting:
 
-When form data hits your system, the automation immediately pulls project specifications from the original source. Residential remodel or commercial build — context matters for follow-up.
+Lead data arrives from any marketing channel — your website form, Facebook ads, Google campaigns. The automation triggers instantly, whether it's 2pm or 2am.
 
-Next, it traces marketing attribution. Which campaign drove this lead? Which vendor? The system captures and preserves that data so you know what's working.
+Make pulls project details from the original lead source. Residential remodel or commercial build, the system captures those specifications that matter for your estimates.
 
-Then comes the smart part: HubSpot search runs by both email and contact ID. If it's an existing customer submitting a new project request, Make updates their record without creating duplicates. Brand new prospect? Fresh contact gets built with full project context from day one.
+Marketing attribution gets traced and preserved. Which campaign drove this lead? Which vendor? The source data flows through so you know what's actually working.
 
-Every contact gets paired with a deal record containing project type, estimated value, and original lead source. No more hunting through forms to remember where leads came from.
+Now the smart part: Make searches HubSpot by email and contact ID. Existing customer or brand new prospect — it knows the difference.
 
-The final HubSpot record is complete: clean contact with attached deal and full marketing attribution, ready for sales follow-up within minutes of submission.
+If the contact exists, Make merges new project details with their existing record. No duplicate contacts, no lost history.
 
-Your team opens HubSpot Monday morning to find weekend leads already organized, enriched, and ready to work. No manual data entry, no lost opportunities, no more 9pm panic texts.
+If they're new, Make creates a fresh contact record with full project context and marketing attribution from day one.
 
-What's your biggest lead capture headache right now? And if you're tired of manually wrestling form data into your CRM, let's chat about setting this up for your business.
+Every contact gets paired with a deal record containing project type, estimated value, and original lead source data.
+
+The result? Clean contact record in HubSpot with attached deal and complete marketing attribution. Ready for sales follow-up within minutes of form submission.
+
+Make's modular canvas makes this 24-step flow visual and easy to modify when your lead sources change.
+
+What's your biggest challenge with lead follow-up timing? And are you tracking which marketing channels actually convert to closed deals?
 
 #Automation #LeadGeneration #Make

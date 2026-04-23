@@ -1,23 +1,27 @@
-Your crew shows up to find out the scope changed three days ago, but nobody updated the deal value. Meanwhile, you're chasing down scattered change orders trying to figure out what this job is actually worth.
+Change orders used to be chaos — scribbled notes, forgotten price adjustments eating margins, crews showing up clueless about scope changes, deals stuck showing wrong values for weeks.
 
-**BEFORE:** Change orders scribbled on paper napkins. Price adjustments buried in email threads. Your CRM showing the original estimate while the real project balloons to twice the size. You're flying blind on margins because nobody knows the true total.
+Now? Every change order flows through automatically. Deal amounts, hours, labor, materials, and discounts aggregate across all related deals. Your CRM reflects real total value as each update lands.
 
-**AFTER:** Every scope change flows through automatically. All related deals get pulled together, amounts aggregate across labor and materials, and your CRM reflects the real project value the moment any change order hits.
+Here's how Make handles it:
 
-**Here's how Make handles the heavy lifting:**
+When a change order hits, it updates the HubSpot deal with new scope — extra materials, added labor hours, discount adjustments, whatever changed.
 
-When a change order updates any HubSpot deal, the automation kicks in. First, it searches for the entire deal family — your original estimate plus every change order tied to that same job record.
+Make immediately searches HubSpot for the deal family — every deal tied to the same job record. Original estimate plus all change orders so far.
 
-Then comes the math magic. Make loops through each related deal, pulling amounts for labor, materials, discounts, and hours. It adds everything up across all the pieces so you get one true total.
+Then it loops through each related deal, pulling amounts for labor, materials, discounts, and hours. Adds them all up across the entire project.
 
-Next, it checks if there's already a master project in your estimating tool. If not, it creates a new record with all the aggregated totals. If the project exists, it updates those numbers with the fresh combined amounts from HubSpot.
+Next comes the decision point — does a master project record exist in your estimating tool?
 
-The automation also syncs deal ownership, making sure the right sales rep is assigned to both the HubSpot deal and the estimating tool project.
+If no project exists, Make creates a new record with the aggregated totals from all change orders. If the project's already there, it updates the existing record with the new combined totals from HubSpot.
 
-Final result: Your HubSpot deal shows the actual project value. Your estimating tool reflects all changes. No more hunting through emails or guessing what jobs are really worth.
+Make's modular canvas makes this complex branching logic crystal clear — you can see exactly where deals split between create-new and update-existing paths.
 
-The whole thing runs in 44 steps, pulling together scattered change orders into one clean picture. Your margins stay protected because you always know the real numbers.
+Finally, it syncs deal owners to ensure the right sales rep is assigned to both the HubSpot deal and estimating tool project.
 
-What's the biggest change order surprise that's hit your business recently? And if you're tired of chasing down scattered project totals, let's chat about getting this running for your company.
+Result? HubSpot shows actual project value. Your estimating tool reflects all changes. No more guessing what jobs are really worth.
+
+The whole thing runs in 44 steps, handling multiple deals, complex aggregations, and conditional logic without you touching a thing.
+
+What's your biggest headache with change order tracking right now? And if you're ready to automate this mess, let's chat about setting up your Make workflow.
 
 #Automation #ProjectManagement #Make

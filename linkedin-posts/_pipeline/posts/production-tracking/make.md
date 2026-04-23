@@ -1,23 +1,27 @@
-Your office manager just spent 2 hours calling crews for project updates, only to get voicemails and "we're busy, I'll call you back later" responses.
+Your office staff shouldn't have to call crews every hour asking "How's the job going?" Yet most home service companies still chase production updates like it's 1995.
 
-**BEFORE:** Office staff calling crews for updates, production data trapped in text messages and phone calls, no idea which jobs are on track until someone drives to the site. Weekly reports that are already outdated by the time you print them.
+BEFORE: You're playing phone tag with field crews, trying to piece together project status from scattered text messages and voicemails. By the time you get real numbers, they're already outdated. Weekly reports? More like weekly guesswork.
 
-**AFTER:** Time logs and project records pull automatically on a schedule, match against active projects, and sync so your office sees current production data without chasing anyone for updates.
+AFTER: Time logs flow automatically from the field to your office systems. You see current production data, project progress, and crew hours without making a single phone call. Real visibility, zero chasing.
 
-**Here's how Make handles this behind the scenes:**
+Here's how Make pulls this together:
 
-Every hour, your time tracking app sends crew data — clock-in times, project codes, current status. Make grabs every entry from the last sync and pulls all active projects from your database.
+Your time tracking app sends hourly updates to Make's webhook. Crew hours, project codes, current job status — all the field data you need.
 
-Then it gets smart. For each time log entry, Make cross-references against your live project database to find the right job numbers. Does this time entry match a real project in your system?
+Make grabs every time log entry from the last sync. Clock-in times, job sites, crew member names. Everything gets pulled into the workflow automatically.
 
-If yes, Make updates project hours, calculates progress, and syncs everything to your office dashboard and accounting software. If the time log doesn't match any active project, it logs the error and moves on to the next entry.
+Next, it cross-references those time entries against your live project database. Make looks up each job number to find the matching active project.
 
-The result? Your project management tools and accounting software stay current with real field data. No more phone tag with crews. No more driving to job sites just to see if they're on schedule.
+Then comes the smart part: Make checks if this time log matches a real project in your system. Valid match? It updates project hours, calculates progress, and syncs everything to your office dashboard.
 
-Your office dashboard shows actual hours worked, which projects are active, and where your crews are spending time — all updated automatically throughout the day.
+No match? Make logs the error and moves on. No crashes, no confusion.
 
-The best part? Your crews keep working exactly like they always have. They clock in, do the work, clock out. Make handles everything else in the background.
+Finally, all that updated production data gets pushed to your accounting software and project management tools. Your office systems stay current without anyone lifting a finger.
 
-What's your biggest challenge with tracking crew productivity right now? And if you're tired of playing phone tag for project updates, let's chat about setting this up for your business.
+The result? Crews work in the field. Data flows automatically. Your office knows exactly where every job stands.
+
+Make's visual canvas makes it easy to see how time logs connect to projects, then branch out to update multiple systems. Each module handles one piece of the puzzle.
+
+What's your biggest challenge with tracking field production right now? And if you're tired of chasing crews for updates, let's talk about automating your production tracking.
 
 #Automation #ProductionTracking #Make

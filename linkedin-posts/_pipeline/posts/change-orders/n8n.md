@@ -1,23 +1,27 @@
-You're juggling three change orders on paper while your CRM still shows the original $8,000 deal value. Meanwhile, the real project is worth $12,500 and your crew doesn't know about the extra work.
+Change orders used to be chaos — scribbled notes, forgotten price adjustments eating margins, crews showing up clueless about scope changes, deals stuck showing wrong values for weeks.
 
-**BEFORE:** Change orders get scribbled on sticky notes, price adjustments disappear into email threads, and your deals sit in HubSpot showing completely wrong values. You're constantly doing mental math to figure out what jobs are actually worth, and crew shows up confused about scope changes.
+Now? Every change order flows through automatically. Deal amounts, hours, labor, materials, and discounts aggregate across all related deals. Your CRM reflects real total value as each update lands.
 
-**AFTER:** Every change order automatically flows through your system. All related deal amounts get summed across labor, materials, and discounts. Your CRM reflects the real project value the moment any update lands.
+Here's how n8n handles it:
 
-**THE BRIDGE:** Here's how n8n makes this seamless:
+When a change order hits, it updates the HubSpot deal with new scope — extra materials, added labor hours, discount adjustments, whatever changed.
 
-When a change order hits your HubSpot deal, the automation immediately searches for all deals tied to that same job record — your original estimate plus every change order so far.
+n8n immediately searches HubSpot for the deal family — every deal tied to the same job record. Original estimate plus all change orders so far.
 
-It loops through each related deal, pulling amounts for labor, materials, discounts, and hours. Then sums everything up across all categories to get your true project totals.
+Then it loops through each related deal, pulling amounts for labor, materials, discounts, and hours. Adds them all up across the entire project.
 
-Next, it checks if there's already a master project in your estimating tool. If not, it creates a new record with all the aggregated totals. If the project exists, it updates the existing record with the new combined amounts.
+Next comes the decision point — does a master project record exist in your estimating tool?
 
-The system syncs deal owners between HubSpot and your estimating tool, making sure the right sales rep is assigned everywhere.
+If no project exists, n8n creates a new record with the aggregated totals from all change orders. If the project's already there, it updates the existing record with the new combined totals from HubSpot.
 
-Finally, your HubSpot deal shows the actual project value and your estimating tool reflects all changes. No more guessing what jobs are really worth.
+n8n's node graph makes complex workflows like this incredibly visual — you can trace the data flow from trigger through loops to final output.
 
-The whole thing runs automatically every time scope changes. Your deals stay accurate, your estimating tool stays current, and you always know your real project values.
+Finally, it syncs deal owners to ensure the right sales rep is assigned to both the HubSpot deal and estimating tool project.
 
-What's the biggest change order surprise you've had this year? And if you're tired of manually tracking project changes across multiple systems, let's chat about setting this up for your business.
+Result? HubSpot shows actual project value. Your estimating tool reflects all changes. No more guessing what jobs are really worth.
+
+The whole thing runs in 44 steps, handling multiple deals, complex aggregations, and conditional logic without you touching a thing.
+
+What's your biggest headache with change order tracking right now? And if you're ready to automate this mess, let's chat about setting up your n8n workflow.
 
 #Automation #ProjectManagement #n8n

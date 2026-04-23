@@ -1,19 +1,23 @@
-Your estimates are trapped in one system while your sales pipeline lives in another — and someone's always stuck playing copy-paste between the two.
+Your estimates are trapped in one system while your deals live in another. Sales managers spend hours copying numbers between tools, and inconsistent naming makes pipeline reports worthless.
 
-**BEFORE:** Every time your team creates an estimate, the real work begins. Sales managers grab calculators, open spreadsheets, and manually transfer numbers from your estimating tool into HubSpot. Deal names are inconsistent — "Johnson job" in one place, "Kitchen remodel - Johnson" in another. Pipeline reports become guesswork because half the estimates never make it over, and the ones that do have outdated values.
+What if every estimate automatically became a perfectly named HubSpot deal the moment you created it? No manual copying, no pipeline gaps, no spreadsheet gymnastics.
 
-**AFTER:** The moment an estimate hits your system, HubSpot automatically gets a perfectly formatted deal with the exact customer name, project scope, and dollar amount. Your sales team sees every opportunity instantly, pipeline reports show real numbers, and nobody touches a spreadsheet.
+Here's how Make connects your estimating tool to HubSpot:
 
-**THE BRIDGE:** Here's how Make handles this behind the scenes. When a new estimate appears in your estimating tool, Make immediately pulls all quotes from the last few minutes — catching everything, even if multiple estimates come in at once.
+When you create a new estimate, Make immediately pulls all quotes from the last few minutes. This catches everything, even if multiple estimates come in at once.
 
-Then it loops through each one individually. Johnson Kitchen Remodel, $12,500. Martinez Bathroom, $8,200. For every estimate, Make checks if this exact quote already exists as a HubSpot deal. This prevents duplicates when the automation runs multiple times.
+The system loops through each quote individually. Johnson Kitchen Remodel, $12,500. Martinez Bathroom, $8,200. Every estimate gets processed.
 
-If it's genuinely new, Make creates a HubSpot deal with consistent naming — customer name, project type, estimate value. The sales team sees it instantly in their pipeline.
+Before creating anything, Make checks if this exact estimate already exists as a HubSpot deal. This prevents duplicates when the automation runs multiple times.
 
-The result? Every estimate becomes a trackable deal automatically. Sales managers get accurate pipeline reports without manual data entry. Your estimating tool talks, HubSpot listens, and the pipeline updates itself.
+For new estimates, Make creates a HubSpot deal with consistent naming: customer name, project type, estimate value. Your sales team sees it instantly in their pipeline.
 
-No more lost opportunities because someone forgot to transfer an estimate. No more pipeline meetings where half the numbers are wrong because they're three days old.
+The result? Every estimate becomes a trackable deal automatically. Sales managers get accurate pipeline reports without touching a spreadsheet.
 
-What's the biggest gap between your estimating tool and your CRM right now? And if you're tired of playing data entry between systems, let's chat about getting this automated.
+Your estimating tool talks. HubSpot listens. The pipeline updates itself.
 
-#Automation #CRM #Make
+Make's visual canvas makes this workflow easy to build and modify. Each step connects clearly to the next, so you can see exactly how your data flows from estimate to deal.
+
+What's the biggest gap between your estimating and sales systems right now? And if you're ready to automate your estimate-to-deal pipeline, let's chat about setting this up for your business.
+
+#Automation #Estimating #Make

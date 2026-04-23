@@ -1,19 +1,21 @@
-Your accounting software shows $12K in unbilled work, but your project dashboard says everything's invoiced. A customer calls asking about their "final" invoice — except you just voided it yesterday.
+Your home service company just finished a $3,200 job. The work's done, but the invoice is sitting in limbo between your project system and accounting software. Sound familiar?
 
-**BEFORE:** You're constantly playing detective between systems. Unbilled line items hide in your project management tool while your accounting software waits for manual invoice creation. When you void an invoice or update payment terms, it only changes in one place. Your team wastes hours cross-referencing systems, and customers get confused by outdated information.
+BEFORE: Unbilled work slips through the cracks because it lives in one system while invoices get created in another. You're manually checking what needs billing, copying customer details, and hoping nothing gets missed. When invoices get modified or voided, the changes don't sync back to your project dashboards.
 
-**AFTER:** Unbilled work gets caught automatically. Every invoice modification syncs everywhere instantly. Your accounting software and project management system show identical data, and voided invoices vanish from all dashboards simultaneously.
+AFTER: Unbilled line items become invoices automatically. Every modification flows between systems instantly. Nothing falls through the cracks.
 
-**Here's how Make handles the entire invoice lifecycle:**
+Here's how Make handles your entire invoice lifecycle:
 
-The automation scans your project management system for unbilled line items — completed phases, time entries, or materials that haven't been invoiced yet. When it finds unbilled work, it pulls the full customer record from your accounting software, grabbing billing addresses, payment terms, and project details.
+Your automation scans for unbilled work — completed project phases or time entries sitting in your project management system. When it finds something, it pulls the full customer record from your accounting software, grabbing billing address, payment terms, and project details.
 
-Make then builds the invoice automatically in your accounting software with proper formatting and custom fields. Once the invoice is created successfully, it pushes that same invoice into your project management system and links it to the correct job.
+Make then builds the invoice automatically in your accounting software with all line items and proper formatting. No manual data entry required. Once the invoice is created successfully, it syncs to your project management system and links to the right job.
 
-But here's where it gets powerful — the automation handles modifications too. When you edit an invoice, void it, or update payment status in either system, Make catches those changes and syncs them everywhere. It processes payment updates, generates PDF copies for your records, and ensures both systems always show identical information.
+But here's where it gets powerful — the automation catches modifications too. Invoice edits, voids, or payment updates trigger the sync in both directions. Make's modular canvas lets you handle these different scenarios with separate branches that all feed back into the main flow.
 
-The result? Your team stops playing system detective. Customers never see outdated invoices. And that $12K in unbilled work actually becomes $12K in sent invoices.
+The system generates and stores PDF versions for your records, then ensures both platforms show identical data. When invoices get voided, they disappear from project dashboards automatically. Payment status updates everywhere.
 
-What's your biggest headache with invoice management — the initial creation or keeping everything synced afterward? And if you're tired of manual invoice workflows, let's chat about setting up something like this for your business.
+Your accounting software and project management system stay perfectly in sync. Unbilled items get caught before they become write-offs. Invoice modifications flow both ways instantly.
+
+What's the biggest invoicing headache in your business — missed billing or keeping systems synced? And if you're tired of playing invoice detective between platforms, let's chat about automating your entire billing workflow.
 
 #Automation #InvoiceAutomation #Make

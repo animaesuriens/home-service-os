@@ -1,21 +1,27 @@
-Receipts buried in email, bills scattered in your accounting software, project costs hiding in spreadsheets — and when the client asks "what did we spend?" you're hunting through three systems for an hour.
+Your accountant asks "how much did we spend on the Henderson job?" and you're suddenly playing detective across three different systems.
 
-**BEFORE:** Every expense lives in isolation. That lumber bill from Home Depot? Somewhere in your accounting software. The receipt photo your crew texted? Lost in email. The actual job it belongs to? Good luck connecting those dots when you're trying to figure out if the Martinez bathroom is over budget.
+BEFORE: Receipts buried in email. Bills scattered in your accounting software. Project costs hiding in spreadsheets. Nobody can answer basic job costing questions without an hour-long treasure hunt through disconnected systems.
 
-**AFTER:** Every bill automatically finds its home. Expenses flow from your accounting software straight into Airtable, matched to the right customer and project, with all receipt attachments downloaded and linked. Job costing stays current without the treasure hunt.
+AFTER: Every expense automatically finds its project home. Bills flow in, customer references get matched, receipt attachments download and link themselves. Always-current job costing without the detective work.
 
-**THE BRIDGE:** Here's how n8n makes this happen automatically.
+Here's how n8n handles this expense matching magic:
 
-When a new bill hits your accounting software, n8n grabs the expense data and starts detective work. It searches your customer records to find the matching client account — whether it's materials for the Henderson kitchen or fuel for the crew truck.
+New bills arrive from your accounting software — could be materials for that kitchen remodel or fuel for the crew truck. n8n immediately starts hunting for the customer connection.
 
-The system downloads any attached receipts or invoices from the expense record. Photos, PDFs, whatever documentation came with that bill.
+The system searches your job records, cross-referencing customer data to link each vendor bill to the right client account. No more guessing which Henderson this receipt belongs to.
 
-Then comes the smart routing. n8n checks whether this expense belongs to a main job or a specific project phase within that job. If it's a general job expense, it links directly to the main job record in Airtable with full customer context. If it's project-specific, it connects to that phase while maintaining the parent job relationship.
+Any attached receipts or invoices get downloaded automatically. Photos, PDFs, whatever documentation came with the expense — n8n grabs it all and stores it properly.
 
-Finally, n8n saves everything to Airtable — expense data, attachment links, customer connections, job relationships. Every receipt knows exactly which project it belongs to.
+Then comes the smart routing. n8n checks whether this expense belongs to a main job or a specific project phase within that job. Different branches handle each scenario.
 
-No more spreadsheet archaeology. No more "I think that invoice is somewhere in my email." Your job costing stays current automatically, and when clients ask about project expenses, you have answers in seconds instead of hours.
+For main job expenses, everything links directly to the job record in Airtable with full customer context. For project-specific costs, n8n connects to the exact project phase while maintaining the parent job relationship.
 
-What's your biggest headache with tracking job costs right now? And if you're tired of playing expense detective, let's chat about getting your costs organized automatically.
+Finally, n8n updates your Airtable records with the expense data and attachment links. Customer connections, job assignments, project relationships — all locked in automatically.
+
+The result? Your job costing stays current without the treasure hunt. Every receipt knows exactly which project it belongs to. When someone asks about Henderson job costs, you've got answers in seconds, not hours.
+
+n8n's node-based workflow gives you complete control over this expense routing — you can customize exactly how expenses flow from accounting software to their project homes.
+
+What's your biggest headache with expense tracking right now? And if you're tired of playing expense detective, let's chat about automating your job costing.
 
 #Automation #ExpenseManagement #n8n

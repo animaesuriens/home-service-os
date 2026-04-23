@@ -1,21 +1,27 @@
-You're drowning in receipts scattered across email, bills buried in accounting software, and project costs hiding in spreadsheets — asking "how much did we spend on that job?" triggers an hour-long treasure hunt.
+Your accountant asks "how much did we spend on the Henderson job?" and you're suddenly playing detective across three different systems.
 
-**BEFORE:** Every expense lives in isolation. The lumber receipt is in your email. The equipment rental bill sits in your accounting software. Project costs are tracked in a separate spreadsheet. When a customer asks about job costs or you need to price similar work, you're playing detective across three different systems.
+BEFORE: Receipts buried in email. Bills scattered in your accounting software. Project costs hiding in spreadsheets. Nobody can answer basic job costing questions without an hour-long treasure hunt through disconnected systems.
 
-**AFTER:** Every bill automatically finds its home. Expenses flow from your accounting software straight into Airtable, matched to the right customer and project, with receipt attachments downloaded and linked. Job costing stays current without the manual chase.
+AFTER: Every expense automatically finds its project home. Bills flow in, customer references get matched, receipt attachments download and link themselves. Always-current job costing without the detective work.
 
-**THE BRIDGE:** Here's how Zapier makes this happen:
+Here's how Zapier handles this expense matching magic:
 
-When a new bill hits your accounting software, the automation immediately grabs the expense data — whether it's materials for the Henderson kitchen or fuel for the crew truck. It searches your Airtable records to find matching customer references, linking that vendor bill to the right client account.
+New bills arrive from your accounting software — could be materials for that kitchen remodel or fuel for the crew truck. Zapier immediately starts hunting for the customer connection.
 
-Next, it downloads any attached receipts or invoices from the expense record. Photos, PDFs, whatever the vendor sent gets pulled into your system automatically.
+The system searches your job records, cross-referencing customer data to link each vendor bill to the right client account. No more guessing which Henderson this receipt belongs to.
 
-The smart part: it checks whether this expense belongs to a main job or a specific project phase within that job. If it's a general job expense, it links directly to the main job record with full customer context. If it's tied to a specific phase like "kitchen demo" or "final walkthrough," it connects to that project while maintaining the parent job relationship.
+Any attached receipts or invoices get downloaded automatically. Photos, PDFs, whatever documentation came with the expense — Zapier grabs it all and stores it properly.
 
-Finally, it saves everything to Airtable — expense data, attachment links, customer connections, job and project relationships all locked in place.
+Then comes the smart routing. Zapier checks whether this expense belongs to a main job or a specific project phase within that job. Different paths handle each scenario.
 
-The result? Your job costing is always current. Every receipt knows exactly which project it belongs to. No more treasure hunts when customers ask about costs or you need to analyze profitability.
+For main job expenses, everything links directly to the job record in Airtable with full customer context. For project-specific costs, Zapier connects to the exact project phase while maintaining the parent job relationship.
 
-What's your biggest headache with tracking job expenses right now? If you're ready to automate your expense matching and eliminate the manual chase, let's chat about setting this up for your business.
+Finally, Zapier updates your Airtable records with the expense data and attachment links. Customer connections, job assignments, project relationships — all locked in automatically.
+
+The result? Your job costing stays current without the treasure hunt. Every receipt knows exactly which project it belongs to. When someone asks about Henderson job costs, you've got answers in seconds, not hours.
+
+Zapier's step-by-step Zap structure makes this expense routing straightforward — each action builds logically on the last to get expenses where they belong.
+
+What's your biggest headache with expense tracking right now? And if you're tired of playing expense detective, let's chat about automating your job costing.
 
 #Automation #ExpenseManagement #Zapier

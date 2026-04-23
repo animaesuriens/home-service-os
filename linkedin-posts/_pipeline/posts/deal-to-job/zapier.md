@@ -1,21 +1,29 @@
-Your CRM shows "Deal Won" but your ops team is still manually creating job records, copy-pasting customer details, and praying no change orders slip through the cracks during your busiest weeks.
+Your CRM shows a deal won. Your ops team scrambles to manually create job records, copy-pasting customer data between systems while change orders slip through the cracks.
 
-**BEFORE:** Every closed deal triggers a scramble. Someone has to dig through the CRM, extract all the customer info and project specs, then hunt down every addendum and change order tied to that deal. Half the time, a change order gets missed because it's buried in a different system or wasn't properly linked. Your team burns hours on data entry that should take minutes.
+BEFORE: Deal closes in HubSpot. Someone prints the contract details. Another person opens your job management system. They manually type customer info, project scope, contract terms. Then they hunt through linked records to find every change order and addendum. Each one needs its own job record. During busy season, addendums get missed. Jobs start without proper setup.
 
-**AFTER:** The second HubSpot marks a deal as won, your system springs into action. Customer data flows automatically, every linked change order gets processed, and complete job records appear in your system — no manual work, no missed addendums, no data entry errors.
+AFTER: The moment HubSpot marks that deal won, your system automatically parses all job data, finds every linked change order, and creates complete job records. No manual data entry. No missed addendums. Every change order gets proper job assignment.
 
-**THE BRIDGE:** Here's how Zapier makes this seamless:
+HERE'S HOW ZAPIER HANDLES THE CONVERSION:
 
-When HubSpot sends the won deal event, the system immediately parses all the job data — customer info, project scope, contract details, the works. Then it searches for every addendum and change order linked to that deal ID.
+HubSpot triggers when a deal status changes to "won" — sends the complete deal record with customer data and job specifications.
 
-For each change order it finds, the automation asks a critical question: "Does this already have a job assigned?" If yes, it skips to the next one. If no, it creates a complete job record with all the project data automatically populated.
+Zapier parses the incoming job data — extracts customer info, project scope, and contract details from the deal payload.
 
-The beauty is in the loop — it processes every single change order methodically, ensuring nothing falls through the cracks. No more manual hunting through systems or wondering if you caught everything.
+The system searches for all addendums — queries your database for every change order and addendum linked to this specific deal ID.
 
-By the time your ops team checks the system, every won deal has been converted to proper job records, every addendum is accounted for, and they can focus on actually running the jobs instead of shuffling data between systems.
+For each change order found, Zapier checks the assignment status — does this addendum already have a job record assigned to it?
 
-The whole process runs in the background while you're focused on closing the next deal.
+If the change order already has a job, Zapier skips it and moves to the next one in the list.
 
-What's the biggest bottleneck in your deal-to-job handoff process? And if you're tired of manual data shuffling between your CRM and job management system, let's chat about getting this automated.
+If the change order needs processing, Zapier creates a new job record with full project data and customer details.
+
+The loop continues until every change order has proper job assignment.
+
+Your ops team opens their dashboard to find complete job records waiting — customer data populated, addendums processed, ready to schedule.
+
+No more manual copy-paste between systems. No more missed change orders during busy season.
+
+What's the biggest bottleneck in your job setup process right now? And if you're tired of manual data entry slowing down your team, let's chat about automating your deal-to-job workflow.
 
 #Automation #JobSetup #Zapier

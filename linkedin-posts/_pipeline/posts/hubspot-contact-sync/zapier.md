@@ -1,27 +1,27 @@
-Your sales rep opens HubSpot before a call and finds three different records for the same lead. Sound familiar?
+Your sales reps are hunting through HubSpot before every call, finding three versions of the same contact, and you're drowning in duplicate records from different marketing channels.
 
-**BEFORE:** Your team wastes 10 minutes before every call hunting through duplicate contacts. Marketing channels dump leads differently — some use contact IDs, others just emails. Your CRM becomes a mess of scattered data, and reps never know which record has the latest info.
+Here's what happens instead: Every lead gets automatically searched by ID first, then email if needed, then merged with existing data or created fresh. Zero duplicates. Zero manual lookups. Always the latest info.
 
-**AFTER:** Every lead automatically gets searched, merged, and cleaned before it hits your pipeline. One contact per person, always current, zero manual detective work.
+New lead arrives. HubSpot searches twice. One contact emerges.
 
-**THE BRIDGE:** Here's how Zapier handles this 24-step dance automatically.
+Here's how this 24-step Zapier workflow handles it:
 
-When lead data arrives from any marketing vendor, the system immediately searches HubSpot by contact ID first. This catches most existing contacts right away.
+Marketing vendor drops contact info into your system — could be a webform, channel partner, or lead gen tool. The automation kicks off immediately.
 
-No ID match? Zapier pivots and searches by email address instead. Different vendors use different identifiers, so this two-step lookup covers all bases.
+First, HubSpot hunts for an existing contact using the unique ID. This is your first line of defense against duplicates.
 
-If either search finds an existing contact, Zapier pulls their current properties and merges everything with the fresh lead data. All the context stays intact.
+Found a match? Great — we pull the current properties and merge them with the fresh lead data. No match? Time for plan B.
 
-The system then loops through any associated deals, checking project types and marketing sources to maintain data relationships.
+Zapier branches to search by email address instead. Different vendors use different identifiers, so this catches contacts that might exist under a different ID system.
 
-Finally, Zapier generates one clean contact payload with merged data from all sources and pushes it back to HubSpot.
+Whether the contact was found by ID, found by email, or needs to be created fresh, all the data gets standardized into one clean payload.
 
-Your sales rep sees one unified record with complete history — not three partial ones scattered across the system.
+The final step updates your HubSpot contact with merged data from all sources. Your sales reps see one clean record instead of hunting through duplicates.
 
-The whole process runs automatically every time a lead comes in. No more manual searching, no more duplicate guessing, no more incomplete contact records.
+The whole flow runs automatically every time lead data arrives. No more manual searching. No more wondering if you're calling someone who's already in your system under a different name.
 
-Your CRM stays clean, your reps stay focused on selling, and every lead gets the attention it deserves with complete context from day one.
+What's the biggest CRM cleanup challenge in your home service business? Drop a comment below.
 
-What's your biggest CRM data headache right now? And if you're tired of playing contact detective before every sales call, let's chat about setting this up for your team.
+And if you're tired of duplicate hunting, let's chat about automating your lead management.
 
 #Automation #LeadGeneration #Zapier
