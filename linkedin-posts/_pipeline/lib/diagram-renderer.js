@@ -16,6 +16,45 @@ const path = require('path');
 const fs = require('fs-extra');
 const { chromium } = require('playwright');
 
+// Light palette (shared by cream-mode platforms Make and Zapier)
+const LIGHT_TOKENS = {
+  bodyBg: '#faf6f1',
+  dotGrid: null,
+  textPrimary: '#18121e',
+  textSecondary: 'rgba(24, 18, 30, 0.65)',
+  textMuted: 'rgba(24, 18, 30, 0.55)',
+  textSubtle: 'rgba(24, 18, 30, 0.40)',
+  cardBg: '#ffffff',
+  cardBorder: 'rgba(24, 18, 30, 0.08)',
+  cardShadow: '0 2px 0 rgba(24, 18, 30, 0.04), 0 10px 24px -14px rgba(24, 18, 30, 0.12)',
+  divider: 'rgba(24, 18, 30, 0.08)',
+  dividerStrong: 'rgba(24, 18, 30, 0.12)',
+  kindColor: 'rgba(24, 18, 30, 0.45)',
+  triggerTextPrimary: '#faf6f1',
+  triggerTextSecondary: 'rgba(250, 246, 241, 0.7)',
+  triggerTextMuted: 'rgba(250, 246, 241, 0.6)',
+};
+
+// Dark palette (used by n8n — black background, dot grid, green accents,
+// mirrors the n8n workflow editor aesthetic without copying it literally).
+const DARK_TOKENS = {
+  bodyBg: '#13131a',
+  dotGrid: 'radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px) 0 0 / 22px 22px',
+  textPrimary: '#f1f1f5',
+  textSecondary: 'rgba(241, 241, 245, 0.72)',
+  textMuted: 'rgba(241, 241, 245, 0.55)',
+  textSubtle: 'rgba(241, 241, 245, 0.38)',
+  cardBg: '#1f1f2a',
+  cardBorder: 'rgba(255, 255, 255, 0.06)',
+  cardShadow: '0 2px 0 rgba(0, 0, 0, 0.2), 0 14px 32px -16px rgba(0, 0, 0, 0.55)',
+  divider: 'rgba(255, 255, 255, 0.08)',
+  dividerStrong: 'rgba(255, 255, 255, 0.12)',
+  kindColor: 'rgba(241, 241, 245, 0.45)',
+  triggerTextPrimary: '#f1f1f5',
+  triggerTextSecondary: 'rgba(241, 241, 245, 0.75)',
+  triggerTextMuted: 'rgba(241, 241, 245, 0.55)',
+};
+
 const PLATFORM_THEMES = {
   make: {
     name: 'Make',
@@ -23,9 +62,10 @@ const PLATFORM_THEMES = {
     accent: '#E13FA3',
     accentShadow: 'rgba(225, 63, 163, 0.18)',
     accentTint: 'rgba(225, 63, 163, 0.06)',
-    accentTintDeep: 'rgba(110, 53, 179, 0.06)',  // Make's secondary purple
+    accentTintDeep: 'rgba(110, 53, 179, 0.06)',
     triggerGradientStart: '#18121e',
-    triggerGradientEnd: '#2a1338',                // Make deep purple
+    triggerGradientEnd: '#2a1338',
+    ...LIGHT_TOKENS,
   },
   zapier: {
     name: 'Zapier',
@@ -33,19 +73,21 @@ const PLATFORM_THEMES = {
     accent: '#FF4A00',
     accentShadow: 'rgba(255, 74, 0, 0.18)',
     accentTint: 'rgba(255, 74, 0, 0.06)',
-    accentTintDeep: 'rgba(204, 60, 0, 0.05)',    // deeper orange
+    accentTintDeep: 'rgba(204, 60, 0, 0.05)',
     triggerGradientStart: '#1e1410',
-    triggerGradientEnd: '#331a0a',                // Zapier warm brown
+    triggerGradientEnd: '#331a0a',
+    ...LIGHT_TOKENS,
   },
   n8n: {
     name: 'n8n',
     wordmark: 'Built with n8n',
-    accent: '#EA4B71',
-    accentShadow: 'rgba(234, 75, 113, 0.18)',
-    accentTint: 'rgba(234, 75, 113, 0.06)',
-    accentTintDeep: 'rgba(180, 40, 75, 0.05)',   // deeper n8n red
-    triggerGradientStart: '#1a1014',
-    triggerGradientEnd: '#2e1019',                // n8n dark maroon
+    accent: '#14E098',                              // n8n-style bright mint-green
+    accentShadow: 'rgba(20, 224, 152, 0.28)',
+    accentTint: 'rgba(20, 224, 152, 0.07)',
+    accentTintDeep: 'rgba(20, 224, 152, 0.03)',
+    triggerGradientStart: '#0d2a20',                // dark green panel
+    triggerGradientEnd: '#124534',                  // brighter green-black
+    ...DARK_TOKENS,
   },
 };
 
@@ -139,18 +181,18 @@ function buildHtml(storyBeats, theme) {
     background:
       radial-gradient(ellipse 80% 60% at 20% 10%, ${theme.accentTint}, transparent 60%),
       radial-gradient(ellipse 60% 50% at 90% 90%, ${theme.accentTintDeep}, transparent 60%),
-      #faf6f1;
-    color: #18121e;
+      ${theme.dotGrid ? theme.dotGrid + ', ' : ''}${theme.bodyBg};
+    color: ${theme.textPrimary};
     padding: 56px 78px 48px;
     display: flex;
     flex-direction: column;
   }
   .masthead {
     display: flex; justify-content: space-between; align-items: flex-start;
-    border-bottom: 1px solid rgba(24, 18, 30, 0.12);
+    border-bottom: 1px solid ${theme.dividerStrong};
     padding-bottom: 16px; margin-bottom: 28px;
   }
-  .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(24, 18, 30, 0.55); }
+  .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: ${theme.textMuted}; }
   .wordmark { font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: ${theme.accent}; display: flex; align-items: center; gap: 10px; }
   .wordmark::before {
     content: ''; width: 8px; height: 8px; border-radius: 50%;
@@ -158,36 +200,36 @@ function buildHtml(storyBeats, theme) {
   }
   h1 {
     font-family: 'Fraunces', serif; font-weight: 600; font-size: 48px;
-    line-height: 1.05; letter-spacing: -0.025em; color: #18121e;
+    line-height: 1.05; letter-spacing: -0.025em; color: ${theme.textPrimary};
     margin-top: 6px; max-width: 820px;
   }
   h1 em { font-style: italic; color: ${theme.accent}; font-weight: 600; }
   .dek {
     font-family: 'Fraunces', serif; font-style: italic; font-weight: 400;
-    font-size: 19px; line-height: 1.38; color: rgba(24, 18, 30, 0.65);
+    font-size: 19px; line-height: 1.38; color: ${theme.textSecondary};
     margin-top: 14px; max-width: 760px;
   }
   .flow { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 28px; }
   .row { display: grid; gap: 18px; align-items: stretch; }
   .node {
-    background: #ffffff; border: 1px solid rgba(24, 18, 30, 0.08); border-radius: 12px;
+    background: ${theme.cardBg}; border: 1px solid ${theme.cardBorder}; border-radius: 12px;
     padding: 16px 22px; display: flex; flex-direction: column; gap: 4px;
-    box-shadow: 0 2px 0 rgba(24, 18, 30, 0.04), 0 10px 24px -14px rgba(24, 18, 30, 0.12);
+    box-shadow: ${theme.cardShadow};
   }
-  .node .kind { font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(24, 18, 30, 0.45); margin-bottom: 2px; }
-  .node .label { font-family: 'Fraunces', serif; font-weight: 600; font-size: 22px; line-height: 1.2; color: #18121e; letter-spacing: -0.01em; }
-  .node .detail { font-size: 13px; color: rgba(24, 18, 30, 0.6); margin-top: 4px; line-height: 1.45; }
-  .node.trigger { background: linear-gradient(135deg, ${theme.triggerGradientStart} 0%, ${theme.triggerGradientEnd} 100%); border-color: ${theme.triggerGradientEnd}; color: #faf6f1; }
-  .node.trigger .kind { color: rgba(250, 246, 241, 0.6); }
-  .node.trigger .label { color: #faf6f1; }
-  .node.trigger .detail { color: rgba(250, 246, 241, 0.7); }
+  .node .kind { font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: ${theme.kindColor}; margin-bottom: 2px; }
+  .node .label { font-family: 'Fraunces', serif; font-weight: 600; font-size: 22px; line-height: 1.2; color: ${theme.textPrimary}; letter-spacing: -0.01em; }
+  .node .detail { font-size: 13px; color: ${theme.textSecondary}; margin-top: 4px; line-height: 1.45; }
+  .node.trigger { background: linear-gradient(135deg, ${theme.triggerGradientStart} 0%, ${theme.triggerGradientEnd} 100%); border-color: ${theme.triggerGradientEnd}; color: ${theme.triggerTextPrimary}; }
+  .node.trigger .kind { color: ${theme.triggerTextMuted}; }
+  .node.trigger .label { color: ${theme.triggerTextPrimary}; }
+  .node.trigger .detail { color: ${theme.triggerTextSecondary}; }
   .trigger-dot { display: inline-block; width: 10px; height: 10px; margin-right: 10px; border-radius: 50%; background: ${theme.accent}; vertical-align: 2px; box-shadow: 0 0 0 4px ${theme.accentShadow}; }
   .node.decision { border: 1.5px dashed ${theme.accent}; background: ${theme.accentTint}; }
   .node.decision .kind { color: ${theme.accent}; }
   .colophon {
     margin-top: 22px; display: flex; justify-content: space-between;
     font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
-    color: rgba(24, 18, 30, 0.4); padding-top: 14px; border-top: 1px solid rgba(24, 18, 30, 0.08);
+    color: ${theme.textSubtle}; padding-top: 14px; border-top: 1px solid ${theme.divider};
   }
 </style></head>
 <body>
