@@ -14,7 +14,7 @@ STORYTELLING FRAMEWORK: Before-After-Bridge (BAB)
 - BRIDGE: Walk through exactly how the automation makes this happen (the bulk of the post — describe the workflow steps in a natural, conversational way)
 
 HARD CONSTRAINTS:
-- 400-700 words total. No exceptions.
+- MAXIMUM 2,800 characters total (LinkedIn's limit is 3,000 — leave buffer). Target 300-400 words. No exceptions.
 - First line MUST hook readers in under 210 characters (this is the LinkedIn mobile preview cutoff). Make it punchy, specific, and pain-focused.
 - Casual expert tone — like explaining to a friend who runs a business. Use "you" and "your" liberally. Contractions encouraged. No corporate jargon.
 - Frame everything as "home service company" — never mention painting, painters, or any specific trade.
@@ -36,10 +36,24 @@ TOOL NAMING RULES (STRICT):
 - NEVER use "Make.com" or "Integromat" — just "Make"
 
 ACCURACY RULE (CRITICAL — ZERO TOLERANCE):
-- ONLY describe capabilities that appear in the provided automation steps. Do NOT invent ANY feature not listed in the steps.
-- FORBIDDEN INVENTIONS (never use unless a step explicitly does this): "lead scoring", "scoring", "ranking", "prioritizing", "audit trail", "audit log", "reminders", "confirmations", "notifications to crews", "crew notifications", "alerts", "daily summaries", "categorized", "categorization".
-- Describe ONLY what the steps actually do: lookups, syncs, branches, loops, payload generation, upserts, deletions.
+- ONLY describe capabilities that appear in the REAL SYSTEM DATA section below. Do NOT invent ANY feature not listed.
+- FORBIDDEN INVENTIONS (never use unless a real step explicitly does this):
+  "lead scoring", "scoring", "ranking", "prioritizing",
+  "audit trail", "audit log",
+  "reminders", "confirmations", "notifications to crews", "crew notifications", "alerts",
+  "daily summaries", "categorized", "categorization",
+  "materials ordered", "material ordering", "crew dispatch",
+  "follow-up sequences", "drip campaigns", "nurture sequences",
+  "completion %", "completion percentage", "percent complete",
+  "on track", "behind schedule", "ahead of schedule",
+  "collections", "collection notices", "payment reminders",
+  "SMS delivery", "text message", "text notification",
+  "photo linking", "site visit photos", "project photos",
+  "high-value routing", "priority routing", "VIP",
+  "real-time" (use "on a schedule" or "automatically" instead).
+- Describe ONLY what the real steps actually do: lookups, syncs, branches, loops, payload generation, upserts, deletions.
 - If a step says "Branch on Expression" describe it as routing or conditional logic — not "categorizing" or "scoring".
+- Every capability you mention MUST map to a real step from the REAL SYSTEM DATA. Remove any sentence that describes something not in the data.
 
 HASHTAGS: End with exactly 3 hashtags on a new line:
 1. #Automation (always)
@@ -71,15 +85,19 @@ const FORBIDDEN_NAMES = [
 ];
 
 // ---------------------------------------------------------------------------
-// generatePost(bundle, platform)
+// generatePost(bundle, platform, storyBeats)
 //
 // Generates one LinkedIn post via Claude API.
+// If storyBeats is provided, it becomes the narrative spine — the post must
+// weave through the same beats that will render in the diagram. This guarantees
+// post/diagram alignment (see 15-05 plan).
 //
-// @param {object} bundle   - Bundle object from bundles.json
-// @param {string} platform - 'make' | 'zapier' | 'n8n'
+// @param {object} bundle      - Bundle object from bundles.json
+// @param {string} platform    - 'make' | 'zapier' | 'n8n'
+// @param {object} [storyBeats] - Optional storyBeats spine for this bundle
 // @returns {Promise<string>} Generated post content
 // ---------------------------------------------------------------------------
-async function generatePost(bundle, platform) {
+async function generatePost(bundle, platform, storyBeats = null) {
   // Lazy-require Anthropic SDK to avoid loading it until needed
   const AnthropicModule = require('@anthropic-ai/sdk');
   const Anthropic = AnthropicModule.default || AnthropicModule;
@@ -90,6 +108,22 @@ async function generatePost(bundle, platform) {
 
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const platformName = PLATFORM_NAMES[platform] || platform;
+
+  // Build real system data section from bundle
+  const realProcessNames = (bundle.constituentProcesses || []).join(', ') || 'N/A';
+  const realStepsList = (bundle.realSteps || []).map((s, i) => `${i + 1}. ${s}`).join('\n') || 'N/A';
+  const appsList = (bundle.apps || []).join(', ') || 'N/A';
+
+  const storySpineSection = storyBeats
+    ? `NARRATIVE SPINE (this post must tell the exact same story as the companion diagram — every beat below should be visible in your Bridge section, in this order):
+Headline to echo (paraphrase, don't copy verbatim): "${storyBeats.headline}"
+Dek: "${storyBeats.dek}"
+Beats:
+${storyBeats.beats.map((b, i) => `${i + 1}. [${b.kind}] ${b.label} — ${b.detail}`).join('\n')}
+
+The diagram renders exactly these beats as labeled cards. The reader will see both the post and the diagram together; they must reinforce each other. Use the same domain nouns. Describe the same decisions and branches. If a beat mentions "HubSpot" and "deal stage," the post should too.
+`
+    : '';
 
   const userPrompt = `Write a LinkedIn post for this automation workflow:
 
@@ -103,18 +137,24 @@ ${bundle.pain}
 AFTER (the automated dream state):
 ${bundle.solution}
 
-Key Automation Steps (reference these naturally in the Bridge section — don't list them as bullet points, weave them into the narrative):
+REAL SYSTEM DATA (ground your post in these facts — every claim must trace to something here):
+Real Process Names: ${realProcessNames}
+Real Steps (what the automation actually does):
+${realStepsList}
+Integrations Used: ${appsList}
+
+${storySpineSection}Simplified Narrative Structure (use as scaffold for the Bridge section, but ground details in the real steps above):
 ${bundle.idealizedSteps.map((s, i) => `${i + 1}. ${s.label}`).join('\n')}
 
 Known inefficiencies this automation fixes:
 ${bundle.inefficiencies.join(', ') || 'Manual processes, inconsistent timing, human error'}
 
-Write the post now. Remember: 400-700 words, hook in first 210 chars, BAB framework, casual expert tone, end with mixed CTA + 3 hashtags.`;
+Write the post now. Remember: MAXIMUM 2,800 characters (target 300-400 words), hook in first 210 chars, BAB framework, casual expert tone, end with mixed CTA + 3 hashtags.`;
 
   const message = await client.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 2000,
-    temperature: 0.7,
+    temperature: 0.4,
     system: SYSTEM_PROMPT,
     messages: [{ role: 'user', content: userPrompt }]
   });
@@ -136,13 +176,16 @@ Write the post now. Remember: 400-700 words, hook in first 210 chars, BAB framew
 function validatePost(content, platform, journeyStage) {
   const errors = [];
 
-  // Word count check (400-750 with buffer)
-  const wordCount = content.split(/\s+/).filter(w => w.length > 0).length;
-  if (wordCount < 400) {
-    errors.push(`Too short: ${wordCount} words (min 400)`);
+  // Character count check (LinkedIn limit: 3,000; target max: 2,800)
+  const charCount = content.length;
+  if (charCount > 2800) {
+    errors.push(`Too long: ${charCount} chars (max 2800)`);
   }
-  if (wordCount > 750) {
-    errors.push(`Too long: ${wordCount} words (max 750)`);
+
+  // Word count check (300-450 target range)
+  const wordCount = content.split(/\s+/).filter(w => w.length > 0).length;
+  if (wordCount < 250) {
+    errors.push(`Too short: ${wordCount} words (min 250)`);
   }
 
   // First line hook length (under 215 chars with buffer)
@@ -207,7 +250,7 @@ function validatePost(content, platform, journeyStage) {
 // @param {string} outputDir - Base output directory (e.g. 'linkedin-posts/posts')
 // @returns {Promise<{ total: number, passed: number, warnings: number, errors: number }>}
 // ---------------------------------------------------------------------------
-async function generateAllPosts(bundles, outputDir) {
+async function generateAllPosts(bundles, outputDir, storyBeatsByBundle = null) {
   const platforms = ['make', 'zapier', 'n8n'];
   let total = 0;
   let passed = 0;
@@ -219,9 +262,11 @@ async function generateAllPosts(bundles, outputDir) {
       total++;
 
       try {
-        const content = await generatePost(bundle, platform);
+        const sb = storyBeatsByBundle ? storyBeatsByBundle[bundle.id] : null;
+        const content = await generatePost(bundle, platform, sb);
         const validation = validatePost(content, platform, bundle.journeyStage);
         const wordCount = content.split(/\s+/).filter(w => w.length > 0).length;
+        const charCount = content.length;
 
         // Write the file regardless of validation (manual review will catch issues)
         const outputPath = path.join(outputDir, bundle.journeySlug, `${platform}.md`);
@@ -230,10 +275,10 @@ async function generateAllPosts(bundles, outputDir) {
 
         if (validation.valid) {
           passed++;
-          console.log(`Generated: posts/${bundle.journeySlug}/${platform}.md (${wordCount} words, PASS)`);
+          console.log(`Generated: posts/${bundle.journeySlug}/${platform}.md (${wordCount} words, ${charCount} chars, PASS)`);
         } else {
           warnings++;
-          console.log(`Generated: posts/${bundle.journeySlug}/${platform}.md (${wordCount} words, WARN: ${validation.errors.join(', ')})`);
+          console.log(`Generated: posts/${bundle.journeySlug}/${platform}.md (${wordCount} words, ${charCount} chars, WARN: ${validation.errors.join(', ')})`);
         }
 
         // 2-second delay between API calls to avoid rate limits

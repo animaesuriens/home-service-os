@@ -46,6 +46,19 @@ async function main() {
 
   const bundlesData = await fs.readJSON(path.join(dataDir, 'bundles.json'));
 
+  // Load storyBeats if present — they become the shared narrative spine for
+  // post + diagram. Absent is not fatal (allows running posts alone for smoke tests).
+  const storybeatsPath = path.join(dataDir, 'storybeats.json');
+  let storyBeatsByBundle = null;
+  if (await fs.pathExists(storybeatsPath)) {
+    const sbFile = await fs.readJSON(storybeatsPath);
+    storyBeatsByBundle = sbFile.byBundle || null;
+    const sbCount = storyBeatsByBundle ? Object.keys(storyBeatsByBundle).length : 0;
+    console.log(`Loaded storyBeats for ${sbCount} bundle(s) from storybeats.json`);
+  } else {
+    console.warn('storybeats.json not found — posts will generate without narrative spine (consider running npm run stage2:storybeats first)');
+  }
+
   // Validate bundle if provided
   let targetBundle = null;
   if (bundleArg) {
@@ -70,7 +83,7 @@ async function main() {
   if (!bundleArg && !platformArg) {
     // No filters: run all posts via existing function
     console.log(`Generating posts for ${bundlesData.totalBundles} bundles x 3 platforms = ${bundlesData.totalBundles * 3} posts`);
-    const result = await generateAllPosts(bundlesData.bundles, postsDir);
+    const result = await generateAllPosts(bundlesData.bundles, postsDir, storyBeatsByBundle);
 
     console.log('\n--- Summary ---');
     console.log(`Total: ${result.total}`);
@@ -99,7 +112,8 @@ async function main() {
         total++;
 
         try {
-          const content = await generatePost(bundle, platform);
+          const sb = storyBeatsByBundle ? storyBeatsByBundle[bundle.id] : null;
+          const content = await generatePost(bundle, platform, sb);
           const validation = validatePost(content, platform, bundle.journeyStage);
           const wordCount = content.split(/\s+/).filter(w => w.length > 0).length;
 
